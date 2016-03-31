@@ -16,8 +16,8 @@ var tplTriggerJSON = `{
 var tplTriggerGoFile = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo/golib/engine/ext/trigger"
-	"github.com/TIBCOSoftware/flogo/golib/engine/starter"
+	"github.com/TIBCOSoftware/flogo-lib/engine/ext/trigger"
+	"github.com/TIBCOSoftware/flogo-lib/engine/starter"
 )
 
 // MyTrigger is a stub for your Trigger implementation
@@ -58,7 +58,7 @@ var tplTriggerTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo/golib/engine/ext/trigger"
+	"github.com/TIBCOSoftware/flogo-lib/engine/ext/trigger"
 )
 
 func TestRegistered(t *testing.T) {

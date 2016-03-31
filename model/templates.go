@@ -10,8 +10,8 @@ var tplModelGoFile = `package {{.Name}}
 
 import (
 	"fmt"
-	"github.com/TIBCOSoftware/flogo/golib/core/ext/model"
-	"github.com/TIBCOSoftware/flogo/golib/core/process"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/model"
+	"github.com/TIBCOSoftware/flogo-lib/core/process"
 )
 
 func init() {
@@ -188,7 +188,7 @@ var tplModelTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo/golib/core/ext/model"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/model"
 )
 
 func TestRegistered(t *testing.T) {

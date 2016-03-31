@@ -85,7 +85,7 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 
 		os.Chdir(activityName)
 		fmt.Fprint(os.Stdout, "Installing flogo lib...\n")
-		cmd := exec.Command("gb", "vendor", "fetch", "github.com/TIBCOSoftware/flogo/golib")
+		cmd := exec.Command("gb", "vendor", "fetch", "github.com/TIBCOSoftware/flogo-lib")
 		cmd.Stdout = os.Stdout
 		err := cmd.Run()
 		if err != nil {

@@ -21,7 +21,7 @@ var tplActivityJSON = `{
 var tplActivityGoFile = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo/golib/core/ext/activity"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/activity"
 )
 
 // MyActivity is a stub for your Activity implementation
@@ -52,8 +52,8 @@ var tplActivityTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo/golib/core/ext/activity"
-	"github.com/TIBCOSoftware/flogo/golib/test"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/activity"
+	"github.com/TIBCOSoftware/flogo-lib/test"
 )
 
 func TestRegistered(t *testing.T) {
