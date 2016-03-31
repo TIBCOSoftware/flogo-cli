@@ -1,10 +1,11 @@
 package engine
 
 import (
-	"fg"
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
 )
 
 var optDelModel = &flogo.OptionInfo{

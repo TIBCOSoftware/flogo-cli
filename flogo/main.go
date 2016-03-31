@@ -6,17 +6,18 @@ package main
 
 import (
 	"bufio"
-	"fg"
-	"fgutil"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 
-	_ "activity"
-	_ "engine"
-	_ "model"
-	_ "trigger"
+	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
+
+	_ "github.com/TIBCOSoftware/flogo-tools/activity"
+	_ "github.com/TIBCOSoftware/flogo-tools/engine"
+	_ "github.com/TIBCOSoftware/flogo-tools/model"
+	_ "github.com/TIBCOSoftware/flogo-tools/trigger"
 )
 
 var (

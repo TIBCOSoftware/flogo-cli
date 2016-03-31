@@ -1,7 +1,7 @@
 package trigger
 
 import (
-	"fg"
+	"github.com/TIBCOSoftware/flogo-tools/fg"
 )
 
 var optTrigger = &flogo.OptionInfo{

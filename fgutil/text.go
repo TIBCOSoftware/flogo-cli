@@ -19,6 +19,7 @@ func RenderTemplate(w io.Writer, text string, data interface{}) {
 	}
 }
 
+// Capitalize will return a copy of the provided string with the first letter capitalized
 func Capitalize(s string) string {
 	if s == "" {
 		return s
@@ -33,8 +34,7 @@ func printUsage(w io.Writer, template string, data interface{}) {
 	bw.Flush()
 }
 
-
-
+// IsStringInSlice determines if the specified value is in the provided string slice
 func IsStringInSlice(value string, list []string) bool {
 	for _, v := range list {
 		if v == value {

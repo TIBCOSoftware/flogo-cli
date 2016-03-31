@@ -1,17 +1,19 @@
 package engine
 
 import (
-	"fg"
-	"os"
-	"fmt"
 	"encoding/json"
-	"strings"
-	"fgutil"
+	"fmt"
+	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 type getItems func(cfg *EngineConfig) []*ItemConfig
 
+// AddEngineItem adds an item(activity, model or trigger) to the engine
 func AddEngineItem(c flogo.Command, itemType string, args []string, gi getItems, useSrc bool) (itemConfig *ItemConfig, engineConfig *EngineConfig) {
 
 	configFile, err := os.Open(fileDescriptor)
@@ -54,26 +56,25 @@ func AddEngineItem(c flogo.Command, itemType string, args []string, gi getItems,
 	if strings.HasPrefix(itemPath, "local://") {
 		localPath = itemPath[8:]
 		altPath = "file://" + localPath
-	} else
-	if strings.HasPrefix(itemPath, "file://") {
+	} else if strings.HasPrefix(itemPath, "file://") {
 		localPath = itemPath[6:]
 		altPath = "local://" + localPath
 	}
 
 	if len(localPath) > 0 {
 
-		if ContainsItem(altPath, gi(engineConfig) ) {
+		if ContainsItem(altPath, gi(engineConfig)) {
 			fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in engine project.\n\n", fgutil.Capitalize(itemType), itemPath)
 			os.Exit(2)
 		}
 
 		usesGb := false
 
-		itemFile, err := os.Open(path(localPath, itemType + ".json"))
+		itemFile, err := os.Open(path(localPath, itemType+".json"))
 
 		if err != nil {
 			itemFile.Close()
-			itemFile, err = os.Open(path(localPath, "src", itemType +".json"))
+			itemFile, err = os.Open(path(localPath, "src", itemType+".json"))
 
 			usesGb = true
 			if err != nil {
@@ -84,7 +85,7 @@ func AddEngineItem(c flogo.Command, itemType string, args []string, gi getItems,
 		}
 
 		itemConfig := &struct {
-			Name string         `json:"name"`
+			Name string `json:"name"`
 		}{}
 
 		jsonParser := json.NewDecoder(itemFile)
@@ -135,5 +136,5 @@ func AddEngineItem(c flogo.Command, itemType string, args []string, gi getItems,
 	//engineConfig.Models = append(engineConfig.Models, itemConfig)
 	//fgutil.WriteJsonToFile(fileDescriptor, engineConfig)
 
-	return &ItemConfig{Path:itemPath, Version:"latest"}, engineConfig
+	return &ItemConfig{Path: itemPath, Version: "latest"}, engineConfig
 }

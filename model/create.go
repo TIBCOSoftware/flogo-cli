@@ -1,13 +1,14 @@
 package model
 
 import (
-	"fg"
-	"fgutil"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 const fileDescriptor string = "model.json"

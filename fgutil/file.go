@@ -1,13 +1,14 @@
 package fgutil
 
 import (
-	"os"
+	"encoding/json"
 	"fmt"
 	"io"
-	"encoding/json"
+	"os"
 )
 
-func WriteJsonToFile(filePath string, data interface{})  error {
+// WriteJSONtoFile encodes the data to json and saves it to a file
+func WriteJSONtoFile(filePath string, data interface{}) error {
 
 	f, _ := os.Create(filePath)
 
@@ -27,6 +28,7 @@ func WriteJsonToFile(filePath string, data interface{})  error {
 	return nil
 }
 
+// CopyFile copies the file from the source to the destination file
 func CopyFile(source string, dest string) (err error) {
 	sourcefile, err := os.Open(source)
 	if err != nil {
@@ -46,14 +48,14 @@ func CopyFile(source string, dest string) (err error) {
 	if err == nil {
 		sourceinfo, err := os.Stat(source)
 		if err != nil {
-			err = os.Chmod(dest, sourceinfo.Mode())
+			os.Chmod(dest, sourceinfo.Mode())
 		}
-
 	}
 
 	return
 }
 
+// CopyDir copies the specified directory and its contents to the specified destination
 func CopyDir(source string, dest string) (err error) {
 
 	// get properties of source dir
@@ -78,7 +80,6 @@ func CopyDir(source string, dest string) (err error) {
 		sourcefilepointer := source + "/" + obj.Name()
 
 		destinationfilepointer := dest + "/" + obj.Name()
-
 
 		if obj.IsDir() {
 			// create sub-directories - recursively

@@ -79,7 +79,7 @@ func (r *CommandRegistry) CommandOptionInfos() []*OptionInfo {
 
 	//return command options sorted by name
 	var sortedKeys []string
-	for k, _ := range r.commands {
+	for k := range r.commands {
 		sortedKeys = append(sortedKeys, k)
 	}
 

@@ -1,10 +1,11 @@
 package model
 
 import (
-	"fg"
 	"flag"
 	"fmt"
 	"os"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
 )
 
 var optHelp = &flogo.OptionInfo{

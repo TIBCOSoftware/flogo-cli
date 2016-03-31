@@ -2,10 +2,11 @@ package flogo
 
 import (
 	"bufio"
-	"fgutil"
 	"io"
 	"os"
 	"sync"
+
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 // Tool is a

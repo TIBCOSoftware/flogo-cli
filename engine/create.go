@@ -1,13 +1,14 @@
 package engine
 
 import (
-	"fg"
 	"flag"
 	"fmt"
 	"os"
-	"fgutil"
 	"os/exec"
 	"strings"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 const fileDescriptor string = "engine.json"
@@ -86,18 +87,18 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 
 	// create engine.json file
 	engineConfig := &EngineConfig{
-		Name:engineName,
-		Version:"0.0.1",
-		Description:"My engine description",
-		Activities: make([]*ItemConfig, 0),
-		Triggers: make([]*ItemConfig, 0),
-		Models: make([]*ItemConfig, 0),
+		Name:        engineName,
+		Version:     "0.0.1",
+		Description: "My engine description",
+		Activities:  make([]*ItemConfig, 0),
+		Triggers:    make([]*ItemConfig, 0),
+		Models:      make([]*ItemConfig, 0),
 	}
 
 	// todo: add default model
 	// todo: make a .flogo directory in user home, were people can put a default engine.json (use -default on create, or specify a json?)
 
-	fgutil.WriteJsonToFile(path(basePath, fileDescriptor), engineConfig)
+	fgutil.WriteJSONtoFile(path(basePath, fileDescriptor), engineConfig)
 
 	return nil
 }
@@ -105,4 +106,3 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 func path(parts ...string) string {
 	return strings.Join(parts[:], string(os.PathSeparator))
 }
-

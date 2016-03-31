@@ -1,8 +1,8 @@
 package fgutil
 
 import (
-	"os/exec"
 	"os"
+	"os/exec"
 )
 
 // ExecutableExists checks if the specified executable
@@ -15,6 +15,7 @@ func ExecutableExists(execName string) bool {
 	return true
 }
 
+// FileExists determines if the named file exists
 func FileExists(filePath string) bool {
 
 	f, err := os.Open(filePath)

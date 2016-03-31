@@ -1,9 +1,10 @@
 package engine
 
 import (
-	"fg"
 	"flag"
-	"fgutil"
+
+	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 var optAddActivity = &flogo.OptionInfo{
@@ -40,8 +41,7 @@ func (c *cmdAddActivity) Exec(ctx *flogo.Context, args []string) error {
 	itemConfig, engineConfig := AddEngineItem(c, "activity", args, gi, c.useSrc)
 
 	engineConfig.Models = append(engineConfig.Models, itemConfig)
-	fgutil.WriteJsonToFile(fileDescriptor, engineConfig)
+	fgutil.WriteJSONtoFile(fileDescriptor, engineConfig)
 
 	return nil
 }
-

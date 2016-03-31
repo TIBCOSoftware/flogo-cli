@@ -1,7 +1,7 @@
 package activity
 
 import (
-	"fg"
+	"github.com/TIBCOSoftware/flogo-tools/fg"
 )
 
 var optActivity = &flogo.OptionInfo{
