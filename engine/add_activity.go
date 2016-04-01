@@ -4,7 +4,6 @@ import (
 	"flag"
 
 	"github.com/TIBCOSoftware/flogo-tools/fg"
-	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
 var optAddActivity = &flogo.OptionInfo{
@@ -35,13 +34,13 @@ func (c *cmdAddActivity) AddFlags(fs *flag.FlagSet) {
 func (c *cmdAddActivity) Exec(ctx *flogo.Context, args []string) error {
 
 	gi := func(cfg *EngineConfig) []*ItemConfig {
-		return cfg.Models
+		return cfg.Activities
 	}
 
 	itemConfig, engineConfig := AddEngineItem(c, "activity", args, gi, c.useSrc)
+	engineConfig.Activities = append(engineConfig.Activities, itemConfig)
 
-	engineConfig.Models = append(engineConfig.Models, itemConfig)
-	fgutil.WriteJSONtoFile(fileDescriptor, engineConfig)
+	updateConfigFiles(engineConfig)
 
 	return nil
 }

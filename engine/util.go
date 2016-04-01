@@ -138,3 +138,15 @@ func AddEngineItem(c flogo.Command, itemType string, args []string, gi getItems,
 
 	return &ItemConfig{Path: itemPath, Version: "latest"}, engineConfig
 }
+
+
+func updateConfigFiles(engineConfig *EngineConfig) {
+	fgutil.WriteJSONtoFile(fileDescriptor, engineConfig)
+
+	sourcePath := path("src", engineConfig.Name)
+
+	// create imports test Go file
+	f, _ := os.Create(path(sourcePath, fileImportsGo))
+	fgutil.RenderTemplate(f, tplImportsGoFile, engineConfig)
+	f.Close()
+}

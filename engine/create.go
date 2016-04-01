@@ -12,9 +12,8 @@ import (
 )
 
 const fileDescriptor string = "engine.json"
-const fileEngineGo string = "engine.go"
-const fileEngineTestGo string = "engine_test.go"
-const fileEngineMdGo string = "engine_metadata.go"
+const fileMainGo string = "main.go"
+const fileImportsGo string = "imports.go"
 
 var optCreate = &flogo.OptionInfo{
 	Name:      "create",
@@ -68,7 +67,7 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	fmt.Fprintf(os.Stdout, "Creating flogo engine '%s'...\n", engineName)
 
 	basePath := engineName
-	sourcePath := path(engineName, "src")
+	sourcePath := path(engineName, "src", engineName)
 	vendorPath := path(engineName, "vendor", "src")
 
 	os.MkdirAll(sourcePath, 0777)
@@ -97,8 +96,19 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 
 	// todo: add default model
 	// todo: make a .flogo directory in user home, were people can put a default engine.json (use -default on create, or specify a json?)
-
 	fgutil.WriteJSONtoFile(path(basePath, fileDescriptor), engineConfig)
+
+	// todo create main and imports for items,
+
+	// create main Go file
+	f, _ := os.Create(path(sourcePath, fileMainGo))
+	fgutil.RenderTemplate(f, tplMainGoFile, engineConfig)
+	f.Close()
+
+	// create imports test Go file
+	f, _ = os.Create(path(sourcePath, fileImportsGo))
+	fgutil.RenderTemplate(f, tplImportsGoFile, engineConfig)
+	f.Close()
 
 	return nil
 }
