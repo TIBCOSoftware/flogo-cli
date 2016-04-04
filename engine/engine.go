@@ -2,6 +2,7 @@ package engine
 
 import (
 	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"strings"
 )
 
 var optEngine = &flogo.OptionInfo{
@@ -28,8 +29,11 @@ func init() {
 	Tool()
 }
 
-// EngineConfig is engine project configuration object
-type EngineConfig struct {
+//////////////////////////////////////////////////////////////
+// ProjectConfig
+
+// EngineProjectConfig is engine project configuration object
+type EngineProjectConfig struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
@@ -41,12 +45,48 @@ type EngineConfig struct {
 
 // ItemConfig is configuration for a model, activity or trigger
 type ItemConfig struct {
+	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Version string `json:"version"`
 }
 
-// ContainsItem determines if the path exists in  list of ItemConfigs
-func ContainsItem(path string, list []*ItemConfig) bool {
+type TriggerProjectConfig struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+
+	Config     []*ConfigValue `json:"config"`
+}
+
+type ConfigValue struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value string `json:"value,omitempty"`
+}
+
+///////////////////////////////////////////////////////////////
+// Engine Config
+
+type EngineConfig struct {
+	LogLevel        string           `json:"loglevel"`
+	StateServiceURI string           `json:"state_service"`
+	WorkerConfig    *WorkerConfig    `json:"engine"`
+	Triggers        []*TriggerConfig `json:"triggers"`
+}
+
+type TriggerConfig struct {
+	Name   string `json:"name"`
+	Config map[string]string  `json:"config"`
+}
+
+type WorkerConfig struct {
+	NumWorkers    int `json:"workers_count"`
+	WorkQueueSize int `json:"workqueue_size"`
+	MaxStepCount  int `json:"stepcount_max"`
+}
+
+// ContainsItemPath determines if the path exists in  list of ItemConfigs
+func ContainsItemPath(list []*ItemConfig, path string) bool {
 	for _, v := range list {
 		if v.Path == path {
 			return true
@@ -54,3 +94,28 @@ func ContainsItem(path string, list []*ItemConfig) bool {
 	}
 	return false
 }
+
+// ContainsItemPath determines if the path exists in  list of ItemConfigs
+func ContainsItemName(list []*ItemConfig, name string) bool {
+	for _, v := range list {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+// GetItemConfig gets the item config for the specified path or name
+func GetItemConfig(list []*ItemConfig, itemNameOrPath string) (int, *ItemConfig) {
+
+	isPath := strings.Contains(itemNameOrPath, "/")
+
+	for i, v := range list {
+		if (isPath && v.Path == itemNameOrPath) ||  (!isPath && v.Name == itemNameOrPath){
+			return i, v
+		}
+	}
+	return -1, nil
+}
+
+

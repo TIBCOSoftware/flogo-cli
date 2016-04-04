@@ -11,7 +11,8 @@ import (
 	"github.com/TIBCOSoftware/flogo-tools/fgutil"
 )
 
-const fileDescriptor string = "engine.json"
+const fileProjectConfig string = "engine.json"
+const fileEngineConfig string = "config.json"
 const fileMainGo string = "main.go"
 const fileImportsGo string = "imports.go"
 
@@ -85,7 +86,7 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	os.Chdir("..")
 
 	// create engine.json file
-	engineConfig := &EngineConfig{
+	projectConfig := &EngineProjectConfig{
 		Name:        engineName,
 		Version:     "0.0.1",
 		Description: "My engine description",
@@ -96,18 +97,29 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 
 	// todo: add default model
 	// todo: make a .flogo directory in user home, were people can put a default engine.json (use -default on create, or specify a json?)
-	fgutil.WriteJSONtoFile(path(basePath, fileDescriptor), engineConfig)
+	fgutil.WriteJSONtoFile(path(basePath, fileProjectConfig), projectConfig)
 
-	// todo create main and imports for items,
+	// create engine.json file
+	engineConfig := &EngineConfig{
+		LogLevel:    "info",
+		StateServiceURI: "",
+		WorkerConfig: &WorkerConfig{NumWorkers:5, WorkQueueSize:50, MaxStepCount:32000},
+		Triggers: make([]*TriggerConfig,0),
+	}
+
+	binPath := path(engineName, "bin")
+	os.MkdirAll(binPath, 0777)
+
+	fgutil.WriteJSONtoFile(path(binPath, fileEngineConfig), engineConfig)
 
 	// create main Go file
 	f, _ := os.Create(path(sourcePath, fileMainGo))
-	fgutil.RenderTemplate(f, tplMainGoFile, engineConfig)
+	fgutil.RenderTemplate(f, tplMainGoFile, projectConfig)
 	f.Close()
 
 	// create imports test Go file
 	f, _ = os.Create(path(sourcePath, fileImportsGo))
-	fgutil.RenderTemplate(f, tplImportsGoFile, engineConfig)
+	fgutil.RenderTemplate(f, tplImportsGoFile, projectConfig)
 	f.Close()
 
 	return nil

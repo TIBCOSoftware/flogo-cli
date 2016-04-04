@@ -118,11 +118,11 @@ import (
 
 	// activities
 {{range .Activities}}
-	_ "{{.Path}}"{{end}}
+	_ "{{.Path}}/rt"{{end}}
 
 	// triggers
 {{range .Triggers}}
-	_ "{{.Path}}"{{end}}
+	_ "{{.Path}}/rt"{{end}}
 
 	// models
 {{range .Models}}
