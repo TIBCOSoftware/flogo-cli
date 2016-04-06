@@ -3,7 +3,7 @@ package engine
 import (
 	"flag"
 
-	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo/fg"
 	"fmt"
 	"os"
 )

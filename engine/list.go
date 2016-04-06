@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo-tools/fg"
-	"github.com/TIBCOSoftware/flogo-tools/fgutil"
+	"github.com/TIBCOSoftware/flogo/fg"
+	"github.com/TIBCOSoftware/flogo/fgutil"
 	"encoding/json"
 	"bufio"
 )

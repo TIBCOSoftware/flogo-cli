@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo/fg"
 	"strings"
 )
 

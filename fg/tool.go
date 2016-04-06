@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/TIBCOSoftware/flogo-tools/fgutil"
+	"github.com/TIBCOSoftware/flogo/fgutil"
 )
 
 // Tool is a

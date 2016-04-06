@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo/fg"
 )
 
 var optModel = &flogo.OptionInfo{

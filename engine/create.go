@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo-tools/fg"
-	"github.com/TIBCOSoftware/flogo-tools/fgutil"
+	"github.com/TIBCOSoftware/flogo/fg"
+	"github.com/TIBCOSoftware/flogo/fgutil"
 )
 
 const fileProjectConfig string = "engine.json"

@@ -3,11 +3,11 @@ package engine
 import (
 	"flag"
 
-	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo/fg"
 	"os"
 	"fmt"
 	"encoding/json"
-	"github.com/TIBCOSoftware/flogo-tools/fgutil"
+	"github.com/TIBCOSoftware/flogo/fgutil"
 )
 
 var optAdd = &flogo.OptionInfo{

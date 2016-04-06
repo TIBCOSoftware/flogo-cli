@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo-tools/fg"
+	"github.com/TIBCOSoftware/flogo/fg"
 	"encoding/json"
 	"os/exec"
 )
