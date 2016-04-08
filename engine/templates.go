@@ -118,7 +118,11 @@ import (
 
 	// activities
 {{range .Activities}}
+	{{if .Local}}
+	_ "activity/{{.Name}}/rt"{{end}}
+	{{if not .Local}}
 	_ "{{.Path}}/rt"{{end}}
+	{{end}}
 
 	// triggers
 {{range .Triggers}}

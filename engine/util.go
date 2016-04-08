@@ -37,6 +37,7 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 	//todo: handle paths that end in "rt"
 
 	var itemName string
+	var isLocal bool
 
 	if len(localPath) > 0 {
 
@@ -83,6 +84,8 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 
 		fgutil.CopyDir(fromDir, toDir)
 
+		isLocal = true
+
 	} else {
 
 		//todo handle item already fetched - external or bad cleanup
@@ -114,7 +117,7 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 		itemFile.Close()
 	}
 
-	return &ItemConfig{Name:itemName, Path: itemPath, Version: "latest"}, itemConfigPath
+	return &ItemConfig{Name:itemName, Path: itemPath, Version: "latest", Local:isLocal}, itemConfigPath
 }
 
 func getItemName(itemFile *os.File, itemType string) string {

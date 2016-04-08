@@ -48,6 +48,7 @@ type ItemConfig struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Version string `json:"version"`
+	Local   bool   `json:"local"`
 }
 
 type TriggerProjectConfig struct {
