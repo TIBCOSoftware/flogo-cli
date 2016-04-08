@@ -69,10 +69,10 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 		sourcePath := path("src")
 		vendorPath := path("vendor", "src")
 
-		toDir := path(vendorPath, itemType, itemConfig.Name)
+		toDir := path(vendorPath, itemType, itemName)
 
 		if useSrc {
-			toDir = path(sourcePath, itemType, itemConfig.Name)
+			toDir = path(sourcePath, itemType, itemName)
 		}
 
 		fromDir := localPath
