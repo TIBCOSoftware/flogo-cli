@@ -16,15 +16,15 @@ var tplTriggerJSON = `{
 var tplTriggerGoFile = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/engine/ext/trigger"
-	"github.com/TIBCOSoftware/flogo-lib/engine/starter"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/trigger"
+	"github.com/TIBCOSoftware/flogo-lib/core/processinst"
 )
 
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
 	metadata       *trigger.Metadata
-	processStarter starter.ProcessStarter
-	config         map[string]string
+	processStarter processinst.Starter
+	config         *trigger.Config
 }
 
 func init() {
@@ -33,7 +33,7 @@ func init() {
 }
 
 // Init implements trigger.Trigger.Init
-func (t *MyTrigger) Init(processStarter starter.ProcessStarter, config map[string]string) {
+func (t *MyTrigger) Init(processStarter processinst.Starter, config *trigger.Config) {
 	t.processStarter = processStarter
 	t.config = config
 }
@@ -58,7 +58,7 @@ var tplTriggerTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo-lib/engine/ext/trigger"
+	"github.com/TIBCOSoftware/flogo-lib/core/ext/trigger"
 )
 
 func TestRegistered(t *testing.T) {

@@ -14,6 +14,8 @@ import (
 const fileProjectConfig string = "engine.json"
 const fileEngineConfig string = "config.json"
 const fileMainGo string = "main.go"
+const fileEnvGo string = "env.go"
+const fileConfigGo string = "config.go"
 const fileImportsGo string = "imports.go"
 
 var optCreate = &flogo.OptionInfo{
@@ -99,14 +101,8 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	// todo: make a .flogo directory in user home, were people can put a default engine.json (use -default on create, or specify a json?)
 	fgutil.WriteJSONtoFile(path(basePath, fileProjectConfig), projectConfig)
 
-	// create engine.json file
-	engineConfig := &EngineConfig{
-		LogLevel:    "info",
-		StateServiceURI: "",
-		WorkerConfig: &WorkerConfig{NumWorkers:5, WorkQueueSize:50, MaxStepCount:32000},
-		Triggers: make([]*TriggerConfig,0),
-	}
-
+	// create config.json file
+	engineConfig := DefaultEngineConfig()
 	binPath := path(engineName, "bin")
 	os.MkdirAll(binPath, 0777)
 
@@ -117,7 +113,17 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	fgutil.RenderTemplate(f, tplMainGoFile, projectConfig)
 	f.Close()
 
-	// create imports test Go file
+	// create environment Go file
+	f, _ = os.Create(path(sourcePath, fileEnvGo))
+	fgutil.RenderTemplate(f, tplEngineEnvGoFile, projectConfig)
+	f.Close()
+
+	// create config Go file
+	f, _ = os.Create(path(sourcePath, fileConfigGo))
+	fgutil.RenderTemplate(f, tplEngineConfigGoFile, projectConfig)
+	f.Close()
+
+	// create imports Go file
 	f, _ = os.Create(path(sourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, projectConfig)
 	f.Close()

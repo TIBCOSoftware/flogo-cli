@@ -20,13 +20,13 @@ const fileActivityMdGo string = "activity_metadata.go"
 
 var optCreate = &flogo.OptionInfo{
 	Name:      "create",
-	UsageLine: "create [-with-ui] [-gb] activityName",
+	UsageLine: "create [-with-ui] [-nogb] activityName",
 	Short:     "create an activity project",
 	Long: `Creates a flogo activity project.
 
 Options:
     -with-ui    generate activity ui
-    -gb         generate within gb structure
+    -nogb       generate without gb structure
 `,
 }
 
@@ -37,7 +37,7 @@ func init() {
 type cmdCreate struct {
 	option *flogo.OptionInfo
 	withUI bool
-	useGB  bool
+	noGB   bool
 }
 
 func (c *cmdCreate) OptionInfo() *flogo.OptionInfo {
@@ -46,7 +46,7 @@ func (c *cmdCreate) OptionInfo() *flogo.OptionInfo {
 
 func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.withUI), "with-ui", false, "generate ui components")
-	fs.BoolVar(&(c.useGB), "gb", false, "generate within gb structure")
+	fs.BoolVar(&(c.noGB), "nogb", false, "generate without gb structure")
 }
 
 func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
@@ -70,7 +70,7 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 
 	basePath := activityName
 
-	if c.useGB {
+	if !c.noGB {
 
 		if !fgutil.ExecutableExists("gb") {
 			fmt.Fprintf(os.Stderr, "Error: Cannot create activity project [%s] using 'gb', gb is not installed\n\n", activityName)

@@ -1,5 +1,6 @@
 package engine
 
+
 var tplMainGoFile = `package main
 
 import (
@@ -8,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/TIBCOSoftware/flogo-lib/engine/ext/trigger"
 	"github.com/op/go-logging"
 )
 
@@ -24,53 +24,21 @@ func main() {
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	logging.SetBackend(backendFormatter)
 
-	config := engine.LoadConfigurationFromFile("config.json")
-
-	if config == nil {
-		config = engine.NewConfiguration()
-		log.Warning("Configuration file not found, using defaults")
-	}
+	config := GetEngineConfig()
 
 	logLevel, _ := logging.LogLevel(config.LogLevel)
 
 	logging.SetLevel(logLevel, "")
 
-	processRegistry := engine.NewProcessRegistry()
-	stateService := engine.NewRestStateService(config.StateServiceURI)
+	env := GetEngineEnvironment(config)
 
-	system := engine.NewSystem(processRegistry, stateService, config.EngineConfig)
-
-	log.Info("Starting Engine...")
-
-	engine := system.GetEngine()
-
-	triggers := trigger.Triggers()
-
-	// initialize triggers
-	for _, trigger := range triggers {
-
-		triggerConfig := config.Triggers[trigger.Metadata().ID]
-		trigger.Init(engine, triggerConfig.Config)
-	}
-
+	engine := engine.NewEngine(env)
 	engine.Start()
-
-	// start triggers
-	for _, trigger := range triggers {
-		trigger.Start()
-	}
 
 	exitChan := setupSignalHandling()
 
-	log.Info("Engine Running...")
 	code := <-exitChan
 
-	log.Infof("\nShutting Down Engine...\n")
-
-	// stop triggers
-	for _, trigger := range triggers {
-		trigger.Stop()
-	}
 	engine.Stop()
 
 	os.Exit(code)
@@ -112,6 +80,52 @@ func setupSignalHandling() chan int {
 	return exitChan
 }
 `
+var tplEngineEnvGoFile = `package main
+
+import (
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/service/processprovider/ppsremote"
+	"github.com/TIBCOSoftware/flogo-lib/service/staterecorder/srsremote"
+	"github.com/TIBCOSoftware/flogo-lib/service/tester"
+)
+
+// GetEngineEnvironment gets the engine environment
+func GetEngineEnvironment(engineConfig *engine.Config) *engine.Environment {
+
+	processProvider := ppsremote.NewRemoteProcessProvider()
+	stateRecorder := srsremote.NewRemoteStateRecorder()
+	engineTester := tester.NewRestEngineTester()
+
+	return engine.NewEnvironment(processProvider, stateRecorder, engineTester, engineConfig)
+}
+`
+
+var tplEngineConfigGoFile = `package main
+
+import (
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+)
+
+const configFileName string = "config.json"
+
+// can be used to compile in config file
+const configJSON string = ""
+
+// GetEngineConfig gets the engine configuration
+func GetEngineConfig() *engine.Config {
+
+	config := engine.LoadConfigFromFile(configFileName)
+	//config := engine.LoadConfigFromJSON(configJSON)
+
+	if config == nil {
+		config = engine.DefaultConfig()
+		log.Warningf("Configuration file '%s' not found, using defaults", configFileName)
+	}
+
+	return config
+}
+`
+
 var tplImportsGoFile = `package main
 
 import (

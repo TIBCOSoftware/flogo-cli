@@ -136,11 +136,11 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 
 		if !ContainsTriggerConfig(engineConfig.Triggers, itemConfig.Name) {
 
-			triggerConfig := &TriggerConfig{Name:itemConfig.Name, Config:make(map[string]string)}
+			triggerConfig := &TriggerConfig{Name:itemConfig.Name, Settings:make(map[string]string)}
 
 			for _, v := range triggerProjectConfig.Config {
 
-				triggerConfig.Config[v.Name] = v.Value
+				triggerConfig.Settings[v.Name] = v.Value
 			}
 
 			engineConfig.Triggers = append(engineConfig.Triggers, triggerConfig)
