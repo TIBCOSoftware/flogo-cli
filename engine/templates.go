@@ -1,5 +1,10 @@
 package engine
 
+import (
+	"os"
+
+	"github.com/TIBCOSoftware/flogo/fgutil"
+)
 
 var tplMainGoFile = `package main
 
@@ -96,7 +101,10 @@ func GetEngineEnvironment(engineConfig *engine.Config) *engine.Environment {
 	stateRecorder := srsremote.NewRemoteStateRecorder()
 	engineTester := tester.NewRestEngineTester()
 
-	return engine.NewEnvironment(processProvider, stateRecorder, engineTester, engineConfig)
+	env := engine.NewEnvironment(processProvider, stateRecorder, engineTester, engineConfig)
+	env.SetEmbeddedJSONFlows(EmeddedFlowsAreCompressed(), EmeddedJSONFlows())
+
+	return env
 }
 `
 
@@ -131,20 +139,41 @@ var tplImportsGoFile = `package main
 import (
 
 	// activities
-{{range .Activities}}
-	{{if .Local}}
-	_ "activity/{{.Name}}/rt"{{end}}
-	{{if not .Local}}
-	_ "{{.Path}}/rt"{{end}}
-	{{end}}
-
+{{range .Activities}}{{if .Local}}	_ "activity/{{.Name}}/rt"{{end}}{{if not .Local}}	_ "{{.Path}}/rt"{{end}}
+{{end}}
 	// triggers
-{{range .Triggers}}
-	_ "{{.Path}}/rt"{{end}}
-
+{{range .Triggers}}	_ "{{.Path}}/rt"
+{{end}}
 	// models
-{{range .Models}}
-	_ "{{.Path}}"{{end}}
-
+{{range .Models}}	_ "{{.Path}}"
+{{end}}
 )
+`
+
+func createFlowsGoFile(dir string, flows map[string]string) {
+	// create flows Go file
+	f, _ := os.Create(path(dir, fileFlowsGo))
+	fgutil.RenderTemplate(f, tplFlowsGoFile, flows)
+	f.Close()
+}
+
+var tplFlowsGoFile = `package main
+
+var embeddedJSONFlows map[string]string
+
+func init() {
+
+	embeddedJSONFlows = make(map[string]string)
+
+{{ range $key, $value := . }}	embeddedJSONFlows["{{ $key }}"] = "{{ $value }}"
+{{ end }}
+}
+
+func EmeddedFlowsAreCompressed() bool {
+	return true
+}
+
+func EmeddedJSONFlows() map[string]string {
+	return embeddedJSONFlows
+}
 `

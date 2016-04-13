@@ -72,9 +72,11 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	basePath := engineName
 	sourcePath := path(engineName, "src", engineName)
 	vendorPath := path(engineName, "vendor", "src")
+	flowsPath := path(engineName, "flows")
 
 	os.MkdirAll(sourcePath, 0777)
 	os.MkdirAll(vendorPath, 0777)
+	os.MkdirAll(flowsPath, 0777)
 
 	fmt.Fprint(os.Stdout, "Installing flogo lib...\n")
 	os.Chdir(engineName)
@@ -127,6 +129,9 @@ func (c *cmdCreate) Exec(ctx *flogo.Context, args []string) error {
 	f, _ = os.Create(path(sourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, projectConfig)
 	f.Close()
+
+	// create empty "flows" Go file
+	createFlowsGoFile(sourcePath, make(map[string]string))
 
 	return nil
 }

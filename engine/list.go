@@ -1,14 +1,14 @@
 package engine
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/TIBCOSoftware/flogo/fg"
 	"github.com/TIBCOSoftware/flogo/fgutil"
-	"encoding/json"
-	"bufio"
 )
 
 var optList = &flogo.OptionInfo{
@@ -70,11 +70,11 @@ func (c *cmdList) Exec(ctx *flogo.Context, args []string) error {
 		itemType := args[0]
 
 		switch itemType {
-		case "activity":
+		case itActivity:
 			tpl = tplListActivities
-		case "model":
+		case itModel:
 			tpl = tplListModels
-		case "trigger":
+		case itTrigger:
 			tpl = tplListTriggers
 		default:
 			fmt.Fprintf(os.Stderr, "Error: Unknown item type '%s'\n\n", itemType)

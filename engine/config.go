@@ -3,7 +3,7 @@ package engine
 //////////////////////////////////////////////////////////////
 // ProjectConfig
 
-// EngineProjectConfig is engine project configuration object
+// EngineProjectConfig is the engine project configuration object
 type EngineProjectConfig struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
@@ -22,14 +22,16 @@ type ItemConfig struct {
 	Local   bool   `json:"local"`
 }
 
+// TriggerProjectConfig is the trigger project configuration object
 type TriggerProjectConfig struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Config     []*ConfigValue `json:"config"`
+	Config []*ConfigValue `json:"config"`
 }
 
+// ConfigValue struct describes a configuration value
 type ConfigValue struct {
 	Name  string `json:"name"`
 	Type  string `json:"type"`
@@ -41,6 +43,7 @@ type ConfigValue struct {
 
 // todo: consolidate with config from flogo-lib
 
+// EngineConfig is the engine configuration object
 type EngineConfig struct {
 	LogLevel     string           `json:"loglevel"`
 	RunnerConfig *RunnerConfig    `json:"processRunner"`
@@ -48,51 +51,57 @@ type EngineConfig struct {
 	Services     []*ServiceConfig `json:"services"`
 }
 
+// RunnerConfig is the runner configuration object
 type RunnerConfig struct {
 	Type   string        `json:"type"`
 	Pooled *PooledConfig `json:"pooled,omitempty"`
 	Direct *DirectConfig `json:"direct,omitempty"`
 }
 
+// DirectConfig  is the configuration object for a Direct Runner
 type DirectConfig struct {
 	MaxStepCount int `json:"maxStepCount"`
 }
 
+// PooledConfig  is the configuration object for a Pooled Runner
 type PooledConfig struct {
 	NumWorkers    int `json:"numWorkers"`
 	WorkQueueSize int `json:"workQueueSize"`
 	MaxStepCount  int `json:"maxStepCount"`
 }
 
+// TriggerConfig is the trigger configuration object
 type TriggerConfig struct {
 	Name      string            `json:"name"`
 	Settings  map[string]string `json:"settings"`
 	Endpoints []*EndpointConfig `json:"endpoints"`
 }
 
+// EndpointConfig is the endpoint configuration object
 type EndpointConfig struct {
-	ProcessURI string `json:"processURI"`
-	ConfigData string `json:"configData"` // if string, the trigger can unmarshall its own config
+	ProcessURI string            `json:"processURI"`
+	Settings   map[string]string `json:"settings"`
 }
 
+// ServiceConfig is the service configuration object
 type ServiceConfig struct {
 	Name     string            `json:"name"`
 	Enabled  bool              `json:"enabled"`
 	Settings map[string]string `json:"settings,omitempty"`
 }
 
-// DefaultConfig returns the default engine configuration
+// DefaultEngineConfig returns the default engine configuration
 func DefaultEngineConfig() *EngineConfig {
 
 	var ec EngineConfig
 
 	ec.LogLevel = "INFO"
-	ec.RunnerConfig =  &RunnerConfig{Type:"pooled", Pooled:&PooledConfig{NumWorkers:5, WorkQueueSize:50, MaxStepCount:32000}}
-	ec.Triggers = make([]*TriggerConfig,0)
-	ec.Services = make([]*ServiceConfig,0)
+	ec.RunnerConfig = &RunnerConfig{Type: "pooled", Pooled: &PooledConfig{NumWorkers: 5, WorkQueueSize: 50, MaxStepCount: 32000}}
+	ec.Triggers = make([]*TriggerConfig, 0)
+	ec.Services = make([]*ServiceConfig, 0)
 
-	ec.Services = append(ec.Services, &ServiceConfig{Name:"stateRecorder", Enabled: true, Settings: map[string]string{"host": ""}})
-	ec.Services = append(ec.Services, &ServiceConfig{Name:"processProvider", Enabled: true})
+	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: true, Settings: map[string]string{"host": ""}})
+	ec.Services = append(ec.Services, &ServiceConfig{Name: "processProvider", Enabled: true})
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "engineTester", Enabled: true, Settings: map[string]string{"port": "8080"}})
 
 	return &ec

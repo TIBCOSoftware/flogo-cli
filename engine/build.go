@@ -1,13 +1,19 @@
 package engine
 
 import (
+	"bufio"
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/TIBCOSoftware/flogo/fg"
-	"encoding/json"
-	"os/exec"
 )
 
 var optBuild = &flogo.OptionInfo{
@@ -21,12 +27,14 @@ Options:
 `,
 }
 
+const fileFlowsGo string = "flows.go"
+
 func init() {
 	Tool().CommandRegistry().RegisterCommand(&cmdBuild{option: optBuild})
 }
 
 type cmdBuild struct {
-	option *flogo.OptionInfo
+	option   *flogo.OptionInfo
 	validate bool
 }
 
@@ -62,6 +70,12 @@ func (c *cmdBuild) Exec(ctx *flogo.Context, args []string) error {
 
 	configFile.Close()
 
+	flowsPath := "./flows"
+
+	flows := importFlows(flowsPath)
+
+	createFlowsGoFile(path("src", projectConfig.Name), flows)
+
 	if len(projectConfig.Models) == 0 {
 		fmt.Fprint(os.Stderr, "Error: Engine must have a least one model.\n\n")
 		os.Exit(2)
@@ -85,4 +99,64 @@ func (c *cmdBuild) Exec(ctx *flogo.Context, args []string) error {
 	}
 
 	return nil
+}
+
+func importFlows(flowDir string) map[string]string {
+
+	fmt.Println("flows dir: ", flowDir)
+
+	flows := make(map[string]string)
+
+	fileInfos, err := ioutil.ReadDir(flowDir)
+
+	if err == nil {
+
+		for _, fileInfo := range fileInfos {
+
+			fmt.Println("file/dir: ", fileInfo.Name())
+
+			if !fileInfo.IsDir() {
+
+				fileName := fileInfo.Name()
+
+				// validate flow json
+				flowFilePath := path(flowDir, fileName)
+				b64 := gzipAndB64(flowFilePath) //todo: is gzip necessary
+				idx := strings.Index(fileName, ".")
+
+				flows[fileName[:idx]] = b64
+			}
+		}
+	}
+
+	return flows
+}
+
+func gzipAndB64(flowFilePath string) string {
+
+	in, err := os.Open(flowFilePath)
+	if err != nil {
+		//log.Fatal(err)
+	}
+
+	bufin := bufio.NewReader(in)
+
+	var b bytes.Buffer
+	gz, err := gzip.NewWriterLevel(&b, gzip.BestCompression)
+	_, err = bufin.WriteTo(gz)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := gz.Flush(); err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
+	in.Close()
+
+	return base64.StdEncoding.EncodeToString(b.Bytes())
 }

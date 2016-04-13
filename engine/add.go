@@ -1,12 +1,12 @@
 package engine
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/TIBCOSoftware/flogo/fg"
-	"os"
-	"fmt"
-	"encoding/json"
 	"github.com/TIBCOSoftware/flogo/fgutil"
 )
 
@@ -40,7 +40,6 @@ func (c *cmdAdd) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 
-
 	projectConfigFile, err := os.Open(fileProjectConfig)
 
 	if err != nil {
@@ -49,7 +48,7 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 	}
 
 	if len(args) == 0 {
-		fmt.Fprint(os.Stderr, "Error: %s item type not specified\n\n")
+		fmt.Fprint(os.Stderr, "Error: item type not specified\n\n")
 		Tool().CmdUsage(c)
 	}
 
@@ -79,19 +78,19 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 	var itemConfig *ItemConfig
 
 	switch itemType {
-	case "activity":
+	case itActivity:
 		gi := func(cfg *EngineProjectConfig) []*ItemConfig {
 			return cfg.Activities
 		}
 		itemConfig, itemConfigPath = AddEngineItem(c, projectConfig, "activity", args[1:], gi, c.useSrc)
 		projectConfig.Activities = append(projectConfig.Activities, itemConfig)
-	case "model":
+	case itModel:
 		gi := func(cfg *EngineProjectConfig) []*ItemConfig {
 			return cfg.Models
 		}
 		itemConfig, itemConfigPath = AddEngineItem(c, projectConfig, "model", args[1:], gi, c.useSrc)
 		projectConfig.Models = append(projectConfig.Models, itemConfig)
-	case "trigger":
+	case itTrigger:
 		gi := func(cfg *EngineProjectConfig) []*ItemConfig {
 			return cfg.Triggers
 		}
@@ -117,7 +116,7 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 		triggerConfigFile.Close()
 
 		//read engine config.json
-		engineConfigPath := path("bin",fileEngineConfig)
+		engineConfigPath := path("bin", fileEngineConfig)
 		engineConfigFile, err := os.Open(engineConfigPath)
 
 		engineConfig := &EngineConfig{}
@@ -131,12 +130,12 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 		engineConfigFile.Close()
 
 		if engineConfig.Triggers == nil {
-			engineConfig.Triggers = make([]*TriggerConfig,0)
+			engineConfig.Triggers = make([]*TriggerConfig, 0)
 		}
 
 		if !ContainsTriggerConfig(engineConfig.Triggers, itemConfig.Name) {
 
-			triggerConfig := &TriggerConfig{Name:itemConfig.Name, Settings:make(map[string]string)}
+			triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
 
 			for _, v := range triggerProjectConfig.Config {
 
@@ -159,6 +158,7 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 	return nil
 }
 
+// ContainsTriggerConfig determines if the list of TriggerConfigs contains the specified one
 func ContainsTriggerConfig(list []*TriggerConfig, triggerName string) bool {
 	for _, v := range list {
 		if v.Name == triggerName {

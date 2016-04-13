@@ -48,13 +48,13 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 
 		usesGb := false
 
-		itemConfigPath = path(localPath, itemType + ".json")
+		itemConfigPath = path(localPath, itemType+".json")
 		fmt.Print("itemConfigPath: " + itemConfigPath)
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
 			itemFile.Close()
-			itemFile, err = os.Open(path(localPath, "src", itemType + ".json"))
+			itemFile, err = os.Open(path(localPath, "src", itemType+".json"))
 
 			usesGb = true
 			if err != nil {
@@ -104,7 +104,7 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 
 		vendorPath := path("vendor", "src")
 
-		itemConfigPath = path(vendorPath, itemPath, itemType + ".json")
+		itemConfigPath = path(vendorPath, itemPath, itemType+".json")
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
@@ -117,7 +117,7 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 		itemFile.Close()
 	}
 
-	return &ItemConfig{Name:itemName, Path: itemPath, Version: "latest", Local:isLocal}, itemConfigPath
+	return &ItemConfig{Name: itemName, Path: itemPath, Version: "latest", Local: isLocal}, itemConfigPath
 }
 
 func getItemName(itemFile *os.File, itemType string) string {
@@ -136,7 +136,7 @@ func getItemName(itemFile *os.File, itemType string) string {
 	return itemConfig.Name
 }
 
-// AddEngineItem adds an item(activity, model or trigger) to the engine
+// DelEngineItem deletes an item(activity, model or trigger) from the engine
 func DelEngineItem(c flogo.Command, itemType string, args []string, gi getItems, useSrc bool) (idx int, engineConfig *EngineProjectConfig) {
 
 	configFile, err := os.Open(fileProjectConfig)

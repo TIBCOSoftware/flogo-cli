@@ -1,8 +1,15 @@
 package engine
 
 import (
-	"github.com/TIBCOSoftware/flogo/fg"
 	"strings"
+
+	"github.com/TIBCOSoftware/flogo/fg"
+)
+
+const (
+	itActivity = "activity"
+	itTrigger  = "trigger"
+	itModel    = "model"
 )
 
 var optEngine = &flogo.OptionInfo{
@@ -29,8 +36,6 @@ func init() {
 	Tool()
 }
 
-
-
 // ContainsItemPath determines if the path exists in  list of ItemConfigs
 func ContainsItemPath(list []*ItemConfig, path string) bool {
 	for _, v := range list {
@@ -41,7 +46,7 @@ func ContainsItemPath(list []*ItemConfig, path string) bool {
 	return false
 }
 
-// ContainsItemPath determines if the path exists in  list of ItemConfigs
+// ContainsItemName determines if the path exists in  list of ItemConfigs
 func ContainsItemName(list []*ItemConfig, name string) bool {
 	for _, v := range list {
 		if v.Name == name {
@@ -57,11 +62,9 @@ func GetItemConfig(list []*ItemConfig, itemNameOrPath string) (int, *ItemConfig)
 	isPath := strings.Contains(itemNameOrPath, "/")
 
 	for i, v := range list {
-		if (isPath && v.Path == itemNameOrPath) ||  (!isPath && v.Name == itemNameOrPath){
+		if (isPath && v.Path == itemNameOrPath) || (!isPath && v.Name == itemNameOrPath) {
 			return i, v
 		}
 	}
 	return -1, nil
 }
-
-
