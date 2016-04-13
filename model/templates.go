@@ -11,12 +11,12 @@ var tplModelGoFile = `package {{.Name}}
 import (
 	"fmt"
 	"github.com/TIBCOSoftware/flogo-lib/core/ext/model"
-	"github.com/TIBCOSoftware/flogo-lib/core/process"
+	"github.com/TIBCOSoftware/flogo-lib/core/flow"
 )
 
 func init() {
 	m := model.New("{{.Name}}")
-	m.RegisterProcessBehavior(1, &MyProcessBehavior{})
+	m.RegisterFlowBehavior(1, &MyFlowBehavior{})
 	m.RegisterTaskBehavior(1, &MyTaskBehavior{})
 	m.RegisterLinkBehavior(1, &MyLinkBehavior{})
 
@@ -25,29 +25,29 @@ func init() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// MyProcessBehavior implements model.ProcessBehavior
-type MyProcessBehavior struct {
+// MyFlowBehavior implements model.FlowBehavior
+type MyFlowBehavior struct {
 }
 
-// Start implements model.ProcessBehavior.Start
-func (pb *MyProcessBehavior) Start(context model.ProcessContext, data interface{}) (start bool, evalCode int) {
+// Start implements model.FlowBehavior.Start
+func (pb *MyFlowBehavior) Start(context model.FlowContext, data interface{}) (start bool, evalCode int) {
 	// just schedule the root task
 	return true, 0
 }
 
-// Resume implements model.ProcessBehavior.Resume
-func (pb *MyProcessBehavior) Resume(context model.ProcessContext, data interface{}) bool {
+// Resume implements model.FlowBehavior.Resume
+func (pb *MyFlowBehavior) Resume(context model.FlowContext, data interface{}) bool {
 	return true
 }
 
-// TasksDone implements model.ProcessBehavior.TasksDone
-func (pb *MyProcessBehavior) TasksDone(context model.ProcessContext, doneCode int) {
+// TasksDone implements model.FlowBehavior.TasksDone
+func (pb *MyFlowBehavior) TasksDone(context model.FlowContext, doneCode int) {
 	// all tasks are done
 }
 
-// Done implements model.ProcessBehavior.Done
-func (pb *MyProcessBehavior) Done(context model.ProcessContext) {
-	fmt.Printf("Process Done\n")
+// Done implements model.FlowBehavior.Done
+func (pb *MyFlowBehavior) Done(context model.FlowContext) {
+	fmt.Printf("Flow Done\n")
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ func (tb *MyTaskBehavior) Done(context model.TaskContext, doneCode int) (notifyP
 	links := task.ToLinks()
 	numLinks := len(links)
 
-	// process outgoing links
+	// flow outgoing links
 	if numLinks > 0 {
 
 		taskEntries := make([]*model.TaskEntry, 0, numLinks)
@@ -151,7 +151,7 @@ func (tb *MyTaskBehavior) Done(context model.TaskContext, doneCode int) (notifyP
 }
 
 // ChildDone implements model.TaskBehavior.ChildDone
-func (tb *MyTaskBehavior) ChildDone(context model.TaskContext, childTask *process.Task, childDoneCode int) (done bool, doneCode int) {
+func (tb *MyTaskBehavior) ChildDone(context model.TaskContext, childTask *flow.Task, childDoneCode int) (done bool, doneCode int) {
 
 	// our children are done, so just transition ourselves to done
 	return true, 0

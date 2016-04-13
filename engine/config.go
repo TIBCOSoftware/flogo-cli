@@ -46,7 +46,7 @@ type ConfigValue struct {
 // EngineConfig is the engine configuration object
 type EngineConfig struct {
 	LogLevel     string           `json:"loglevel"`
-	RunnerConfig *RunnerConfig    `json:"processRunner"`
+	RunnerConfig *RunnerConfig    `json:"flowRunner"`
 	Triggers     []*TriggerConfig `json:"triggers"`
 	Services     []*ServiceConfig `json:"services"`
 }
@@ -79,8 +79,8 @@ type TriggerConfig struct {
 
 // EndpointConfig is the endpoint configuration object
 type EndpointConfig struct {
-	ProcessURI string            `json:"processURI"`
-	Settings   map[string]string `json:"settings"`
+	FlowURI  string            `json:"flowURI"`
+	Settings map[string]string `json:"settings"`
 }
 
 // ServiceConfig is the service configuration object
@@ -101,7 +101,7 @@ func DefaultEngineConfig() *EngineConfig {
 	ec.Services = make([]*ServiceConfig, 0)
 
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: true, Settings: map[string]string{"host": ""}})
-	ec.Services = append(ec.Services, &ServiceConfig{Name: "processProvider", Enabled: true})
+	ec.Services = append(ec.Services, &ServiceConfig{Name: "flowProvider", Enabled: true})
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "engineTester", Enabled: true, Settings: map[string]string{"port": "8080"}})
 
 	return &ec

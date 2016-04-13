@@ -17,13 +17,13 @@ var tplTriggerGoFile = `package {{.Name}}
 
 import (
 	"github.com/TIBCOSoftware/flogo-lib/core/ext/trigger"
-	"github.com/TIBCOSoftware/flogo-lib/core/processinst"
+	"github.com/TIBCOSoftware/flogo-lib/core/flowinst"
 )
 
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
 	metadata       *trigger.Metadata
-	processStarter processinst.Starter
+	flowStarter flowinst.Starter
 	config         *trigger.Config
 }
 
@@ -33,8 +33,8 @@ func init() {
 }
 
 // Init implements trigger.Trigger.Init
-func (t *MyTrigger) Init(processStarter processinst.Starter, config *trigger.Config) {
-	t.processStarter = processStarter
+func (t *MyTrigger) Init(flowStarter flowinst.Starter, config *trigger.Config) {
+	t.flowStarter = flowStarter
 	t.config = config
 }
 
