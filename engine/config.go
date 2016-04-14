@@ -100,7 +100,7 @@ func DefaultEngineConfig() *EngineConfig {
 	ec.Triggers = make([]*TriggerConfig, 0)
 	ec.Services = make([]*ServiceConfig, 0)
 
-	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: true, Settings: map[string]string{"host": ""}})
+	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: false, Settings: map[string]string{"host": "", "port":""}})
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "flowProvider", Enabled: true})
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "engineTester", Enabled: true, Settings: map[string]string{"port": "8080"}})
 
