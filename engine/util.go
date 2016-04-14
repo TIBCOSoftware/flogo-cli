@@ -49,7 +49,6 @@ func AddEngineItem(c flogo.Command, projectConfig *EngineProjectConfig, itemType
 		usesGb := false
 
 		itemConfigPath = path(localPath, itemType+".json")
-		fmt.Print("itemConfigPath: " + itemConfigPath)
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
@@ -221,4 +220,13 @@ func updateProjectConfigFiles(engineConfig *EngineProjectConfig) {
 	f, _ := os.Create(path(sourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, engineConfig)
 	f.Close()
+}
+
+func stringInList(str string, list []string) bool {
+	for _, value := range list {
+		if value == str {
+			return true
+		}
+	}
+	return false
 }

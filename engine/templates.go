@@ -17,10 +17,7 @@ import (
 	"github.com/op/go-logging"
 )
 
-var log = logging.MustGetLogger("main")
-
-func main() {
-
+func init() {
 	var format = logging.MustStringFormatter(
 		"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
 	)
@@ -28,6 +25,12 @@ func main() {
 	backend := logging.NewLogBackend(os.Stderr, "", 0)
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	logging.SetBackend(backendFormatter)
+	logging.SetLevel(logging.INFO, "")
+}
+
+var log = logging.MustGetLogger("main")
+
+func main() {
 
 	config := GetEngineConfig()
 

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/TIBCOSoftware/flogo/fg"
 	"github.com/TIBCOSoftware/flogo/fgutil"
@@ -20,6 +21,9 @@ Options:
     -src   copy contents to source (only when using local/file)
 `,
 }
+
+var validItemTypes = []string{itActivity, itTrigger, itModel}
+
 
 func init() {
 	Tool().CommandRegistry().RegisterCommand(&cmdAdd{option: optAdd})
@@ -52,7 +56,12 @@ func (c *cmdAdd) Exec(ctx *flogo.Context, args []string) error {
 		Tool().CmdUsage(c)
 	}
 
-	itemType := args[0]
+	itemType := strings.ToLower(args[0])
+
+	if !stringInList(itemType, validItemTypes) {
+		fmt.Fprintf(os.Stderr, "Error: invalid item type '%s'\n\n", itemType)
+		Tool().CmdUsage(c)
+	}
 
 	if len(args) == 1 {
 		fmt.Fprintf(os.Stderr, "Error: %s path not specified\n\n", fgutil.Capitalize(itemType))
