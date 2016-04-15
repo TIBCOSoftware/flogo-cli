@@ -28,7 +28,7 @@ func init() {
 
 type cmdCreate struct {
 	option *cli.OptionInfo
-	noGB  bool
+	noGB   bool
 }
 
 func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
@@ -96,7 +96,8 @@ func (c *cmdCreate) Exec(args []string) error {
 		modelName,
 	}
 
-	//todo revisit this structure
+	//todo revisit model project layout
+
 	createProjectDescriptor(codeSrcPath, data)
 	createModelGoFile(codeSrcPath, data)
 	createModelTestGoFile(codeSrcPath, data)

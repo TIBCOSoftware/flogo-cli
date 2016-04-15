@@ -36,7 +36,7 @@ func (c *cmdDel) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdDel) Exec(args []string) error {
 
-	projectConfig := loadProjectConfig()
+	projectDescriptor := loadProjectDescriptor()
 
 	itemType := args[0]
 
@@ -50,26 +50,26 @@ func (c *cmdDel) Exec(args []string) error {
 		cmdUsage(c)
 	}
 
-	gb := fgutil.NewGb(projectConfig.Name)
+	gb := fgutil.NewGb(projectDescriptor.Name)
 
 	itemNameOrPath := args[1]
 
 	switch itemType {
 	case itActivity:
-		projectConfig.Activities = DelFlogoItem(gb, itActivity, itemNameOrPath, projectConfig.Activities, c.useSrc)
+		projectDescriptor.Activities = DelFlogoItem(gb, itActivity, itemNameOrPath, projectDescriptor.Activities, c.useSrc)
 
 	case itModel:
-		projectConfig.Models = DelFlogoItem(gb, itModel, itemNameOrPath, projectConfig.Models, c.useSrc)
+		projectDescriptor.Models = DelFlogoItem(gb, itModel, itemNameOrPath, projectDescriptor.Models, c.useSrc)
 
 	case itTrigger:
-		projectConfig.Triggers = DelFlogoItem(gb, itTrigger, itemNameOrPath, projectConfig.Triggers, c.useSrc)
+		projectDescriptor.Triggers = DelFlogoItem(gb, itTrigger, itemNameOrPath, projectDescriptor.Triggers, c.useSrc)
 
 	default:
 		fmt.Fprintf(os.Stderr, "Error: Unknown item type '%s'\n\n", itemType)
 		os.Exit(2)
 	}
 
-	updateProjectConfigFiles(gb, projectConfig)
+	updateProjectDescriptorFiles(gb, projectDescriptor)
 
 	return nil
 }

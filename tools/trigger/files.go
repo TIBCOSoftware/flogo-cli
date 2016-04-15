@@ -24,19 +24,25 @@ func createProjectDescriptor(sourcePath string, data interface{}) {
 	}
 
 	f, _ := os.Create(filePath)
-	fgutil.RenderTemplate(f, tplTriggerJSON, data)
+	fgutil.RenderTemplate(f, tplTriggerDescriptorJSON, data)
 	f.Close()
 }
 
-var tplTriggerJSON = `{
+var tplTriggerDescriptorJSON = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "description": "trigger description",
-  "config":[
+  "settings":[
     {
       "name": "input",
       "type": "string",
       "value": "default"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "type": "string"
     }
   ]
 }`
@@ -120,4 +126,4 @@ func createMetadataGoFile(codeSourcePath string, data interface{}) {
 
 var tplMetadataGoFile = `package {{.Name}}
 
-var jsonMetadata = ` + "`" + tplTriggerJSON + "`"
+var jsonMetadata = ` + "`" + tplTriggerDescriptorJSON + "`"

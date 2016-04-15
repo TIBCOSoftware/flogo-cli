@@ -24,11 +24,11 @@ func createProjectDescriptor(sourcePath string, data interface{}) {
 	}
 
 	f, _ := os.Create(filePath)
-	fgutil.RenderTemplate(f, tplActivityJSON, data)
+	fgutil.RenderTemplate(f, tplActivityDescriptorJSON, data)
 	f.Close()
 }
 
-var tplActivityJSON = `{
+var tplActivityDescriptorJSON = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "description": "activity description",
@@ -136,4 +136,4 @@ func createMetadataGoFile(codeSourcePath string, data interface{}) {
 
 var tplMetadataGoFile = `package {{.Name}}
 
-var jsonMetadata = ` + "`" + tplActivityJSON + "`"
+var jsonMetadata = ` + "`" + tplActivityDescriptorJSON + "`"

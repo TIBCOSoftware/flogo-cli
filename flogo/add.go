@@ -29,8 +29,8 @@ func init() {
 }
 
 type cmdAdd struct {
-	option *cli.OptionInfo
-	useSrc bool
+	option   *cli.OptionInfo
+	addToSrc bool
 }
 
 func (c *cmdAdd) OptionInfo() *cli.OptionInfo {
@@ -38,12 +38,12 @@ func (c *cmdAdd) OptionInfo() *cli.OptionInfo {
 }
 
 func (c *cmdAdd) AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&(c.useSrc), "src", false, "copy contents to source (only when using local/file)")
+	fs.BoolVar(&(c.addToSrc), "src", false, "copy contents to source (only when using local/file)")
 }
 
 func (c *cmdAdd) Exec(args []string) error {
 
-	projectConfig := loadProjectConfig()
+	projectDescriptor := loadProjectDescriptor()
 
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, "Error: item type not specified\n\n")
@@ -69,21 +69,28 @@ func (c *cmdAdd) Exec(args []string) error {
 		cmdUsage(c)
 	}
 
-	gb := fgutil.NewGb(projectConfig.Name)
+	installItem(projectDescriptor, itemType, itemPath, c.addToSrc)
+
+	return nil
+}
+
+func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, itemPath string, addToSrc bool) {
+
+	gb := fgutil.NewGb(projectDescriptor.Name)
 
 	var itemConfigPath string
-	var itemConfig *ItemConfig
+	var itemConfig *ItemDescriptor
 
 	switch itemType {
 	case itActivity:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itActivity, itemPath, projectConfig.Activities, c.useSrc)
-		projectConfig.Activities = append(projectConfig.Activities, itemConfig)
+		itemConfig, itemConfigPath = AddFlogoItem(gb, itActivity, itemPath, projectDescriptor.Activities, addToSrc)
+		projectDescriptor.Activities = append(projectDescriptor.Activities, itemConfig)
 	case itModel:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itModel, itemPath, projectConfig.Models, c.useSrc)
-		projectConfig.Models = append(projectConfig.Models, itemConfig)
+		itemConfig, itemConfigPath = AddFlogoItem(gb, itModel, itemPath, projectDescriptor.Models, addToSrc)
+		projectDescriptor.Models = append(projectDescriptor.Models, itemConfig)
 	case itTrigger:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, projectConfig.Triggers, c.useSrc)
-		projectConfig.Triggers = append(projectConfig.Triggers, itemConfig)
+		itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, projectDescriptor.Triggers, addToSrc)
+		projectDescriptor.Triggers = append(projectDescriptor.Triggers, itemConfig)
 
 		//read trigger.json
 		triggerConfigFile, err := os.Open(itemConfigPath)
@@ -93,10 +100,10 @@ func (c *cmdAdd) Exec(args []string) error {
 			os.Exit(2)
 		}
 
-		triggerProjectConfig := &TriggerProjectConfig{}
+		triggerProjectDescriptor := &TriggerProjectDescriptor{}
 		jsonParser := json.NewDecoder(triggerConfigFile)
 
-		if err = jsonParser.Decode(triggerProjectConfig); err != nil {
+		if err = jsonParser.Decode(triggerProjectDescriptor); err != nil {
 			fmt.Fprint(os.Stderr, "Error: Unable to parse trigger.json, file may be corrupted.\n\n")
 			os.Exit(2)
 		}
@@ -125,7 +132,7 @@ func (c *cmdAdd) Exec(args []string) error {
 
 			triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
 
-			for _, v := range triggerProjectConfig.Config {
+			for _, v := range triggerProjectDescriptor.Settings {
 
 				triggerConfig.Settings[v.Name] = v.Value
 			}
@@ -141,9 +148,7 @@ func (c *cmdAdd) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	updateProjectConfigFiles(gb, projectConfig)
-
-	return nil
+	updateProjectDescriptorFiles(gb, projectDescriptor)
 }
 
 // ContainsTriggerConfig determines if the list of TriggerConfigs contains the specified one

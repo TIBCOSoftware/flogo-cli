@@ -20,11 +20,11 @@ func createProjectDescriptor(srcPath string, data interface{}) {
 	}
 
 	f, _ := os.Create(filePath)
-	fgutil.RenderTemplate(f, tplModelJSON, data)
+	fgutil.RenderTemplate(f, tplModelDescriptorJSON, data)
 	f.Close()
 }
 
-var tplModelJSON = `{
+var tplModelDescriptorJSON = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "description": "model description"

@@ -8,7 +8,7 @@
 
 ## Installation
 ### Prerequisites
-* The Go programming language should be [installed](https://golang.org/doc/install). 
+* The Go programming language should be [installed](https://golang.org/doc/install).
 * In order to simplify development and building in Go, we are using the **gb** build tool.  It can be downloaded from [here](https://getgb.io).  
 
 ### Install flogo
@@ -18,13 +18,12 @@
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
 
 ```bash
-    flogo create myApp
-    cd myApp
-    
-    flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log 
-    flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
-    flogo add model github.com/TIBCOSoftware/flogo-contrib/model/simple
-    flogo build
+flogo create myApp
+cd myApp
+
+flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
+flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
+flogo build
 ```
 
 ## Contributing and support

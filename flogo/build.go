@@ -47,25 +47,25 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdBuild) Exec(args []string) error {
 
-	projectConfig := loadProjectConfig()
+	projectDescriptor := loadProjectDescriptor()
 
 	if len(args) > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
 		cmdUsage(c)
 	}
 
-	gb := fgutil.NewGb(projectConfig.Name)
+	gb := fgutil.NewGb(projectDescriptor.Name)
 
 	flows := importFlows(dirFlows)
 
 	createFlowsGoFile(gb.CodeSourcePath, flows)
 
-	if len(projectConfig.Models) == 0 {
+	if len(projectDescriptor.Models) == 0 {
 		fmt.Fprint(os.Stderr, "Error: Project must have a least one model.\n\n")
 		os.Exit(2)
 	}
 
-	if len(projectConfig.Triggers) == 0 {
+	if len(projectDescriptor.Triggers) == 0 {
 		fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
 		os.Exit(2)
 	}

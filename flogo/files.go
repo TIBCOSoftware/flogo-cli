@@ -7,20 +7,21 @@ import (
 )
 
 const (
-	fileProjectConfig string = "flogo.json"
-	fileEngineConfig  string = "config.json"
-	fileMainGo        string = "main.go"
-	fileEnvGo         string = "env.go"
-	fileConfigGo      string = "config.go"
-	fileImportsGo     string = "imports.go"
+	fileDescriptor   string = "flogo.json"
+	fileEngineConfig string = "config.json"
+	fileMainGo       string = "main.go"
+	fileEnvGo        string = "env.go"
+	fileConfigGo     string = "config.go"
+	fileImportsGo    string = "imports.go"
 
 	dirFlows string = "flows"
 
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
-func createMainGoFile(codeSourcePath string, projectConfig *FlogoProjectConfig) {
+
+func createMainGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileMainGo))
-	fgutil.RenderTemplate(f, tplMainGoFile, projectConfig)
+	fgutil.RenderTemplate(f, tplMainGoFile, projectDescriptor)
 	f.Close()
 }
 
@@ -107,9 +108,9 @@ func setupSignalHandling() chan int {
 }
 `
 
-func createEngineEnvGoFile(codeSourcePath string, projectConfig *FlogoProjectConfig) {
+func createEngineEnvGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileEnvGo))
-	fgutil.RenderTemplate(f, tplEngineEnvGoFile, projectConfig)
+	fgutil.RenderTemplate(f, tplEngineEnvGoFile, projectDescriptor)
 	f.Close()
 }
 
@@ -136,9 +137,9 @@ func GetEngineEnvironment(engineConfig *engine.Config) *engine.Environment {
 }
 `
 
-func createEngineConfigGoFile(codeSourcePath string, projectConfig *FlogoProjectConfig) {
+func createEngineConfigGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileConfigGo))
-	fgutil.RenderTemplate(f, tplEngineConfigGoFile, projectConfig)
+	fgutil.RenderTemplate(f, tplEngineConfigGoFile, projectDescriptor)
 	f.Close()
 }
 
@@ -168,9 +169,9 @@ func GetEngineConfig() *engine.Config {
 }
 `
 
-func createImportsGoFile(codeSourcePath string, projectConfig *FlogoProjectConfig) {
+func createImportsGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileImportsGo))
-	fgutil.RenderTemplate(f, tplImportsGoFile, projectConfig)
+	fgutil.RenderTemplate(f, tplImportsGoFile, projectDescriptor)
 	f.Close()
 }
 

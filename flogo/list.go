@@ -36,7 +36,7 @@ func (c *cmdList) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdList) Exec(args []string) error {
 
-	projectConfig := loadProjectConfig()
+	projectDescriptor := loadProjectDescriptor()
 
 	if len(args) > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
@@ -67,7 +67,7 @@ func (c *cmdList) Exec(args []string) error {
 	}
 
 	bw := bufio.NewWriter(os.Stdout)
-	fgutil.RenderTemplate(bw, tpl, projectConfig)
+	fgutil.RenderTemplate(bw, tpl, projectDescriptor)
 	bw.Flush()
 
 	return nil

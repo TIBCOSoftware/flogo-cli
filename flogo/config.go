@@ -1,34 +1,42 @@
 package main
 
 //////////////////////////////////////////////////////////////
-// ProjectConfig
+// ProjectDescriptor
 
-// FlogoProjectConfig is the flogo project configuration object
-type FlogoProjectConfig struct {
+// FlogoProjectDescriptor is the flogo project descriptor object
+type FlogoProjectDescriptor struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Models     []*ItemConfig `json:"models"`
-	Activities []*ItemConfig `json:"activities"`
-	Triggers   []*ItemConfig `json:"triggers"`
+	Models     []*ItemDescriptor `json:"models"`
+	Activities []*ItemDescriptor `json:"activities"`
+	Triggers   []*ItemDescriptor `json:"triggers"`
 }
 
-// ItemConfig is configuration for a model, activity or trigger
-type ItemConfig struct {
+// ItemDescriptor is configuration for a model, activity or trigger
+type ItemDescriptor struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Version string `json:"version"`
 	Local   bool   `json:"local"`
 }
 
-// TriggerProjectConfig is the trigger project configuration object
-type TriggerProjectConfig struct {
+// TriggerProjectDescriptor is the trigger project descriptor object
+type TriggerProjectDescriptor struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Config []*ConfigValue `json:"config"`
+	Settings []*ConfigValue `json:"settings"`
+	Outputs  []*ConfigValue `json:"outputs"`
+
+	Endpoint *EndpointDescriptor `json:"endpoint"`
+}
+
+// EndpointDescriptor is the trigger endpoint descriptor object
+type EndpointDescriptor struct {
+	Settings []*ConfigValue `json:"settings"`
 }
 
 // ConfigValue struct describes a configuration value

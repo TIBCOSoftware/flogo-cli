@@ -76,23 +76,25 @@ func (c *cmdCreate) Exec(args []string) error {
 	}
 
 	// create flogo.json file
-	projectConfig := &FlogoProjectConfig{
+	projectDescriptor := &FlogoProjectDescriptor{
 		Name:        appName,
 		Version:     "0.0.1",
 		Description: "My flogo application description",
-		Activities:  make([]*ItemConfig, 0),
-		Triggers:    make([]*ItemConfig, 0),
-		Models:      make([]*ItemConfig, 0),
+		Activities:  make([]*ItemDescriptor, 0),
+		Triggers:    make([]*ItemDescriptor, 0),
+		Models:      make([]*ItemDescriptor, 0),
 	}
 
-	// todo: add default model
-	// todo: make a .flogo directory in user home, were people can put a default flogo.json (use -default on create, or specify a json?)
-	fgutil.WriteJSONtoFile(fileProjectConfig, projectConfig)
+	// todo: add ability to create project from existing project descriptor
 
-	createMainGoFile(gb.CodeSourcePath, projectConfig)
-	createEngineEnvGoFile(gb.CodeSourcePath, projectConfig)
-	createEngineConfigGoFile(gb.CodeSourcePath, projectConfig)
-	createImportsGoFile(gb.CodeSourcePath, projectConfig)
+	// install default model
+	fmt.Fprint(os.Stdout, "Installing default flow model...\n")
+	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", false)
+
+	createMainGoFile(gb.CodeSourcePath, projectDescriptor)
+	createEngineEnvGoFile(gb.CodeSourcePath, projectDescriptor)
+	createEngineConfigGoFile(gb.CodeSourcePath, projectDescriptor)
+	createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 
 	// create empty "flows" Go file
 	createFlowsGoFile(gb.CodeSourcePath, make(map[string]string))
