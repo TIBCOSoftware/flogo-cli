@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/fg"
-	"github.com/TIBCOSoftware/flogo/fgutil"
+	"github.com/TIBCOSoftware/flogo/cli"
+	"github.com/TIBCOSoftware/flogo/util"
 )
 
-var optHelp = &flogo.OptionInfo{
+var optHelp = &cli.OptionInfo{
 	Name:      "help",
 	UsageLine: "help [command]",
 	Short:     "Get help for a command or tool",
@@ -26,10 +26,10 @@ func init() {
 }
 
 type cmdHelp struct {
-	option *flogo.OptionInfo
+	option *cli.OptionInfo
 }
 
-func (c *cmdHelp) OptionInfo() *flogo.OptionInfo {
+func (c *cmdHelp) OptionInfo() *cli.OptionInfo {
 	return c.option
 }
 
@@ -37,7 +37,7 @@ func (c *cmdHelp) AddFlags(fs *flag.FlagSet) {
 	//op op
 }
 
-func (c *cmdHelp) Exec(ctx *flogo.Context, args []string) error {
+func (c *cmdHelp) Exec(args []string) error {
 	if len(args) == 0 {
 		printUsage(os.Stdout)
 		return nil
@@ -52,11 +52,11 @@ func (c *cmdHelp) Exec(ctx *flogo.Context, args []string) error {
 	cmd, exists := commandRegistry.Command(arg)
 
 	if exists {
-		fgutil.RenderTemplate(os.Stdout, helpTpl, cmd.OptionInfo())
+		cli.PrintCmdHelp("", cmd)
 		return nil
 	}
 
-	tool, exists := flogo.GetTool(arg)
+	tool, exists := cli.GetTool(arg)
 
 	if exists {
 		fgutil.RenderTemplate(os.Stdout, "{{.Long}}\n\n", tool.OptionInfo())
@@ -69,8 +69,3 @@ func (c *cmdHelp) Exec(ctx *flogo.Context, args []string) error {
 
 	return nil
 }
-
-var helpTpl = `usage: flogo {{.UsageLine}}
-
-{{.Long | trim}}
-`

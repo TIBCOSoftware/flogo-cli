@@ -11,17 +11,16 @@ import (
 	"io"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/fg"
-	"github.com/TIBCOSoftware/flogo/fgutil"
+	"github.com/TIBCOSoftware/flogo/cli"
+	"github.com/TIBCOSoftware/flogo/util"
 
-	_ "github.com/TIBCOSoftware/flogo/activity"
-	_ "github.com/TIBCOSoftware/flogo/engine"
-	_ "github.com/TIBCOSoftware/flogo/model"
-	_ "github.com/TIBCOSoftware/flogo/trigger"
+	_ "github.com/TIBCOSoftware/flogo/tools/activity"
+	_ "github.com/TIBCOSoftware/flogo/tools/model"
+	_ "github.com/TIBCOSoftware/flogo/tools/trigger"
 )
 
 var (
-	commandRegistry = flogo.NewCommandRegistry()
+	commandRegistry = cli.NewCommandRegistry()
 	fs              = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 )
 
@@ -47,7 +46,7 @@ func main() {
 
 	if !exists {
 
-		tool, toolExists := flogo.GetTool(name)
+		tool, toolExists := cli.GetTool(name)
 
 		if !toolExists {
 			fmt.Fprintf(os.Stderr, "FATAL: unknown command or tool %q\n\n", name)
@@ -71,16 +70,35 @@ func main() {
 		remainingArgs = args[2:]
 	}
 
-	if err := flogo.ExecCommand(nil, fs, cmd, remainingArgs); err != nil {
+	if err := cli.ExecCommand(fs, cmd, remainingArgs); err != nil {
 		fatalf("command %q failed: %v", name, err)
 	}
 
 	os.Exit(0)
 }
 
+func cmdUsage(command cli.Command) {
+	cli.CmdUsage("", command)
+}
+
+func usage() {
+	printUsage(os.Stderr)
+	os.Exit(2)
+}
+
+func printUsage(w io.Writer) {
+	bw := bufio.NewWriter(w)
+
+	options := commandRegistry.CommandOptionInfos()
+	options = append(options, cli.GetToolOptionInfos()...)
+
+	fgutil.RenderTemplate(bw, usageTpl, options)
+	bw.Flush()
+}
+
 var usageTpl = `Usage:
 
-    flogo command/tool [arguments]
+    flogo <command/tool> [arguments]
 
 Commands:
 {{range .}}{{if not .IsTool}}
@@ -91,18 +109,3 @@ Tools:
     {{.Name | printf "%-12s"}} {{.Short}}{{end}}{{end}}
 
 `
-
-func printUsage(w io.Writer) {
-	bw := bufio.NewWriter(w)
-
-	options := commandRegistry.CommandOptionInfos()
-	options = append(options, flogo.GetToolOptionInfos()...)
-
-	fgutil.RenderTemplate(bw, usageTpl, options)
-	bw.Flush()
-}
-
-func usage() {
-	printUsage(os.Stderr)
-	os.Exit(2)
-}
