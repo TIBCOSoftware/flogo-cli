@@ -79,7 +79,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 		localPath = itemPath[8:]
 		altPath = "file://" + localPath
 	} else if strings.HasPrefix(itemPath, "file://") {
-		localPath = itemPath[6:]
+		localPath = itemPath[7:]
 		altPath = "local://" + localPath
 	}
 
