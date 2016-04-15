@@ -67,33 +67,19 @@ func getItemName(itemFile *os.File, itemType string) string {
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
 func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*ItemDescriptor, addToSrc bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
 
+	itemPath = strings.Replace(itemPath, "file://", "local://", 1)
+
 	if ContainsItemPath(items, itemPath) {
 		fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
 		os.Exit(2)
 	}
 
-	var altPath string
-	var localPath string
-
-	if strings.HasPrefix(itemPath, "local://") {
-		localPath = itemPath[8:]
-		altPath = "file://" + localPath
-	} else if strings.HasPrefix(itemPath, "file://") {
-		localPath = itemPath[7:]
-		altPath = "local://" + localPath
-	}
-
-	//todo: handle paths that end in "rt"
+	localPath, local := extractPathFromLocalURI(itemPath)
 
 	var itemName string
 	var isLocal bool
 
-	if len(localPath) > 0 {
-
-		if ContainsItemPath(items, altPath) {
-			fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
-			os.Exit(2)
-		}
+	if local {
 
 		usesGb := false
 
@@ -162,6 +148,8 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 // DelFlogoItem deletes an item(activity, model or trigger) from the flogo project
 func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items []*ItemDescriptor, useSrc bool) []*ItemDescriptor {
 
+	itemNameOrPath = strings.Replace(itemNameOrPath, "file://", "local://", 1)
+
 	toRemove, itemConfig := GetItemConfig(items, itemNameOrPath)
 
 	if toRemove == -1 {
@@ -171,15 +159,9 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 
 	itemPath := itemConfig.Path
 
-	var localPath string
+	_, local := extractPathFromLocalURI(itemPath)
 
-	if strings.HasPrefix(itemPath, "local://") {
-		localPath = itemPath[8:]
-	} else if strings.HasPrefix(itemPath, "file://") {
-		localPath = itemPath[6:]
-	}
-
-	if len(localPath) > 0 {
+	if local {
 
 		// delete it from source and vendor
 

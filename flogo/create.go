@@ -8,6 +8,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
+	"path/filepath"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -108,4 +109,21 @@ func (c *cmdCreate) Exec(args []string) error {
 
 func path(parts ...string) string {
 	return strings.Join(parts[:], string(os.PathSeparator))
+}
+
+func extractPathFromLocalURI(fileURI string) (localPath string, local bool) {
+
+	if strings.HasPrefix(fileURI, "local://") {
+
+		startIdx := 8
+
+		if strings.HasPrefix(fileURI, "local:///C:/") { //special case for windows
+			startIdx = 9
+		}
+
+		localPath = filepath.Clean(fileURI[startIdx:])
+		local = true
+	}
+
+	return localPath, local
 }
