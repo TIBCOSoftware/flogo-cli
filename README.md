@@ -12,7 +12,7 @@
 * In order to simplify development and building in Go, we are using the **gb** build tool.  It can be downloaded from [here](https://getgb.io).  
 
 ### Install flogo
-    go get github.com/TIBCOSofware/flogo/...
+    go get github.com/TIBCOSoftware/flogo/...
 
 ## Creating a new Flogo project
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
