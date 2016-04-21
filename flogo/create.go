@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"path/filepath"
+	"regexp"
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
-	"path/filepath"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -117,7 +118,8 @@ func extractPathFromLocalURI(fileURI string) (localPath string, local bool) {
 
 		startIdx := 8
 
-		if strings.HasPrefix(fileURI, "local:///C:/") { //special case for windows
+		r, _ := regexp.Compile("local:///([A-Za-z]+):/") //special case for windows
+		if r.MatchString(fileURI) {
 			startIdx = 9
 		}
 
