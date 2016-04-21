@@ -99,14 +99,19 @@ func importFlows(flowDir string) map[string]string {
 				// validate flow json
 				flowFilePath := path(flowDir, fileName)
 				b64 := gzipAndB64(flowFilePath) //todo: is gzip necessary
-				idx := strings.Index(fileName, ".")
 
-				flows[fileName[:idx]] = b64
+				flows[genFlowURI(fileName)] = b64
 			}
 		}
 	}
 
 	return flows
+}
+
+func genFlowURI(fileName string) string {
+
+	idx := strings.LastIndex(fileName, ".")
+	return "local://" + fileName[:idx]
 }
 
 func gzipAndB64(flowFilePath string) string {
