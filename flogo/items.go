@@ -88,7 +88,8 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 
 		if err != nil {
 			itemFile.Close()
-			itemFile, err = os.Open(path(localPath, "src", itemType+".json"))
+			itemConfigPath = path(localPath, "src", itemType+".json")
+			itemFile, err = os.Open(itemConfigPath)
 
 			usesGb = true
 			if err != nil {

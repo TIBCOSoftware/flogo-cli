@@ -203,7 +203,7 @@ import (
 {{range .Activities}}{{if .Local}}	_ "activity/{{.Name}}/rt"{{end}}{{if not .Local}}	_ "{{.Path}}/rt"{{end}}
 {{end}}
 	// triggers
-{{range .Triggers}}	_ "{{.Path}}/rt"
+{{range .Triggers}}{{if .Local}}	_ "trigger/{{.Name}}/rt"{{end}}{{if not .Local}}	_ "{{.Path}}/rt"{{end}}
 {{end}}
 	// models
 {{range .Models}}	_ "{{.Path}}"
