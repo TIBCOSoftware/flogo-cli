@@ -84,8 +84,9 @@ func (t *MyTrigger) Metadata() *trigger.Metadata {
 }
 
 // Start implements trigger.Trigger.Start
-func (t *MyTrigger) Start() {
+func (t *MyTrigger) Start() error {
 	// start the trigger
+	return nil
 }
 
 // Stop implements trigger.Trigger.Start
