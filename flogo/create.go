@@ -105,6 +105,10 @@ func (c *cmdCreate) Exec(args []string) error {
 	engineConfig := DefaultEngineConfig()
 	fgutil.WriteJSONtoFile(gb.NewBinFilePath(fileEngineConfig), engineConfig)
 
+	// create triggers.json file
+	triggersConfig := DefaultTriggersConfig()
+	fgutil.WriteJSONtoFile(gb.NewBinFilePath(fileTriggersConfig), triggersConfig)
+
 	return nil
 }
 

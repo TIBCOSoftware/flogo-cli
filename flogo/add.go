@@ -110,25 +110,25 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 
 		triggerConfigFile.Close()
 
-		//read engine config.json
-		engineConfigPath := gb.NewBinFilePath(fileEngineConfig)
-		engineConfigFile, err := os.Open(engineConfigPath)
+		//read triggers.json
+		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
+		triggersConfigFile, err := os.Open(triggersConfigPath)
 
-		engineConfig := &EngineConfig{}
-		jsonParser = json.NewDecoder(engineConfigFile)
+		triggersConfig := &TriggersConfig{}
+		jsonParser = json.NewDecoder(triggersConfigFile)
 
-		if err = jsonParser.Decode(engineConfig); err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to parse application config.json, file may be corrupted.\n\n")
+		if err = jsonParser.Decode(triggersConfig); err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
 			os.Exit(2)
 		}
 
-		engineConfigFile.Close()
+		triggersConfigFile.Close()
 
-		if engineConfig.Triggers == nil {
-			engineConfig.Triggers = make([]*TriggerConfig, 0)
+		if triggersConfig.Triggers == nil {
+			triggersConfig.Triggers = make([]*TriggerConfig, 0)
 		}
 
-		if !ContainsTriggerConfig(engineConfig.Triggers, itemConfig.Name) {
+		if !ContainsTriggerConfig(triggersConfig.Triggers, itemConfig.Name) {
 
 			triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
 
@@ -137,9 +137,9 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 				triggerConfig.Settings[v.Name] = v.Value
 			}
 
-			engineConfig.Triggers = append(engineConfig.Triggers, triggerConfig)
+			triggersConfig.Triggers = append(triggersConfig.Triggers, triggerConfig)
 
-			fgutil.WriteJSONtoFile(engineConfigPath, engineConfig)
+			fgutil.WriteJSONtoFile(triggersConfigPath, triggersConfig)
 		}
 
 	// add config

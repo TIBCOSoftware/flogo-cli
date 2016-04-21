@@ -55,8 +55,13 @@ type ConfigValue struct {
 type EngineConfig struct {
 	LogLevel     string           `json:"loglevel"`
 	RunnerConfig *RunnerConfig    `json:"flowRunner"`
-	Triggers     []*TriggerConfig `json:"triggers"`
+	Triggers     []*TriggerConfig `json:"triggers,omitempty"`
 	Services     []*ServiceConfig `json:"services"`
+}
+
+// TriggersConfig is the triggers configuration object
+type TriggersConfig struct {
+	Triggers     []*TriggerConfig `json:"triggers"`
 }
 
 // RunnerConfig is the runner configuration object
@@ -105,7 +110,6 @@ func DefaultEngineConfig() *EngineConfig {
 
 	ec.LogLevel = "INFO"
 	ec.RunnerConfig = &RunnerConfig{Type: "pooled", Pooled: &PooledConfig{NumWorkers: 5, WorkQueueSize: 50, MaxStepCount: 32000}}
-	ec.Triggers = make([]*TriggerConfig, 0)
 	ec.Services = make([]*ServiceConfig, 0)
 
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: false, Settings: map[string]string{"host": "", "port": ""}})
@@ -113,4 +117,13 @@ func DefaultEngineConfig() *EngineConfig {
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "engineTester", Enabled: true, Settings: map[string]string{"port": "8080"}})
 
 	return &ec
+}
+
+// DefaultTriggersConfig returns the default triggers configuration
+func DefaultTriggersConfig() *TriggersConfig {
+
+	var tc TriggersConfig
+	tc.Triggers = make([]*TriggerConfig, 0)
+
+	return &tc
 }

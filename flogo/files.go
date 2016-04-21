@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	fileDescriptor   string = "flogo.json"
-	fileEngineConfig string = "config.json"
-	fileMainGo       string = "main.go"
-	fileEnvGo        string = "env.go"
-	fileConfigGo     string = "config.go"
-	fileImportsGo    string = "imports.go"
+	fileDescriptor     string = "flogo.json"
+	fileEngineConfig   string = "config.json"
+	fileTriggersConfig string = "triggers.json"
+	fileMainGo         string = "main.go"
+	fileEnvGo          string = "env.go"
+	fileConfigGo       string = "config.go"
+	fileImportsGo      string = "imports.go"
 
 	dirFlows string = "flows"
 
@@ -52,12 +53,13 @@ var log = logging.MustGetLogger("main")
 func main() {
 
 	config := GetEngineConfig()
+	triggersConfig := GetTriggersConfig()
 
 	logLevel, _ := logging.LogLevel(config.LogLevel)
 
 	logging.SetLevel(logLevel, "")
 
-	env := GetEngineEnvironment(config)
+	env := GetEngineEnvironment(config, triggersConfig)
 
 	engine := engine.NewEngine(env)
 	engine.Start()
@@ -124,13 +126,13 @@ import (
 )
 
 // GetEngineEnvironment gets the engine environment
-func GetEngineEnvironment(engineConfig *engine.Config) *engine.Environment {
+func GetEngineEnvironment(engineConfig *engine.Config, triggersConfig *engine.TriggersConfig) *engine.Environment {
 
 	flowProvider := ppsremote.NewRemoteFlowProvider()
 	stateRecorder := srsremote.NewRemoteStateRecorder()
 	engineTester := tester.NewRestEngineTester()
 
-	env := engine.NewEnvironment(flowProvider, stateRecorder, engineTester, engineConfig)
+	env := engine.NewEnvironment(flowProvider, stateRecorder, engineTester, engineConfig, triggersConfig)
 	env.SetEmbeddedJSONFlows(EmeddedFlowsAreCompressed(), EmeddedJSONFlows())
 
 	return env
@@ -150,9 +152,13 @@ import (
 )
 
 const configFileName string = "config.json"
+const triggersConfigFileName string = "triggers.json"
 
 // can be used to compile in config file
 const configJSON string = ""
+
+// can be used to compile in triggers config file
+const triggersConfigJSON string = ""
 
 // GetEngineConfig gets the engine configuration
 func GetEngineConfig() *engine.Config {
@@ -163,6 +169,20 @@ func GetEngineConfig() *engine.Config {
 	if config == nil {
 		config = engine.DefaultConfig()
 		log.Warningf("Configuration file '%s' not found, using defaults", configFileName)
+	}
+
+	return config
+}
+
+// GetTriggersConfig gets the triggers configuration
+func GetTriggersConfig() *engine.TriggersConfig {
+
+	config := engine.LoadTriggersConfigFromFile(triggersConfigFileName)
+	//config := engine.LoadTriggersConfigFromJSON(triggersConfigJSON)
+
+	if config == nil {
+		config = engine.DefaultTriggersConfig()
+		log.Warningf("Configuration file '%s' not found, using defaults", triggersConfigFileName)
 	}
 
 	return config
