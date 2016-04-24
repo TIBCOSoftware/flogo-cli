@@ -1,15 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
@@ -56,7 +50,7 @@ func (c *cmdBuild) Exec(args []string) error {
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
-	flows := importFlows(dirFlows)
+	flows := ImportFlows(projectDescriptor, dirFlows)
 
 	createFlowsGoFile(gb.CodeSourcePath, flows)
 
@@ -82,63 +76,3 @@ func (c *cmdBuild) Exec(args []string) error {
 	return nil
 }
 
-func importFlows(flowDir string) map[string]string {
-
-	flows := make(map[string]string)
-
-	fileInfos, err := ioutil.ReadDir(flowDir)
-
-	if err == nil {
-
-		for _, fileInfo := range fileInfos {
-
-			if !fileInfo.IsDir() {
-
-				fileName := fileInfo.Name()
-
-				// validate flow json
-				flowFilePath := path(flowDir, fileName)
-				b64 := gzipAndB64(flowFilePath) //todo: is gzip necessary
-
-				flows[genFlowURI(fileName)] = b64
-			}
-		}
-	}
-
-	return flows
-}
-
-func genFlowURI(fileName string) string {
-
-	idx := strings.LastIndex(fileName, ".")
-	return "local://" + fileName[:idx]
-}
-
-func gzipAndB64(flowFilePath string) string {
-
-	in, err := os.Open(flowFilePath)
-	if err != nil {
-		//log.Fatal(err)
-	}
-
-	bufin := bufio.NewReader(in)
-
-	var b bytes.Buffer
-	gz, err := gzip.NewWriterLevel(&b, gzip.BestCompression)
-	_, err = bufin.WriteTo(gz)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if err := gz.Flush(); err != nil {
-		panic(err)
-	}
-	if err := gz.Close(); err != nil {
-		panic(err)
-	}
-
-	in.Close()
-
-	return base64.StdEncoding.EncodeToString(b.Bytes())
-}
