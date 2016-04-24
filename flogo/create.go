@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"path/filepath"
-	"regexp"
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
@@ -114,22 +112,4 @@ func (c *cmdCreate) Exec(args []string) error {
 
 func path(parts ...string) string {
 	return strings.Join(parts[:], string(os.PathSeparator))
-}
-
-func extractPathFromLocalURI(fileURI string) (localPath string, local bool) {
-
-	if strings.HasPrefix(fileURI, "local://") {
-
-		startIdx := 8
-
-		r, _ := regexp.Compile("local:///([A-Za-z]+):/") //special case for windows
-		if r.MatchString(fileURI) {
-			startIdx = 9
-		}
-
-		localPath = filepath.Clean(fileURI[startIdx:])
-		local = true
-	}
-
-	return localPath, local
 }

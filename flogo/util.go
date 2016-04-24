@@ -8,7 +8,7 @@ import (
 	"github.com/TIBCOSoftware/flogo/util"
 )
 
-func updateProjectDescriptorFiles(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor) {
+func updateProjectFiles(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor) {
 	fgutil.WriteJSONtoFile(fileDescriptor, projectDescriptor)
 	createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 }

@@ -51,7 +51,6 @@ func (c *cmdBuild) Exec(args []string) error {
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
 	flows := ImportFlows(projectDescriptor, dirFlows)
-
 	createFlowsGoFile(gb.CodeSourcePath, flows)
 
 	if len(projectDescriptor.Models) == 0 {

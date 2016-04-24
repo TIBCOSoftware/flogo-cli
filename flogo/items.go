@@ -13,6 +13,7 @@ const (
 	itActivity = "activity"
 	itTrigger  = "trigger"
 	itModel    = "model"
+	itFlow     = "flow"
 )
 
 // ContainsItemPath determines if the path exists in  list of ItemConfigs
@@ -67,28 +68,38 @@ func getItemName(itemFile *os.File, itemType string) string {
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
 func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*ItemDescriptor, addToSrc bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
 
-	itemPath = strings.Replace(itemPath, "file://", "local://", 1)
+	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
 	if ContainsItemPath(items, itemPath) {
 		fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
 		os.Exit(2)
 	}
 
-	localPath, local := extractPathFromLocalURI(itemPath)
+	pathInfo, err := fgutil.GetPathInfo(itemPath)
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+		os.Exit(2)
+	}
 
 	var itemName string
 	var isLocal bool
 
-	if local {
+	if pathInfo.IsURL {
+
+		if !pathInfo.IsLocal {
+			fmt.Fprint(os.Stderr, "Error: Add %s, does not support URL scheme '%s'\n", itemType, pathInfo.FileURL.Scheme)
+			os.Exit(2)
+		}
 
 		usesGb := false
 
-		itemConfigPath = path(localPath, itemType+".json")
+		itemConfigPath = path(pathInfo.FullPath, itemType+".json")
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
 			itemFile.Close()
-			itemConfigPath = path(localPath, "src", itemType+".json")
+			itemConfigPath = path(pathInfo.FullPath, "src", itemType+".json")
 			itemFile, err = os.Open(itemConfigPath)
 
 			usesGb = true
@@ -108,10 +119,10 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 			toDir = path(gb.SourcePath, itemType, itemName)
 		}
 
-		fromDir := localPath
+		fromDir := pathInfo.FullPath
 
 		if usesGb {
-			fromDir = path(localPath, "src")
+			fromDir = path(pathInfo.FullPath, "src")
 		}
 
 		fgutil.CopyDir(fromDir, toDir)
@@ -149,7 +160,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 // DelFlogoItem deletes an item(activity, model or trigger) from the flogo project
 func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items []*ItemDescriptor, useSrc bool) []*ItemDescriptor {
 
-	itemNameOrPath = strings.Replace(itemNameOrPath, "file://", "local://", 1)
+	itemNameOrPath = strings.Replace(itemNameOrPath, "local://", fgutil.FileURIPrefix, 1)
 
 	toRemove, itemConfig := GetItemConfig(items, itemNameOrPath)
 
@@ -160,9 +171,19 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 
 	itemPath := itemConfig.Path
 
-	_, local := extractPathFromLocalURI(itemPath)
+	pathInfo, err := fgutil.GetPathInfo(itemPath)
 
-	if local {
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+		os.Exit(2)
+	}
+
+	if pathInfo.IsURL {
+
+		if !pathInfo.IsLocal {
+			fmt.Fprint(os.Stderr, "Error: Add %s, does not support URL scheme '%s'\n", itemType, pathInfo.FileURL.Scheme)
+			os.Exit(2)
+		}
 
 		// delete it from source and vendor
 

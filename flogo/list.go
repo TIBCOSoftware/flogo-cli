@@ -45,10 +45,12 @@ func (c *cmdList) Exec(args []string) error {
 
 	var tpl string
 
+	useDescriptor := true
+	showFlows := false
+
 	if len(args) == 0 {
-
 		tpl = tplListAll
-
+		showFlows = true
 	} else {
 
 		itemType := args[0]
@@ -60,15 +62,31 @@ func (c *cmdList) Exec(args []string) error {
 			tpl = tplListModels
 		case itTrigger:
 			tpl = tplListTriggers
+		case itFlow:
+			showFlows = true
+			useDescriptor = false
 		default:
 			fmt.Fprintf(os.Stderr, "Error: Unknown item type '%s'\n\n", itemType)
 			os.Exit(2)
 		}
 	}
 
-	bw := bufio.NewWriter(os.Stdout)
-	fgutil.RenderTemplate(bw, tpl, projectDescriptor)
-	bw.Flush()
+	if useDescriptor {
+		bw := bufio.NewWriter(os.Stdout)
+		fgutil.RenderTemplate(bw, tpl, projectDescriptor)
+		bw.Flush()
+	}
+
+	if showFlows {
+
+		flows := ImportFlows(projectDescriptor, dirFlows)
+
+		bw := bufio.NewWriter(os.Stdout)
+		fgutil.RenderTemplate(bw, tplListFlows, flows)
+		bw.Flush()
+	}
+
+	tpl = tplListFlows
 
 	return nil
 }
@@ -110,4 +128,8 @@ Models:
 {{range .Models}}
     - {{.Name}} [{{.Path}}]{{end}}
 
+`
+var tplListFlows = `Flows:
+{{ range $key, $val := . }}	- {{ $key }}
+{{ end }}
 `

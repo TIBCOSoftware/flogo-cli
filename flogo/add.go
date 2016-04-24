@@ -13,16 +13,16 @@ import (
 
 var optAdd = &cli.OptionInfo{
 	Name:      "add",
-	UsageLine: "add <activity|model|trigger> <path>",
+	UsageLine: "add <activity|model|trigger|flow> <path>",
 	Short:     "add an activity, model or trigger to a flogo project",
-	Long: `Add an activity, model or trigger to a flogo project
+	Long: `Add an activity, model, trigger or flow to a flogo project
 
 Options:
-    -src   copy contents to source (only when using local/file)
+    -src   copy contents to source (only when using file url)
 `,
 }
 
-var validItemTypes = []string{itActivity, itTrigger, itModel}
+var validItemTypes = []string{itActivity, itTrigger, itModel, itFlow}
 
 func init() {
 	commandRegistry.RegisterCommand(&cmdAdd{option: optAdd})
@@ -80,6 +80,7 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 
 	var itemConfigPath string
 	var itemConfig *ItemDescriptor
+	updateFiles := true
 
 	switch itemType {
 	case itActivity:
@@ -142,13 +143,55 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 			fgutil.WriteJSONtoFile(triggersConfigPath, triggersConfig)
 		}
 
-	// add config
+	case itFlow:
+		updateFiles = false
+
+		pathInfo, err := fgutil.GetPathInfo(itemPath)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+			os.Exit(2)
+		}
+
+		if pathInfo.IsLocal || !pathInfo.IsURL {
+
+			fileInfo, err := os.Stat(pathInfo.FullPath)
+
+			if err !=  nil {
+				fmt.Fprintf(os.Stderr, "Error: File '%s' not found\n", pathInfo.FullPath)
+				os.Exit(2)
+			}
+
+			if fileInfo.IsDir() {
+				fmt.Fprintf(os.Stderr, "Error: Path '%s' is not a file\n", itemPath)
+				os.Exit(2)
+			}
+		}
+
+		if len(pathInfo.FileName) == 0 {
+			fmt.Fprintf(os.Stderr, "Error: Invalid path '%s', file name not specified\n", itemPath)
+			os.Exit(2)
+		}
+
+		ValidateFlow(projectDescriptor, itemPath, pathInfo.IsURL)
+
+		if (pathInfo.IsLocal || !pathInfo.IsURL) {
+			fgutil.CopyFile(pathInfo.FullPath, path("flows", pathInfo.FileName))
+		} else if (pathInfo.IsURL) {
+			fgutil.CopyRemoteFile(pathInfo.FullPath, path("flows", pathInfo.FileName))
+		}
+
+		flows := ImportFlows(projectDescriptor, dirFlows)
+		createFlowsGoFile(gb.CodeSourcePath, flows)
+
 	default:
 		fmt.Fprintf(os.Stderr, "Error: Unknown item type '%s'\n\n", itemType)
 		os.Exit(2)
 	}
 
-	updateProjectDescriptorFiles(gb, projectDescriptor)
+	if updateFiles {
+		updateProjectFiles(gb, projectDescriptor)
+	}
 }
 
 // ContainsTriggerConfig determines if the list of TriggerConfigs contains the specified one

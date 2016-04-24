@@ -11,7 +11,12 @@ import (
 	"encoding/base64"
 	"strings"
 	"compress/gzip"
+	"github.com/TIBCOSoftware/flogo/util"
+	"net/url"
+	"net/http"
 )
+
+const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/schemas/flow_schema.json"
 
 func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[string]string {
 
@@ -26,11 +31,10 @@ func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[
 			if !fileInfo.IsDir() {
 
 				fileName := fileInfo.Name()
-
-				// validate flow json
 				flowFilePath := path(flowDir, fileName)
 
-				ValidateFlow(projectDescriptor, flowFilePath)
+				// validate flow json
+				ValidateFlow(projectDescriptor, flowFilePath, false)
 
 				b64 := gzipAndB64(flowFilePath) //todo: is gzip necessary
 
@@ -45,7 +49,7 @@ func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[
 func genFlowURI(fileName string) string {
 
 	idx := strings.LastIndex(fileName, ".")
-	return "local://" + fileName[:idx]
+	return "embedded://" + fileName[:idx]
 }
 
 func gzipAndB64(flowFilePath string) string {
@@ -77,14 +81,38 @@ func gzipAndB64(flowFilePath string) string {
 	return base64.StdEncoding.EncodeToString(b.Bytes())
 }
 
-func ValidateFlow(projectDescriptor *FlogoProjectDescriptor, flowPath string) {
+func ValidateFlow(projectDescriptor *FlogoProjectDescriptor, flowPath string, isURL bool) {
 
 	// first validate the flow json
-	validateFlowSchema(flowPath)
+	validateFlowSchema(flowPath, isURL)
 
 	//next check if all activities used int he flow are installed in engine
 
-	file, _ := ioutil.ReadFile(flowPath)
+	var file []byte
+
+	if isURL {
+
+		flowURL, _ := url.Parse(flowPath)
+		flowFilePath, local := fgutil.URLToFilePath(flowURL)
+
+		if !local {
+			resp, err := http.Get(flowURL.String())
+			defer resp.Body.Close()
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: Unable to access '%s'\n  - %s\n", flowURL.String(), err.Error())
+				os.Exit(2)
+			}
+
+			file, _ = ioutil.ReadAll(resp.Body)
+
+		} else {
+			file, _ = ioutil.ReadFile(flowFilePath)
+		}
+
+	} else {
+		file, _ = ioutil.ReadFile(flowPath)
+	}
 
 	var flowObj interface{}
 	json.Unmarshal(file, &flowObj)
@@ -108,15 +136,27 @@ func ValidateFlow(projectDescriptor *FlogoProjectDescriptor, flowPath string) {
 	}
 }
 
-func validateFlowSchema(flowPath string) {
+func validateFlowSchema(flowPath string, isURL bool) {
 
 	workingDir, _ := os.Getwd()
 
-	schemaURI := "file://" + workingDir + "/vendor/src/github.com/TIBCOSoftware/flogo-lib/schemas/flow_schema.json"
-	flowURI := "file://" + workingDir + "/" + flowPath
+	schemaURL := fgutil.FileURIPrefix + workingDir + flowSchemaFilePath
 
-	schemaLoader := gojsonschema.NewReferenceLoader(schemaURI)
-	flowLoader := gojsonschema.NewReferenceLoader(flowURI)
+	var flowURL string
+	if isURL {
+		flowURL = flowPath
+	} else {
+		var err error
+		flowURL, err = fgutil.PathToFileURL(flowPath)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: cannot embed '%s', could not parse path\n", flowPath)
+			os.Exit(2)
+		}
+	}
+
+	schemaLoader := gojsonschema.NewReferenceLoader(schemaURL)
+	flowLoader := gojsonschema.NewReferenceLoader(flowURL)
 
 	result, err := gojsonschema.Validate(schemaLoader, flowLoader)
 	if err != nil {
