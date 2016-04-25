@@ -26,7 +26,7 @@ func loadProjectDescriptor() *FlogoProjectDescriptor {
 	jsonParser := json.NewDecoder(projectDescriptorFile)
 
 	if err = jsonParser.Decode(projectDescriptor); err != nil {
-		fmt.Fprint(os.Stderr, "Error: Unable to parse flogo.json, file may be corrupted.\n\n")
+		fmt.Fprintf(os.Stderr, "Error: Unable to parse flogo.json, file may be corrupted.\n - %s\n", err.Error())
 		os.Exit(2)
 	}
 

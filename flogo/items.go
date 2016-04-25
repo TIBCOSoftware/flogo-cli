@@ -43,7 +43,7 @@ func GetItemConfig(list []*ItemDescriptor, itemNameOrPath string) (int, *ItemDes
 	isPath := strings.Contains(itemNameOrPath, "/")
 
 	for i, v := range list {
-		if (isPath && v.Path == itemNameOrPath) || (!isPath && v.Name == itemNameOrPath) {
+		if (isPath && (v.Path == itemNameOrPath || v.LocalPath == itemNameOrPath)) || (!isPath && v.Name == itemNameOrPath) {
 			return i, v
 		}
 	}
@@ -85,7 +85,6 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 	}
 
 	var itemName string
-	var isLocal bool
 
 	if pathInfo.IsURL {
 
@@ -140,7 +139,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 
 		fgutil.CopyDir(fromDir, toDir)
 
-		isLocal = true
+		return &ItemDescriptor{Name: itemName, Path: itemImportPath, Version: "latest", LocalPath: itemPath}, itemConfigPath
 
 	} else {
 
@@ -165,9 +164,9 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 
 		itemName, _ = getItemInfo(itemFile, itemType)
 		itemFile.Close()
-	}
 
-	return &ItemDescriptor{Name: itemName, Path: itemPath, Version: "latest", Local: isLocal}, itemConfigPath
+		return &ItemDescriptor{Name: itemName, Path: itemPath, Version: "latest"}, itemConfigPath
+	}
 }
 
 // DelFlogoItem deletes an item(activity, model or trigger) from the flogo project
@@ -182,33 +181,20 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 		os.Exit(2)
 	}
 
-	itemPath := itemConfig.Path
-
-	pathInfo, err := fgutil.GetPathInfo(itemPath)
-
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
-		os.Exit(2)
-	}
-
-	if pathInfo.IsURL {
-
-		if !pathInfo.IsLocal {
-			fmt.Fprint(os.Stderr, "Error: Add %s, does not support URL scheme '%s'\n", itemType, pathInfo.FileURL.Scheme)
-			os.Exit(2)
-		}
+	if itemConfig.Local() {
 
 		// delete it from source and vendor
-
-		toVendorDir := path(gb.VendorPath, itemType, itemConfig.Name)
-		toSourceDir := path(gb.SourcePath, itemType, itemConfig.Name)
+		toVendorDir :=filepath.Join(gb.VendorPath, itemConfig.Path)
+		toSourceDir := filepath.Join(gb.SourcePath, itemConfig.Path)
 
 		os.RemoveAll(toVendorDir)
 		os.RemoveAll(toSourceDir)
 
+		//todo clean up empty directory hierarchy
+
 	} else {
 
-		err := gb.VendorDelete(itemPath)
+		err := gb.VendorDelete(itemConfig.Path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(2)
@@ -216,43 +202,4 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 	}
 
 	return append(items[:toRemove], items[toRemove + 1:]...)
-}
-
-func CleanupItem(dir string, itemType string, itemName string) int {
-
-	configFile := itemType + ".json"
-
-	var toRemove []string
-
-	delFunc := func(path string, f os.FileInfo, err error) (e error) {
-
-		if !f.IsDir() && f.Name() == configFile {
-
-			currentItemFile, err := os.Open(path)
-			if err == nil {
-				currentItemName, _ := getItemInfo(currentItemFile, itemType)
-				currentItemFile.Close()
-
-				if currentItemName == itemName {
-					toRemove = append(toRemove, filepath.Dir(path))
-				}
-			}
-		}
-
-		return nil
-	}
-
-	filepath.Walk(dir, delFunc)
-
-	deleted := 0
-
-	for _, d := range toRemove {
-
-		if strings.HasPrefix(d, dir) {
-			os.RemoveAll(d)
-			deleted++
-		}
-	}
-
-	return deleted
 }

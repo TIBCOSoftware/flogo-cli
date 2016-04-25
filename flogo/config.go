@@ -16,10 +16,14 @@ type FlogoProjectDescriptor struct {
 
 // ItemDescriptor is configuration for a model, activity or trigger
 type ItemDescriptor struct {
-	Name    string `json:"name"`
-	Path    string `json:"path"`
-	Version string `json:"version"`
-	Local   bool   `json:"local"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Version   string `json:"version"`
+	LocalPath string `json:"localpath,omitempty"`
+}
+
+func (d *ItemDescriptor) Local() bool {
+	return len(d.LocalPath) > 0
 }
 
 // TriggerProjectDescriptor is the trigger project descriptor object

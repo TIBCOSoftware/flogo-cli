@@ -75,11 +75,11 @@ func (a *MyActivity) Metadata() *activity.Metadata {
 }
 
 // Eval implements activity.Activity.Eval
-func (a *MyActivity) Eval(context activity.Context) bool {
+func (a *MyActivity) Eval(context activity.Context) (done bool, evalError *activity.Error)  {
 
 	// do eval
 
-	return true //done
+	return true, nil
 }
 `
 

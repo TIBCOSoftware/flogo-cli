@@ -94,15 +94,15 @@ func (c *cmdList) Exec(args []string) error {
 var tplListAll = `
 Activities:
 {{range .Activities}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 
 Triggers:
 {{range .Triggers}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 
 Models:
 {{range .Models}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 
 `
 
@@ -110,14 +110,14 @@ var tplListActivities = `
 
 Activities:
 {{range .Activities}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 `
 
 var tplListTriggers = `
 
 Triggers:
 {{range .Triggers}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 
 `
 
@@ -125,7 +125,7 @@ var tplListModels = `
 
 Models:
 {{range .Models}}
-    - {{.Name}} [{{.Path}}]{{end}}
+    - {{.Name}} [{{.Path}}]{{if .Local}} (local){{end}}{{end}}
 
 `
 var tplListFlows = `Flows:
