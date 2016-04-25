@@ -92,7 +92,6 @@ func (c *cmdList) Exec(args []string) error {
 }
 
 var tplListAll = `
-
 Activities:
 {{range .Activities}}
     - {{.Name}} [{{.Path}}]{{end}}

@@ -10,16 +10,17 @@ import (
 	"path/filepath"
 	"net/url"
 	"net/http"
+	"io/ioutil"
 )
 
 const FileURIPrefix = "file://"
 
-
 type PathInfo struct {
 	IsLocal  bool
 	IsURL    bool
+	IsFile   bool
 	FileURL  *url.URL
-	FullPath string
+	FilePath string
 	FileName string
 }
 
@@ -34,44 +35,46 @@ func GetPathInfo(pathStr string) (*PathInfo, error) {
 	}
 
 	if len(fileURL.Scheme) > 0 {
-		pi.FileURL = fileURL
 		pi.IsURL = true
+		pi.FileURL = fileURL
 
-		filePath, local := URLToFilePath(fileURL)
+		pi.FilePath, pi.IsLocal = URLToFilePath(fileURL)
 
-		if local {
-			pi.IsLocal = local
-			pi.FullPath = filePath
+		if pi.IsLocal {
+			fileInfo, err := os.Stat(pi.FilePath)
+
+			if err != nil {
+				return nil, err
+			}
+
+			pi.IsFile = !fileInfo.IsDir()
 		}
 	} else {
-		pi.FullPath = pathStr
+		pi.FilePath = pathStr
+
+		fileInfo, err := os.Stat(pi.FilePath)
+
+		if err == nil {
+			//path is a local file or directory
+			pi.IsLocal = true
+			pi.IsFile = !fileInfo.IsDir()
+		}
 	}
 
-	idx := strings.LastIndex(pathStr, "/")
-	pi.FileName = fileURL.Path[idx+1:]
+	if pi.IsFile {
+		idx := strings.LastIndex(pathStr, "/")
+		pi.FileName = fileURL.Path[idx + 1:]
+	}
 
 	return pi, nil
 }
-
-
-//// ToFilePath convert fileURL to file path
-//func ToFilePath(urlString string) (string, bool) {
-//
-//	itemURL, err := url.Parse(urlString)
-//
-//	if err != nil {
-//		return
-//	}
-//
-//	return URLToFilePath(itemURL)
-//}
 
 // ToFilePath convert fileURL to file path
 func URLToFilePath(fileURL *url.URL) (string, bool) {
 
 	if fileURL.Scheme == "file" {
 
-		filePath :=fileURL.Path
+		filePath := fileURL.Path
 
 		if runtime.GOOS == "windows" {
 			if strings.HasPrefix(filePath, "/") {
@@ -227,16 +230,13 @@ func CopyDir(source string, dest string) (err error) {
 func DeleteFilesWithPrefix(dir string, filePrefix string) int {
 
 	deleted := 0
-	delFunc := func(path string, f os.FileInfo, err error) (e error) {
 
-		if strings.HasPrefix(f.Name(), filePrefix) {
-			os.Remove(path)
+	files, _ := ioutil.ReadDir(dir)
+	for _, f := range files {
+		if !f.IsDir() && strings.HasPrefix(f.Name(), filePrefix) {
+			os.Remove(filepath.Join(dir, f.Name()))
 			deleted++
 		}
-		return
 	}
-
-	filepath.Walk(dir, delFunc)
-
 	return deleted
 }

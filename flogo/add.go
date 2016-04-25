@@ -153,32 +153,20 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 			os.Exit(2)
 		}
 
-		if pathInfo.IsLocal || !pathInfo.IsURL {
+		if pathInfo.IsLocal {
 
-			fileInfo, err := os.Stat(pathInfo.FullPath)
-
-			if err !=  nil {
-				fmt.Fprintf(os.Stderr, "Error: File '%s' not found\n", pathInfo.FullPath)
-				os.Exit(2)
-			}
-
-			if fileInfo.IsDir() {
+			if !pathInfo.IsFile {
 				fmt.Fprintf(os.Stderr, "Error: Path '%s' is not a file\n", itemPath)
 				os.Exit(2)
 			}
 		}
 
-		if len(pathInfo.FileName) == 0 {
-			fmt.Fprintf(os.Stderr, "Error: Invalid path '%s', file name not specified\n", itemPath)
-			os.Exit(2)
-		}
-
 		ValidateFlow(projectDescriptor, itemPath, pathInfo.IsURL)
 
-		if (pathInfo.IsLocal || !pathInfo.IsURL) {
-			fgutil.CopyFile(pathInfo.FullPath, path("flows", pathInfo.FileName))
+		if (pathInfo.IsLocal) {
+			fgutil.CopyFile(pathInfo.FilePath, path("flows", pathInfo.FileName))
 		} else if (pathInfo.IsURL) {
-			fgutil.CopyRemoteFile(pathInfo.FullPath, path("flows", pathInfo.FileName))
+			fgutil.CopyRemoteFile(pathInfo.FileURL.String(), path("flows", pathInfo.FileName))
 		}
 
 		flows := ImportFlows(projectDescriptor, dirFlows)
