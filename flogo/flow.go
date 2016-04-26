@@ -14,6 +14,7 @@ import (
 	"github.com/TIBCOSoftware/flogo/util"
 	"net/url"
 	"net/http"
+	"path/filepath"
 )
 
 const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/schemas/flow_schema.json"
@@ -174,6 +175,34 @@ func validateFlowSchema(flowPath string, isURL bool) {
 		os.Exit(2)
 	}
 }
+
+func getAllActivityTypes(flowDir string) map[string]bool {
+
+	fileInfos, err := ioutil.ReadDir(flowDir)
+
+	activityTypes := make(map[string]bool)
+
+	if err == nil {
+
+		for _, fileInfo := range fileInfos {
+
+			if !fileInfo.IsDir() {
+
+				fileName := fileInfo.Name()
+				flowFilePath := filepath.Join(flowDir, fileName)
+
+				file, _ := ioutil.ReadFile(flowFilePath)
+
+				var flowObj interface{}
+				json.Unmarshal(file, &flowObj)
+				getActivityTypes(flowObj, activityTypes)
+			}
+		}
+	}
+
+	return activityTypes
+}
+
 
 func getActivityTypes(flowObj interface{}, activityTypes map[string]bool) {
 

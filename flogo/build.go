@@ -11,12 +11,12 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-validate]",
+	UsageLine: "build [-o]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
-    -validate   validate that the project is buildable
+    -o   optimize for embedded flows
 `,
 }
 
@@ -28,7 +28,7 @@ func init() {
 
 type cmdBuild struct {
 	option   *cli.OptionInfo
-	validate bool
+	optimize bool
 }
 
 func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
@@ -36,7 +36,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 }
 
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&(c.validate), "validate", false, "only validate if buildable")
+	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 }
 
 func (c *cmdBuild) Exec(args []string) error {
@@ -63,8 +63,24 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	if c.validate {
-		return nil
+	if c.optimize {
+
+		//todo optimize triggers
+
+		activityTypes := getAllActivityTypes(dirFlows)
+
+		var activities []*ItemDescriptor
+
+		for  _, activity := range projectDescriptor.Activities {
+
+			if _, ok := activityTypes[activity.Name]; ok {
+				activities = append(activities, activity)
+			}
+		}
+
+		projectDescriptor.Activities = activities
+
+		createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 	}
 
 	err := gb.Build()
