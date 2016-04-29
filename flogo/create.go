@@ -93,7 +93,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	createMainGoFile(gb.CodeSourcePath, projectDescriptor)
 	createEngineEnvGoFile(gb.CodeSourcePath, projectDescriptor)
-	createEngineConfigGoFile(gb.CodeSourcePath, projectDescriptor)
+	createEngineConfigGoFile(gb.CodeSourcePath, nil)
 	createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 
 	// create empty "flows" Go file

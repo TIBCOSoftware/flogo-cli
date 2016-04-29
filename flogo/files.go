@@ -138,10 +138,20 @@ func GetEngineEnvironment(engineConfig *engine.Config, triggersConfig *engine.Tr
 	return env
 }
 `
+type ConfigInfo struct {
+	Include     bool
+	ConfigJSON  string
+	TriggerJSON string
+}
 
-func createEngineConfigGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
+func createEngineConfigGoFile(codeSourcePath string, configInfo *ConfigInfo) {
+
+	if configInfo == nil {
+		configInfo = &ConfigInfo{Include:false, ConfigJSON:"", TriggerJSON:""}
+	}
+
 	f, _ := os.Create(path(codeSourcePath, fileConfigGo))
-	fgutil.RenderTemplate(f, tplEngineConfigGoFile, projectDescriptor)
+	fgutil.RenderTemplate(f, tplEngineConfigGoFile, configInfo)
 	f.Close()
 }
 
@@ -155,16 +165,16 @@ const configFileName string = "config.json"
 const triggersConfigFileName string = "triggers.json"
 
 // can be used to compile in config file
-const configJSON string = ""
+const configJSON string = ` + "`{{.ConfigJSON}}`" + `
 
 // can be used to compile in triggers config file
-const triggersConfigJSON string = ""
+const triggersConfigJSON string = ` + "`{{.TriggerJSON}}`" + `
 
 // GetEngineConfig gets the engine configuration
 func GetEngineConfig() *engine.Config {
 
-	config := engine.LoadConfigFromFile(configFileName)
-	//config := engine.LoadConfigFromJSON(configJSON)
+	{{ if .Include }}//{{ end }}config := engine.LoadConfigFromFile(configFileName)
+	{{ if not .Include }}//{{ end }}config := engine.LoadConfigFromJSON(configJSON)
 
 	if config == nil {
 		config = engine.DefaultConfig()
@@ -177,8 +187,8 @@ func GetEngineConfig() *engine.Config {
 // GetTriggersConfig gets the triggers configuration
 func GetTriggersConfig() *engine.TriggersConfig {
 
-	config := engine.LoadTriggersConfigFromFile(triggersConfigFileName)
-	//config := engine.LoadTriggersConfigFromJSON(triggersConfigJSON)
+	{{ if .Include }}//{{ end }}config := engine.LoadTriggersConfigFromFile(triggersConfigFileName)
+	{{ if not .Include }}//{{ end }}config := engine.LoadTriggersConfigFromJSON(triggersConfigJSON)
 
 	if config == nil {
 		config = engine.DefaultTriggersConfig()

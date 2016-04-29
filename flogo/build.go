@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
@@ -11,12 +13,13 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o]",
+	UsageLine: "build [-o][-i]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
     -o   optimize for embedded flows
+    -i   incorporate config into application
 `,
 }
 
@@ -27,8 +30,9 @@ func init() {
 }
 
 type cmdBuild struct {
-	option   *cli.OptionInfo
-	optimize bool
+	option     *cli.OptionInfo
+	optimize   bool
+	includeCfg bool
 }
 
 func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
@@ -37,6 +41,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
+	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
 }
 
 func (c *cmdBuild) Exec(args []string) error {
@@ -81,6 +86,30 @@ func (c *cmdBuild) Exec(args []string) error {
 		projectDescriptor.Activities = activities
 
 		createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
+	}
+
+	if c.includeCfg {
+
+		engineCfg, err := ioutil.ReadFile(filepath.Join("bin", fileEngineConfig))
+
+		if err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to read engine.config -\n%s\n", err.Error())
+			os.Exit(2)
+		}
+
+		triggersCfg, err := ioutil.ReadFile(filepath.Join("bin", fileTriggersConfig))
+
+		if err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to read triggers.config -\n%s\n", err.Error())
+			os.Exit(2)
+		}
+
+		configInfo := &ConfigInfo{Include:true, ConfigJSON:string(engineCfg), TriggerJSON:string(triggersCfg)}
+
+		createEngineConfigGoFile(gb.CodeSourcePath, configInfo)
+
+	} else {
+		createEngineConfigGoFile(gb.CodeSourcePath, nil)
 	}
 
 	err := gb.Build()
