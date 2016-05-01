@@ -119,7 +119,7 @@ func TestEval(t *testing.T) {
 	md := activity.NewMetadata(jsonMetadata)
 	act := &MyActivity{metadata: md}
 
-	tc := test.NewTestActivityContext()
+	tc := test.NewTestActivityContext(md)
 	//setup attrs
 
 	act.Eval(tc)
