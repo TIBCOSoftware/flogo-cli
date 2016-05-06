@@ -63,7 +63,7 @@ func GetPathInfo(pathStr string) (*PathInfo, error) {
 
 	if pi.IsFile {
 		idx := strings.LastIndex(pathStr, "/")
-		pi.FileName = fileURL.Path[idx + 1:]
+		pi.FileName = pathStr[idx + 1:]
 	}
 
 	return pi, nil

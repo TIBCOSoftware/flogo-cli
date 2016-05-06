@@ -50,6 +50,11 @@ func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[
 func genFlowURI(fileName string) string {
 
 	idx := strings.LastIndex(fileName, ".")
+
+	if idx == -1 {
+		return "embedded://" + fileName
+	}
+
 	return "embedded://" + fileName[:idx]
 }
 
