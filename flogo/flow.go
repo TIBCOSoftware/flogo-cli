@@ -146,7 +146,7 @@ func validateFlowSchema(flowPath string, isURL bool) {
 
 	workingDir, _ := os.Getwd()
 
-	schemaURL := fgutil.FileURIPrefix + workingDir + flowSchemaFilePath
+	schemaURL,_ := fgutil.PathToFileURL(workingDir + flowSchemaFilePath)
 
 	var flowURL string
 	if isURL {
