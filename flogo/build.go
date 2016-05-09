@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"encoding/json"
 
 	"github.com/TIBCOSoftware/flogo/cli"
 	"github.com/TIBCOSoftware/flogo/util"
@@ -86,7 +87,7 @@ func (c *cmdBuild) Exec(args []string) error {
 
 	if c.optimize {
 
-		//todo optimize triggers
+		//optimize activities
 
 		activityTypes := getAllActivityTypes(dirFlows)
 
@@ -100,6 +101,36 @@ func (c *cmdBuild) Exec(args []string) error {
 		}
 
 		projectDescriptor.Activities = activities
+
+		//optimize triggers
+
+		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
+		triggersConfigFile, err := os.Open(triggersConfigPath)
+
+		triggersConfig := &TriggersConfig{}
+		jsonParser := json.NewDecoder(triggersConfigFile)
+
+		if err = jsonParser.Decode(triggersConfig); err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
+			os.Exit(2)
+		}
+
+		triggersConfigFile.Close()
+
+		if triggersConfig.Triggers == nil {
+			triggersConfig.Triggers = make([]*TriggerConfig, 0)
+		}
+
+		var triggers []*ItemDescriptor
+
+		for  _, trigger := range projectDescriptor.Triggers {
+
+			if ContainsTriggerConfig(triggersConfig.Triggers, trigger.Name)  {
+				triggers = append(triggers, trigger)
+			}
+		}
+
+		projectDescriptor.Triggers = triggers
 
 		createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 	}
