@@ -14,6 +14,7 @@ const (
 	fileEnvGo          string = "env.go"
 	fileConfigGo       string = "config.go"
 	fileImportsGo      string = "imports.go"
+	fileExprsGo        string = "exprs.go"
 
 	dirFlows string = "flows"
 
@@ -246,4 +247,34 @@ func EmeddedFlowsAreCompressed() bool {
 func EmeddedJSONFlows() map[string]string {
 	return embeddedJSONFlows
 }
+`
+
+func createExprsGoFile(codeSourcePath string, flows map[string]map[int]string) {
+	f, _ := os.Create(path(codeSourcePath, fileExprsGo))
+	fgutil.RenderTemplate(f, tplExprsGoFile, flows)
+	f.Close()
+}
+
+
+var tplExprsGoFile = `package main
+
+import (
+	"github.com/TIBCOSoftware/flogo-lib/script/fgn"
+)
+
+
+func init() {
+
+	allFlowExprs := make(map[string]map[int]fgn.ExprFunc)
+	var flowExprs map[int]fgn.ExprFunc
+
+{{ range $key, $value := . }}	flowExprs = make(map[int]fgn.ExprFunc)
+    {{ range $k, $v := $value }}flowExprs[{{ $k }}] = func(v map[string]interface{}) bool {
+		return {{ $v }}
+	}
+	{{ end }}allFlowExprs["{{ $key }}"] = flowExprs
+
+{{ end }}
+}
+
 `

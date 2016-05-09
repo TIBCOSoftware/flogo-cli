@@ -208,7 +208,6 @@ func getAllActivityTypes(flowDir string) map[string]bool {
 	return activityTypes
 }
 
-
 func getActivityTypes(flowObj interface{}, activityTypes map[string]bool) {
 
 	switch obj := flowObj.(type) {
@@ -229,4 +228,105 @@ func getActivityTypes(flowObj interface{}, activityTypes map[string]bool) {
 			getActivityTypes(v, activityTypes)
 		}
 	}
+}
+
+func getAllFlowExprs(flowDir string) map[string]map[int]string {
+
+	fileInfos, err := ioutil.ReadDir(flowDir)
+
+	allFlowExprs := make(map[string]map[int]string)
+
+	if err == nil {
+
+		for _, fileInfo := range fileInfos {
+
+			if !fileInfo.IsDir() {
+
+				fileName := fileInfo.Name()
+				flowFilePath := filepath.Join(flowDir, fileName)
+
+				file, _ := ioutil.ReadFile(flowFilePath)
+
+				var flowObj interface{}
+				json.Unmarshal(file, &flowObj)
+
+				flowURI := genFlowURI(fileName)
+
+				linkExprs := make(map[int]string)
+				getLinkExprs(flowObj, linkExprs)
+
+				if len(linkExprs) > 0 {
+					allFlowExprs[flowURI] = linkExprs
+				}
+			}
+		}
+	}
+
+	return allFlowExprs
+}
+
+func getLinkExprs(flowObj interface{}, linkExprs map[int]string) {
+
+	switch obj := flowObj.(type) {
+	case map[string]interface{}:
+		for k, v := range obj {
+
+			if k == "value" {
+				value := v.(string)
+				idFloat, hasID := obj["id"]
+				_, hasFrom := obj["from"]
+
+				if len(value) != 0 && hasID && hasFrom {
+					id := int(idFloat.(float64))
+					linkExprs[id] = value
+				}
+			} else {
+				getLinkExprs(v, linkExprs)
+			}
+		}
+	case []interface{}:
+		for _, v := range obj {
+			getLinkExprs(v, linkExprs)
+		}
+	}
+}
+
+func convertExprsToGo(linkExprs map[int]string) map[int]string {
+
+	transExprs := make(map[int]string, len(linkExprs))
+
+	for id, expr := range linkExprs {
+
+		_, translated := transExpr(expr)
+		transExprs[id] = translated
+	}
+
+	return transExprs;
+}
+
+func transExpr(s string) ([]string, string) {
+
+	var attrs []string
+	var rattrs []string
+
+	strLen := len(s)
+
+	for i := 0; i < strLen; i++ {
+		if s[i] == '$' {
+			var j int
+			for j = i + 1; j < strLen; j++ {
+				if s[j] == ' ' {
+					break
+				}
+			}
+			attrs = append(attrs, s[i+1:j])
+			rattrs = append(rattrs, s[i:j])
+			rattrs = append(rattrs, `v["`+s[i+1:j]+`"]`)
+			i = j
+		}
+	}
+
+	replacer := strings.NewReplacer(rattrs...)
+
+	return attrs, replacer.Replace(s)
 }

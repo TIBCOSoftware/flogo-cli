@@ -68,6 +68,22 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
+	//allFlowExprs := getAllFlowExprs(dirFlows)
+	//fmt.Printf("all flow exprs: %v\n", allFlowExprs)
+	//
+	//allFlowTransExprs := make(map[string]map[int]string)
+	//
+	//if len(allFlowExprs) > 0 {
+	//
+	//	for flowURI, exprs := range allFlowExprs {
+	//
+	//		transExprs := convertExprsToGo(exprs)
+	//		allFlowTransExprs[flowURI] = transExprs
+	//	}
+	//}
+	//
+	//createExprsGoFile(gb.CodeSourcePath, allFlowTransExprs)
+
 	if c.optimize {
 
 		//todo optimize triggers
