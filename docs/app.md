@@ -1,5 +1,5 @@
 # application
-> Details on flogo application related commands.
+> Details on flogo application projects and associated CLI commands.
 
 ## Commands
 #### create
@@ -74,7 +74,9 @@ This command is used to display help on a particular command
 	
 	flogo help build 
 
-##Project Structure
+##Application Project
+
+###Structure
 
 The create command creates a basic structure and files for an application.
 
@@ -109,4 +111,105 @@ The create command creates a basic structure and files for an application.
 	
 - *bin* :	contains the application binary and configuration
 - *flows* : contains the flows to embed
-- *vendor* : go libraries		
+- *vendor* : go libraries
+
+###Metadata
+
+The *flogo.json* file is the metadata describing the application project.  It includes the name, version and the components (activities, triggers and models) that have been installed.
+
+	{
+	  "name": "my_app",
+	  "version": "0.0.1",
+	  "description": "My flogo application description",
+	  "models": [
+	    {
+	      "name": "tibco-simple",
+	      "path": "github.com/TIBCOSoftware/flogo-contrib/model/simple",
+	      "version": "latest"
+	    }
+	  ],
+	  "activities": [
+	    {
+	      "name": "tibco-log",
+	      "path": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+	      "version": "latest"
+	    }
+	  ],
+	  "triggers": [
+	    {
+	      "name": "tibco-rest",
+	      "path": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
+	      "version": "latest"
+	    }
+	  ]
+	}
+
+## Application Configuration
+
+### Application
+
+The *config.json* file contains the configration for application.  It is used to configure the internal process engine and services.
+
+	{
+	  "loglevel": "INFO",
+	  "flowRunner": {
+	    "type": "pooled",
+	    "pooled": {
+	      "numWorkers": 5,
+	      "workQueueSize": 50,
+	      "maxStepCount": 32000
+	    }
+	  },
+	  "services": [
+	    {
+	      "name": "stateRecorder",
+	      "enabled": false,
+	      "settings": {
+	        "host": "",
+	        "port": ""
+	      }
+	    },
+	    {
+	      "name": "engineTester",
+	      "enabled": true,
+	      "settings": {
+	        "port": "8080"
+	      }
+	    }
+	  ]
+	}
+
+***Settings***
+
+- loglevel: set the loglevel for the application
+
+- *flowRunner* runs the flows
+	- pooled: uses a worker pool to execute flows
+		- numworkers: the number of flow runners
+		- workQueueSize: the max number of queue flows to execute
+	- direct: flows are executed on the same goroutine/thread of the trigger
+
+***Services***
+
+- *stateRecorder* recordes the full/incremental state of a flow
+	- enabled: true/false
+	- host: the host of the stateRecorder service
+	- port: the port of the stateRecorder service
+- *engineTester* is a simple REST interface used to directly start a flow and bypass a trigger, used the the UI to directly execute a flow
+	- enabled: true/false
+	- port: the local port to expost the engineTester service
+
+### Triggers
+
+
+	{
+	  "triggers": [
+	    {
+	      "name": "tibco-rest",
+	      "settings": {
+	        "port": ""
+	      },
+	      "endpoints": null
+	    }
+	  ]
+	}
