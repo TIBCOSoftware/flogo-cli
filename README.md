@@ -3,7 +3,7 @@
 
 ![Flogo icon](floyd.png)
 
-**Flogo** is micro-flow engine written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IOT devices.
+**Flogo** is process-flow engine written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IOT devices.
 
 
 ## Installation
@@ -14,7 +14,10 @@
 ### Install flogo
     go get github.com/TIBCOSoftware/flogo/...
 
-## Creating a new Flogo project
+### Update flogo
+    go get -u github.com/TIBCOSoftware/flogo/...
+    
+## Getting Started
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
 
 ```bash
@@ -23,8 +26,18 @@ cd myApp
 
 flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
 flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
+flogo add flow myflow.json
 flogo build
 ```
+
+## Documentation
+Additional documentation on flogo and the CLI tool
+
+  - **Flogo tool**
+    - creating an [application](docs/app.md)
+    - creating an [activity](docs/activity.md)
+    - creating a [trigger](docs/trigger.md)
+    - creating a [model](docs/model.md)
 
 ## Contributing and support
 
