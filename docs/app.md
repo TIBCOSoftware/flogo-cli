@@ -200,16 +200,33 @@ The *config.json* file contains the configration for application.  It is used to
 	- port: the local port to expost the engineTester service
 
 ### Triggers
-
+The *triggers.json* contains the configuration for the triggers used by the application.
 
 	{
-	  "triggers": [
-	    {
-	      "name": "tibco-rest",
-	      "settings": {
-	        "port": ""
-	      },
-	      "endpoints": null
-	    }
-	  ]
-	}
+      "triggers": [
+        {
+          "name": "tibco-rest",
+          "settings": {
+            "port": "9090"
+          },
+          "endpoints": [
+            {
+              "flowURI": "embedded://myflow",
+              "settings": {
+                "autoIdReply": "true",
+                "method": "POST",
+                "path": "/device/update"
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+***Trigger Configuration***
+
+- name: the name of the trigger
+- settings: global settings for the trigger
+- *endpoints* the endpoints configured for the trigger
+	- flowURI: the flow the endpoint starts
+	- settings: the endpoint specific settings
