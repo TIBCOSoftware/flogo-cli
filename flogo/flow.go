@@ -11,7 +11,7 @@ import (
 	"encoding/base64"
 	"strings"
 	"compress/gzip"
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 	"net/url"
 	"net/http"
 	"path/filepath"

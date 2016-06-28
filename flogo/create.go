@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo/cli"
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 var optCreate = &cli.OptionInfo{

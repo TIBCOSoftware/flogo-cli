@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/TIBCOSoftware/flogo/cli"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
 )
 
 var optModel = &cli.OptionInfo{

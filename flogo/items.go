@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 	"path/filepath"
 )
 

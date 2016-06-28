@@ -1,7 +1,7 @@
 package activity
 
 import (
-	"github.com/TIBCOSoftware/flogo/cli"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
 )
 
 var optActivity = &cli.OptionInfo{

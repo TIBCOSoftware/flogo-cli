@@ -11,8 +11,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/cli"
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 
 	_ "github.com/TIBCOSoftware/flogo/tools/activity"
 	_ "github.com/TIBCOSoftware/flogo/tools/model"

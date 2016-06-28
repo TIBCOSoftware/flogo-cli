@@ -3,7 +3,7 @@ package activity
 import (
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 const (

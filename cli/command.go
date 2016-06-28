@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 // Command represents a command that is executed within flogo project

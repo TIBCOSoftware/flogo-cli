@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"encoding/json"
 
-	"github.com/TIBCOSoftware/flogo/cli"
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 var optBuild = &cli.OptionInfo{

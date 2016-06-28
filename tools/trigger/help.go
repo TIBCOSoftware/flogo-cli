@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/cli"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
 )
 
 var optHelp = &cli.OptionInfo{

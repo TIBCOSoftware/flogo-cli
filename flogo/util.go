@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo/util"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 func updateProjectFiles(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor) {
