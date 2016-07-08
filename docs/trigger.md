@@ -21,7 +21,7 @@ The create command creates a basic structure and files for a trigger.
 	mytrigger\
 		src\
 			trigger.json
-			rt\
+			runtime\
 				trigger.go
 				trigger_metadata.go
 				trigger_test.go

@@ -118,8 +118,8 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 		var toDir string
 		if len(itemImportPath) > 0 {
 
-			if itemType != itModel && filepath.Base(itemImportPath) == "rt" {
-				itemImportPath = itemImportPath[:len(itemImportPath) - 3]
+			if itemType != itModel && filepath.Base(itemImportPath) == "runtime" {
+				itemImportPath = itemImportPath[:len(itemImportPath) - 8]
 			}
 		} else {
 			itemImportPath = filepath.Join(itemType, itemName)

@@ -211,10 +211,10 @@ var tplImportsGoFile = `package main
 import (
 
 	// activities
-{{range .Activities}}	_ "{{.Path}}/rt"
+{{range .Activities}}	_ "{{.Path}}/runtime"
 {{end}}
 	// triggers
-{{range .Triggers}}	_ "{{.Path}}/rt"
+{{range .Triggers}}	_ "{{.Path}}/runtime"
 {{end}}
 	// models
 {{range .Models}}	_ "{{.Path}}"

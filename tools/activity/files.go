@@ -12,8 +12,8 @@ const (
 	fileActivityTestGo string = "activity_test.go"
 	fileActivityMdGo   string = "activity_metadata.go"
 
-	dirDT string = "dt"
-	dirRT string = "rt"
+	dirUI string = "ui"
+	dirRT string = "runtime"
 )
 
 func createProjectDescriptor(sourcePath string, data interface{}) {
@@ -32,6 +32,7 @@ var tplActivityDescriptorJSON = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "description": "activity description",
+  "author": "Your Name <you.name@example.org>",
   "inputs":[
     {
       "name": "input",

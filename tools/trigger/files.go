@@ -12,8 +12,8 @@ const (
 	fileTriggerTestGo string = "trigger_test.go"
 	fileTriggerMdGo   string = "trigger_metadata.go"
 
-	dirDT string = "dt"
-	dirRT string = "rt"
+	dirUI string = "ui"
+	dirRT string = "runtime"
 )
 
 func createProjectDescriptor(sourcePath string, data interface{}) {
@@ -32,6 +32,7 @@ var tplTriggerDescriptorJSON = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "description": "trigger description",
+  "author": "Your Name <you.name@example.org>",
   "settings":[
     {
       "name": "input",
@@ -62,9 +63,9 @@ import (
 
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
-	metadata       *trigger.Metadata
+	metadata    *trigger.Metadata
 	flowStarter flowinst.Starter
-	config         *trigger.Config
+	config      *trigger.Config
 }
 
 func init() {

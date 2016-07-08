@@ -21,7 +21,7 @@ The create command creates a basic structure and files for an activity.
 	myactivity\
 		src\
 			activity.json
-			rt\
+			runtime\
 				activity.go
 				activity_metadata.go
 				activity_test.go

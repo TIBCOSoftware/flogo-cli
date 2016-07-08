@@ -12,12 +12,12 @@ import (
 
 var optCreate = &cli.OptionInfo{
 	Name:      "create",
-	UsageLine: "create [-nogb] modelName",
+	UsageLine: "create [-no_gb] modelName",
 	Short:     "creae a model project",
 	Long: `Creates a flogo model project.
 
 Options:
-    -nogb       generate without gb structure
+    -no_gb       generate without gb structure
 
 `,
 }
