@@ -146,7 +146,7 @@ func validateFlowSchema(flowPath string, isURL bool) {
 
 	workingDir, _ := os.Getwd()
 
-	schemaURL,_ := fgutil.PathToFileURL(workingDir + flowSchemaFilePath)
+	//schemaURL,_ := fgutil.PathToFileURL(workingDir + flowSchemaFilePath)
 
 	var flowURL string
 	if isURL {
@@ -161,7 +161,13 @@ func validateFlowSchema(flowPath string, isURL bool) {
 		}
 	}
 
-	schemaLoader := gojsonschema.NewReferenceLoader(schemaURL)
+	//schemaLoader := gojsonschema.NewReferenceLoader(schemaURL)
+
+	//work around for issue using file loader with gojsonschema
+	schemaBytes, err := ioutil.ReadFile(workingDir + flowSchemaFilePath);
+	schemaStr := string(schemaBytes)
+	schemaLoader := gojsonschema.NewStringLoader(schemaStr)
+
 	flowLoader := gojsonschema.NewReferenceLoader(flowURL)
 
 	result, err := gojsonschema.Validate(schemaLoader, flowLoader)
