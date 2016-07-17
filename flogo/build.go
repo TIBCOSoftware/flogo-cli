@@ -14,13 +14,14 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-i]",
+	UsageLine: "build [-o][-i][-c configDir]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
     -o   optimize for embedded flows
     -i   incorporate config into application
+    -c   specifiy configration directory
 `,
 }
 
@@ -34,6 +35,7 @@ type cmdBuild struct {
 	option     *cli.OptionInfo
 	optimize   bool
 	includeCfg bool
+	configDir  string
 }
 
 func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
@@ -43,6 +45,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
+	fs.StringVar(&(c.configDir), "c", "bin", "config directory")
 }
 
 func (c *cmdBuild) Exec(args []string) error {
@@ -64,10 +67,10 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	if len(projectDescriptor.Triggers) == 0 {
-		fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
-		os.Exit(2)
-	}
+	//if len(projectDescriptor.Triggers) == 0 {
+	//	fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
+	//	os.Exit(2)
+	//}
 
 	//allFlowExprs := getAllFlowExprs(dirFlows)
 	//fmt.Printf("all flow exprs: %v\n", allFlowExprs)
@@ -137,14 +140,14 @@ func (c *cmdBuild) Exec(args []string) error {
 
 	if c.includeCfg {
 
-		engineCfg, err := ioutil.ReadFile(filepath.Join("bin", fileEngineConfig))
+		engineCfg, err := ioutil.ReadFile(filepath.Join(c.configDir, fileEngineConfig))
 
 		if err != nil {
 			fmt.Fprint(os.Stderr, "Error: Unable to read engine.config -\n%s\n", err.Error())
 			os.Exit(2)
 		}
 
-		triggersCfg, err := ioutil.ReadFile(filepath.Join("bin", fileTriggersConfig))
+		triggersCfg, err := ioutil.ReadFile(filepath.Join(c.configDir, fileTriggersConfig))
 
 		if err != nil {
 			fmt.Fprint(os.Stderr, "Error: Unable to read triggers.config -\n%s\n", err.Error())
