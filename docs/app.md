@@ -68,6 +68,7 @@ This command is used to build the application.
 	
 - [ -o ] : optimize compilation, application will only contain activities and triggers used by its flows
 - [ -i ] : incorporates the configuration into the compiled application	 	 
+- [ -c configDir] : specifies the directory to use for configuration when using the -i flag
 
 ### help
 This command is used to display help on a particular command
