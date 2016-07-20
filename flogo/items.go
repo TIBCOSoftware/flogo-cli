@@ -15,6 +15,7 @@ const (
 	itTrigger = "trigger"
 	itModel = "model"
 	itFlow = "flow"
+	itPalette = "palette"
 )
 
 // ContainsItemPath determines if the path exists in  list of ItemConfigs
@@ -68,13 +69,20 @@ func getItemInfo(itemFile *os.File, itemType string) (string, string) {
 }
 
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
-func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*ItemDescriptor, addToSrc bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
+func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
 
 	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
 	if ContainsItemPath(items, itemPath) {
-		fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
-		os.Exit(2)
+
+		if (ignoreDup) {
+			fmt.Fprintf(os.Stdout, "Warning: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
+			return nil, ""
+
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
+			os.Exit(2)
+		}
 	}
 
 	pathInfo, err := fgutil.GetPathInfo(itemPath)

@@ -9,20 +9,23 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"net/url"
+	"net/http"
+	"io/ioutil"
 )
 
 var optAdd = &cli.OptionInfo{
 	Name:      "add",
 	UsageLine: "add <activity|model|trigger|flow> <path>",
-	Short:     "add an activity, model or trigger to a flogo project",
-	Long: `Add an activity, model, trigger or flow to a flogo project
+	Short:     "add an activity, flow, model, trigger or palette to a flogo project",
+	Long: `Add an activity, flow, model, trigger or palette to a flogo project
 
 Options:
     -src   copy contents to source (only when using file url)
 `,
 }
 
-var validItemTypes = []string{itActivity, itTrigger, itModel, itFlow}
+var validItemTypes = []string{itActivity, itTrigger, itModel, itFlow, itPalette}
 
 func init() {
 	commandRegistry.RegisterCommand(&cmdAdd{option: optAdd})
@@ -78,100 +81,20 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
-	var itemConfigPath string
-	var itemConfig *ItemDescriptor
 	updateFiles := true
 
 	switch itemType {
 	case itActivity:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itActivity, itemPath, projectDescriptor.Activities, addToSrc)
-		projectDescriptor.Activities = append(projectDescriptor.Activities, itemConfig)
+		addActivity(gb, projectDescriptor, itemPath, addToSrc, false)
 	case itModel:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itModel, itemPath, projectDescriptor.Models, addToSrc)
-		projectDescriptor.Models = append(projectDescriptor.Models, itemConfig)
+		addModel(gb, projectDescriptor, itemPath, addToSrc, false)
 	case itTrigger:
-		itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, projectDescriptor.Triggers, addToSrc)
-		projectDescriptor.Triggers = append(projectDescriptor.Triggers, itemConfig)
-
-		//read trigger.json
-		triggerConfigFile, err := os.Open(itemConfigPath)
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: Unable to find '%s'\n\n", itemConfigPath)
-			os.Exit(2)
-		}
-
-		triggerProjectDescriptor := &TriggerProjectDescriptor{}
-		jsonParser := json.NewDecoder(triggerConfigFile)
-
-		if err = jsonParser.Decode(triggerProjectDescriptor); err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to parse trigger.json, file may be corrupted.\n\n")
-			os.Exit(2)
-		}
-
-		triggerConfigFile.Close()
-
-		//read triggers.json
-		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
-		triggersConfigFile, err := os.Open(triggersConfigPath)
-
-		triggersConfig := &TriggersConfig{}
-		jsonParser = json.NewDecoder(triggersConfigFile)
-
-		if err = jsonParser.Decode(triggersConfig); err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
-			os.Exit(2)
-		}
-
-		triggersConfigFile.Close()
-
-		if triggersConfig.Triggers == nil {
-			triggersConfig.Triggers = make([]*TriggerConfig, 0)
-		}
-
-		if !ContainsTriggerConfig(triggersConfig.Triggers, itemConfig.Name) {
-
-			triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
-
-			for _, v := range triggerProjectDescriptor.Settings {
-
-				triggerConfig.Settings[v.Name] = v.Value
-			}
-
-			triggersConfig.Triggers = append(triggersConfig.Triggers, triggerConfig)
-
-			fgutil.WriteJSONtoFile(triggersConfigPath, triggersConfig)
-		}
-
+		addTrigger(gb, projectDescriptor, itemPath, addToSrc, false)
 	case itFlow:
 		updateFiles = false
-
-		pathInfo, err := fgutil.GetPathInfo(itemPath)
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
-			os.Exit(2)
-		}
-
-		if pathInfo.IsLocal {
-
-			if !pathInfo.IsFile {
-				fmt.Fprintf(os.Stderr, "Error: Path '%s' is not a file\n", itemPath)
-				os.Exit(2)
-			}
-		}
-
-		ValidateFlow(projectDescriptor, itemPath, pathInfo.IsURL)
-
-		if (pathInfo.IsLocal) {
-			fgutil.CopyFile(pathInfo.FilePath, path("flows", pathInfo.FileName))
-		} else if (pathInfo.IsURL) {
-			fgutil.CopyRemoteFile(pathInfo.FileURL.String(), path("flows", pathInfo.FileName))
-		}
-
-		flows := ImportFlows(projectDescriptor, dirFlows)
-		createFlowsGoFile(gb.CodeSourcePath, flows)
-
+		addFlow(gb, projectDescriptor, itemPath, addToSrc)
+	case itPalette:
+		addPalette(gb, projectDescriptor, itemPath, addToSrc)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: Unknown item type '%s'\n\n", itemType)
 		os.Exit(2)
@@ -179,6 +102,190 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 
 	if updateFiles {
 		updateProjectFiles(gb, projectDescriptor)
+	}
+}
+
+func addActivity(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool, ignoreDup bool) {
+
+	var itemConfig *ItemDescriptor
+
+	itemConfig, _ = AddFlogoItem(gb, itActivity, itemPath, projectDescriptor.Activities, addToSrc, ignoreDup)
+
+	if itemConfig != nil {
+		projectDescriptor.Activities = append(projectDescriptor.Activities, itemConfig)
+		fmt.Fprintf(os.Stdout, "Added Activity: %s [%s]\n", itemConfig.Name, itemConfig.Path)
+	}
+}
+
+func addModel(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool, ignoreDup bool) {
+
+	var itemConfig *ItemDescriptor
+
+	itemConfig, _ = AddFlogoItem(gb, itModel, itemPath, projectDescriptor.Models, addToSrc, ignoreDup)
+	if itemConfig != nil {
+		projectDescriptor.Models = append(projectDescriptor.Models, itemConfig)
+		fmt.Fprintf(os.Stdout, "Added Model: %s [%s]\n", itemConfig.Name, itemConfig.Path)
+	}
+}
+
+func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool, ignoreDup bool) {
+
+	var itemConfig *ItemDescriptor
+	var itemConfigPath string
+
+	itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, projectDescriptor.Triggers, addToSrc, ignoreDup)
+
+	if itemConfig == nil {
+		return
+	}
+
+	projectDescriptor.Triggers = append(projectDescriptor.Triggers, itemConfig)
+
+	//read trigger.json
+	triggerConfigFile, err := os.Open(itemConfigPath)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Unable to find '%s'\n\n", itemConfigPath)
+		os.Exit(2)
+	}
+
+	triggerProjectDescriptor := &TriggerProjectDescriptor{}
+	jsonParser := json.NewDecoder(triggerConfigFile)
+
+	if err = jsonParser.Decode(triggerProjectDescriptor); err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to parse trigger.json, file may be corrupted.\n\n")
+		os.Exit(2)
+	}
+
+	triggerConfigFile.Close()
+
+	//read triggers.json
+	triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
+	triggersConfigFile, err := os.Open(triggersConfigPath)
+
+	triggersConfig := &TriggersConfig{}
+	jsonParser = json.NewDecoder(triggersConfigFile)
+
+	if err = jsonParser.Decode(triggersConfig); err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
+		os.Exit(2)
+	}
+
+	triggersConfigFile.Close()
+
+	if triggersConfig.Triggers == nil {
+		triggersConfig.Triggers = make([]*TriggerConfig, 0)
+	}
+
+	if !ContainsTriggerConfig(triggersConfig.Triggers, itemConfig.Name) {
+
+		triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
+
+		for _, v := range triggerProjectDescriptor.Settings {
+
+			triggerConfig.Settings[v.Name] = v.Value
+		}
+
+		triggersConfig.Triggers = append(triggersConfig.Triggers, triggerConfig)
+
+		fgutil.WriteJSONtoFile(triggersConfigPath, triggersConfig)
+	}
+
+	fmt.Fprintf(os.Stdout, "Added Trigger: %s [%s]\n", itemConfig.Name, itemConfig.Path)
+}
+
+func addFlow(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool) {
+
+	pathInfo, err := fgutil.GetPathInfo(itemPath)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+		os.Exit(2)
+	}
+
+	if pathInfo.IsLocal {
+
+		if !pathInfo.IsFile {
+			fmt.Fprintf(os.Stderr, "Error: Path '%s' is not a file\n", itemPath)
+			os.Exit(2)
+		}
+	}
+
+	ValidateFlow(projectDescriptor, itemPath, pathInfo.IsURL)
+
+	if (pathInfo.IsLocal) {
+		fgutil.CopyFile(pathInfo.FilePath, path("flows", pathInfo.FileName))
+	} else if (pathInfo.IsURL) {
+		fgutil.CopyRemoteFile(pathInfo.FileURL.String(), path("flows", pathInfo.FileName))
+	}
+
+	flows := ImportFlows(projectDescriptor, dirFlows)
+	createFlowsGoFile(gb.CodeSourcePath, flows)
+}
+
+func addPalette(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool) {
+
+	pathInfo, err := fgutil.GetPathInfo(itemPath)
+
+	if err != nil || (!pathInfo.IsLocal && !pathInfo.IsURL){
+		fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+		os.Exit(2)
+	}
+
+	if pathInfo.IsLocal {
+
+		if !pathInfo.IsFile {
+			fmt.Fprintf(os.Stderr, "Error: Path '%s' is not a file\n", itemPath)
+			os.Exit(2)
+		}
+	}
+
+	var file []byte
+
+	if pathInfo.IsURL {
+
+		flowURL, _ := url.Parse(itemPath)
+		flowFilePath, local := fgutil.URLToFilePath(flowURL)
+
+		if !local {
+			resp, err := http.Get(flowURL.String())
+			defer resp.Body.Close()
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: Unable to access '%s'\n  - %s\n", flowURL.String(), err.Error())
+				os.Exit(2)
+			}
+
+			file, _ = ioutil.ReadAll(resp.Body)
+
+		} else {
+			file, _ = ioutil.ReadFile(flowFilePath)
+		}
+
+	} else {
+		file, _ = ioutil.ReadFile(itemPath)
+	}
+
+	var paletteDescriptor *FlogoPaletteDescriptor
+	err = json.Unmarshal(file, &paletteDescriptor)
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to parse palette descriptor, file may be corrupted.\n\n")
+		os.Exit(2)
+	}
+
+	fmt.Fprintf(os.Stdout, "Adding Palette: %s [%s]\n\n", paletteDescriptor.Name, projectDescriptor.Description)
+
+	activities := paletteDescriptor.FlogoExtensions.Activities
+
+	for _, activity := range activities {
+		addActivity(gb, projectDescriptor, activity.Path, true, true)
+	}
+
+	triggers := paletteDescriptor.FlogoExtensions.Triggers
+
+	for _, trigger := range triggers {
+		addTrigger(gb, projectDescriptor, trigger.Path, true, true)
 	}
 }
 
