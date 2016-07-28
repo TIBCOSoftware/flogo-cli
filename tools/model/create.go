@@ -76,7 +76,8 @@ func (c *cmdCreate) Exec(args []string) error {
 
 		gb.Init(false)
 
-		err := gb.VendorFetch("github.com/TIBCOSoftware/flogo-lib")
+		//todo should we add the ability to specify the flogo-lib version
+		err := gb.VendorFetch("github.com/TIBCOSoftware/flogo-lib", "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(2)

@@ -69,7 +69,7 @@ func getItemInfo(itemFile *os.File, itemType string) (string, string) {
 }
 
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
-func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
+func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version string, items []*ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
 
 	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
@@ -156,7 +156,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, items []*Item
 		//gb vendor delete for now, need proper cleanup on error
 		gb.VendorDeleteSilent(itemPath)
 
-		err := gb.VendorFetch(itemPath)
+		err := gb.VendorFetch(itemPath, version)
 		if err != nil {
 			os.Exit(2)
 		}

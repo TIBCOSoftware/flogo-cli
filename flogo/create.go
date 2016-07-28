@@ -69,7 +69,8 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	fmt.Fprint(os.Stdout, "Installing flogo lib...\n")
 
-	err := gb.VendorFetch(pathFlogoLib)
+	//todo should we add the ability to specify the flogo-lib version
+	err := gb.VendorFetch(pathFlogoLib, "")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(2)
@@ -89,7 +90,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	// install default model
 	fmt.Fprint(os.Stdout, "Installing default flow model...\n")
-	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", false)
+	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", "", false)
 
 	createMainGoFile(gb.CodeSourcePath, projectDescriptor)
 	createEngineEnvGoFile(gb.CodeSourcePath, projectDescriptor)

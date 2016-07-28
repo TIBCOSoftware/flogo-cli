@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Gb stucture that contains gb project paths
+// Gb structure that contains gb project paths
 type Gb struct {
 	BinPath        string
 	SourcePath     string
@@ -48,8 +48,25 @@ func (e *Gb) NewBinFilePath(fileName string) string {
 }
 
 // VendorFetch performs a 'gb vendor fetch'
-func (e *Gb) VendorFetch(path string) error {
-	cmd := exec.Command("gb", "vendor", "fetch", path)
+func (e *Gb) VendorFetch(path string, version string) error {
+
+	var cmd *exec.Cmd
+
+	if version == "" {
+		cmd = exec.Command("gb", "vendor", "fetch", path)
+	} else {
+
+		var tag string
+
+		if version[0] != 'v' {
+			tag = "v" + version
+		} else {
+			tag = version
+		}
+
+		cmd = exec.Command("gb", "vendor", "fetch","-tag", tag , path)
+	}
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
