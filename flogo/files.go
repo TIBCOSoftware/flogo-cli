@@ -204,12 +204,12 @@ var tplFlowsGoFile = `package main
 import (
 	"github.com/TIBCOSoftware/flogo-lib/core/action"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/TIBCOSoftware/flogo-lib/flow/flowdef"
 	"github.com/TIBCOSoftware/flogo-lib/flow/flowinst"
 	"github.com/TIBCOSoftware/flogo-lib/flow/service"
 	"github.com/TIBCOSoftware/flogo-lib/flow/service/flowprovider"
 	"github.com/TIBCOSoftware/flogo-lib/flow/service/staterecorder"
 	"github.com/TIBCOSoftware/flogo-lib/flow/service/tester"
+	"github.com/TIBCOSoftware/flogo-lib/flow/support"
 )
 
 var embeddedJSONFlows map[string]string
@@ -227,7 +227,7 @@ func EnableFlowServices(engine *engine.Engine, engineConfig *engine.Config) {
 
 	log.Debug("Flow Services and Actions enabled")
 
-	embeddedFlowMgr := flow.NewEmbeddedFlowManager(true, embeddedJSONFlows)
+	embeddedFlowMgr := support.NewEmbeddedFlowManager(true, embeddedJSONFlows)
 
 	fpConfig := engineConfig.Services[service.ServiceFlowProvider]
 	flowProvider := flowprovider.NewRemoteFlowProvider(fpConfig, embeddedFlowMgr)
@@ -241,7 +241,7 @@ func EnableFlowServices(engine *engine.Engine, engineConfig *engine.Config) {
 	engineTester := tester.NewRestEngineTester(etConfig)
 	engine.RegisterService(engineTester)
 
-	options := &flowinst.FlowRunOptions{Record: stateRecorder.Enabled()}
+	options := &flowinst.ActionOptions{Record: stateRecorder.Enabled()}
 
 	flowAction := flowinst.NewFlowAction(flowProvider, stateRecorder, options)
 	action.Register(flowinst.ActionType, flowAction)
