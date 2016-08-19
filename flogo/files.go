@@ -121,9 +121,9 @@ var tplEngineEnvGoFile = `package main
 
 import (
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/TIBCOSoftware/flogo-lib/service/flowprovider/ppsremote"
-	"github.com/TIBCOSoftware/flogo-lib/service/staterecorder/srsremote"
-	"github.com/TIBCOSoftware/flogo-lib/service/tester"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/flowprovider/ppsremote"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/staterecorder/srsremote"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/tester"
 )
 
 // GetEngineEnvironment gets the engine environment
