@@ -93,7 +93,6 @@ func (c *cmdCreate) Exec(args []string) error {
 	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", "", false)
 
 	createMainGoFile(gb.CodeSourcePath, projectDescriptor)
-	createEngineEnvGoFile(gb.CodeSourcePath, projectDescriptor)
 	createEngineConfigGoFile(gb.CodeSourcePath, nil)
 	createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
 

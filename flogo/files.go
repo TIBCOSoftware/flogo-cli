@@ -11,7 +11,6 @@ const (
 	fileEngineConfig   string = "config.json"
 	fileTriggersConfig string = "triggers.json"
 	fileMainGo         string = "main.go"
-	fileEnvGo          string = "env.go"
 	fileConfigGo       string = "config.go"
 	fileImportsGo      string = "imports.go"
 	fileExprsGo        string = "exprs.go"
@@ -53,16 +52,16 @@ var log = logging.MustGetLogger("main")
 
 func main() {
 
-	config := GetEngineConfig()
+	engineConfig := GetEngineConfig()
 	triggersConfig := GetTriggersConfig()
 
-	logLevel, _ := logging.LogLevel(config.LogLevel)
-
+	logLevel, _ := logging.LogLevel(engineConfig.LogLevel)
 	logging.SetLevel(logLevel, "")
 
-	env := GetEngineEnvironment(config, triggersConfig)
+	engine := engine.NewEngine(engineConfig, triggersConfig)
 
-	engine := engine.NewEngine(env)
+	EnableFlowServices(engine, engineConfig)
+
 	engine.Start()
 
 	exitChan := setupSignalHandling()
@@ -111,34 +110,6 @@ func setupSignalHandling() chan int {
 }
 `
 
-func createEngineEnvGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
-	f, _ := os.Create(path(codeSourcePath, fileEnvGo))
-	fgutil.RenderTemplate(f, tplEngineEnvGoFile, projectDescriptor)
-	f.Close()
-}
-
-var tplEngineEnvGoFile = `package main
-
-import (
-	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/TIBCOSoftware/flogo-lib/flow/service/flowprovider/ppsremote"
-	"github.com/TIBCOSoftware/flogo-lib/flow/service/staterecorder/srsremote"
-	"github.com/TIBCOSoftware/flogo-lib/flow/service/tester"
-)
-
-// GetEngineEnvironment gets the engine environment
-func GetEngineEnvironment(engineConfig *engine.Config, triggersConfig *engine.TriggersConfig) *engine.Environment {
-
-	flowProvider := ppsremote.NewRemoteFlowProvider()
-	stateRecorder := srsremote.NewRemoteStateRecorder()
-	engineTester := tester.NewRestEngineTester()
-
-	env := engine.NewEnvironment(flowProvider, stateRecorder, engineTester, engineConfig, triggersConfig)
-	env.SetEmbeddedJSONFlows(EmeddedFlowsAreCompressed(), EmeddedJSONFlows())
-
-	return env
-}
-`
 type ConfigInfo struct {
 	Include     bool
 	ConfigJSON  string
@@ -230,6 +201,17 @@ func createFlowsGoFile(codeSourcePath string, flows map[string]string) {
 
 var tplFlowsGoFile = `package main
 
+import (
+	"github.com/TIBCOSoftware/flogo-lib/core/action"
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/flow/flowdef"
+	"github.com/TIBCOSoftware/flogo-lib/flow/flowinst"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/flowprovider"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/staterecorder"
+	"github.com/TIBCOSoftware/flogo-lib/flow/service/tester"
+)
+
 var embeddedJSONFlows map[string]string
 
 func init() {
@@ -240,12 +222,29 @@ func init() {
 {{ end }}
 }
 
-func EmeddedFlowsAreCompressed() bool {
-	return true
-}
+// EnableFlowServices enables flow services and action for engine
+func EnableFlowServices(engine *engine.Engine, engineConfig *engine.Config) {
 
-func EmeddedJSONFlows() map[string]string {
-	return embeddedJSONFlows
+	log.Debug("Flow Services and Actions enabled")
+
+	embeddedFlowMgr := flow.NewEmbeddedFlowManager(true, embeddedJSONFlows)
+
+	fpConfig := engineConfig.Services[service.ServiceFlowProvider]
+	flowProvider := flowprovider.NewRemoteFlowProvider(fpConfig, embeddedFlowMgr)
+	engine.RegisterService(flowProvider)
+
+	srConfig := engineConfig.Services[service.ServiceStateRecorder]
+	stateRecorder := staterecorder.NewRemoteStateRecorder(srConfig)
+	engine.RegisterService(stateRecorder)
+
+	etConfig := engineConfig.Services[service.ServiceEngineTester]
+	engineTester := tester.NewRestEngineTester(etConfig)
+	engine.RegisterService(engineTester)
+
+	options := &flowinst.FlowRunOptions{Record: stateRecorder.Enabled()}
+
+	flowAction := flowinst.NewFlowAction(flowProvider, stateRecorder, options)
+	action.Register(flowinst.ActionType, flowAction)
 }
 `
 
@@ -259,7 +258,7 @@ func createExprsGoFile(codeSourcePath string, flows map[string]map[int]string) {
 var tplExprsGoFile = `package main
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/script/fgn"
+	"github.com/TIBCOSoftware/flogo-lib/flow/script/fgn"
 )
 
 

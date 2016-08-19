@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 )
 
-const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/schemas/flow_schema.json"
+const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/flows/flow/schema.json"
 
 func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[string]string {
 

@@ -56,7 +56,7 @@ func createActivityGoFile(codeSourcePath string, data interface{}) {
 var tplActivityGoFile = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/activity"
+	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
 )
 
 // MyActivity is a stub for your Activity implementation
@@ -94,8 +94,8 @@ var tplActivityTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/activity"
-	"github.com/TIBCOSoftware/flogo-lib/test"
+	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"github.com/TIBCOSoftware/flogo-lib/flow/test"
 )
 
 func TestRegistered(t *testing.T) {

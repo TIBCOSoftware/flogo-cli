@@ -46,8 +46,8 @@ var tplModelGoFile = `package {{.Name}}
 
 import (
 	"fmt"
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/model"
-	"github.com/TIBCOSoftware/flogo-lib/core/flow"
+	"github.com/TIBCOSoftware/flogo-lib/flow/flowdef"
+	"github.com/TIBCOSoftware/flogo-lib/flow/model"
 )
 
 func init() {
@@ -236,7 +236,7 @@ var tplModelTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/model"
+	"github.com/TIBCOSoftware/flogo-lib/flow/model"
 )
 
 func TestRegistered(t *testing.T) {

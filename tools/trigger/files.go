@@ -57,15 +57,15 @@ func createTriggerGoFile(codeSourcePath string, data interface{}) {
 var tplTriggerGoFile = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/trigger"
-	"github.com/TIBCOSoftware/flogo-lib/core/flowinst"
+	"github.com/TIBCOSoftware/flogo-lib/core/action"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
-	metadata    *trigger.Metadata
-	flowStarter flowinst.Starter
-	config      *trigger.Config
+	metadata *trigger.Metadata
+	runner   action.Runner
+	config   *trigger.Config
 }
 
 func init() {
@@ -74,9 +74,9 @@ func init() {
 }
 
 // Init implements trigger.Trigger.Init
-func (t *MyTrigger) Init(flowStarter flowinst.Starter, config *trigger.Config) {
-	t.flowStarter = flowStarter
+func (t *MyTrigger) Init(config *trigger.Config, runner action.Runner) {
 	t.config = config
+	t.runner = runner
 }
 
 // Metadata implements trigger.Trigger.Metadata
@@ -106,8 +106,19 @@ var tplTriggerTestGoFile = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo-lib/core/ext/trigger"
+
+	"github.com/TIBCOSoftware/flogo-lib/core/action"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
+
+type TestRunner struct {
+}
+
+// Run implements action.Runner.Run
+func (tr *TestRunner) Run(context context.Context, action action.Action, uri string, options interface{}) (code int, data interface{}, err error) {
+	log.Debugf("Ran Action: %v", uri)
+	return 0, nil, nil
+}
 
 func TestRegistered(t *testing.T) {
 	act := trigger.Get("{{.Name}}")
