@@ -153,12 +153,11 @@ The *config.json* file contains the configration for application.  It is used to
 
 	{
 	  "loglevel": "INFO",
-	  "flowRunner": {
+	  "actionRunner": {
 	    "type": "pooled",
 	    "pooled": {
 	      "numWorkers": 5,
 	      "workQueueSize": 50,
-	      "maxStepCount": 32000
 	    }
 	  },
 	  "services": [
@@ -184,11 +183,11 @@ The *config.json* file contains the configration for application.  It is used to
 
 - loglevel: set the loglevel for the application
 
-- *flowRunner* runs the flows
-	- pooled: uses a worker pool to execute flows
-		- numworkers: the number of flow runners
-		- workQueueSize: the max number of queue flows to execute
-	- direct: flows are executed on the same goroutine/thread of the trigger
+- *actionRunner* runs the action
+	- pooled: uses a worker pool to execute actions
+		- numworkers: the number of action runners
+		- workQueueSize: the max number of queued actionss to execute
+	- direct: actions are executed on the same goroutine/thread of the trigger
 
 ***Services***
 
@@ -212,7 +211,8 @@ The *triggers.json* contains the configuration for the triggers used by the appl
           },
           "endpoints": [
             {
-              "flowURI": "embedded://myflow",
+              "actionType": "flow",
+              "actionURI": "embedded://myflow",
               "settings": {
                 "autoIdReply": "true",
                 "method": "POST",
@@ -229,5 +229,6 @@ The *triggers.json* contains the configuration for the triggers used by the appl
 - name: the name of the trigger
 - settings: global settings for the trigger
 - *endpoints* the endpoints configured for the trigger
-	- flowURI: the flow the endpoint starts
+	- actionType: the type of action the endpoint runs
+	- actionURI: the uri for the action
 	- settings: the endpoint specific settings

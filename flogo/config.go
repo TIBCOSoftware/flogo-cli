@@ -75,7 +75,7 @@ type ConfigValue struct {
 // EngineConfig is the engine configuration object
 type EngineConfig struct {
 	LogLevel     string           `json:"loglevel"`
-	RunnerConfig *RunnerConfig    `json:"flowRunner"`
+	RunnerConfig *RunnerConfig    `json:"actionRunner"`
 	Triggers     []*TriggerConfig `json:"triggers,omitempty"`
 	Services     []*ServiceConfig `json:"services"`
 }
@@ -94,14 +94,12 @@ type RunnerConfig struct {
 
 // DirectConfig  is the configuration object for a Direct Runner
 type DirectConfig struct {
-	MaxStepCount int `json:"maxStepCount"`
 }
 
 // PooledConfig  is the configuration object for a Pooled Runner
 type PooledConfig struct {
 	NumWorkers    int `json:"numWorkers"`
 	WorkQueueSize int `json:"workQueueSize"`
-	MaxStepCount  int `json:"maxStepCount"`
 }
 
 // TriggerConfig is the trigger configuration object
@@ -113,8 +111,9 @@ type TriggerConfig struct {
 
 // EndpointConfig is the endpoint configuration object
 type EndpointConfig struct {
-	FlowURI  string            `json:"flowURI"`
-	Settings map[string]string `json:"settings"`
+	ActionType string            `json:"actionType"`
+	ActionURI  string            `json:"actionURI"`
+	Settings   map[string]string `json:"settings"`
 }
 
 // ServiceConfig is the service configuration object
@@ -130,7 +129,7 @@ func DefaultEngineConfig() *EngineConfig {
 	var ec EngineConfig
 
 	ec.LogLevel = "INFO"
-	ec.RunnerConfig = &RunnerConfig{Type: "pooled", Pooled: &PooledConfig{NumWorkers: 5, WorkQueueSize: 50, MaxStepCount: 32000}}
+	ec.RunnerConfig = &RunnerConfig{Type: "pooled", Pooled: &PooledConfig{NumWorkers: 5, WorkQueueSize: 50}}
 	ec.Services = make([]*ServiceConfig, 0)
 
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: false, Settings: map[string]string{"host": "", "port": ""}})
