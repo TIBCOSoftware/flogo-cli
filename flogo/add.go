@@ -71,7 +71,7 @@ func (c *cmdAdd) Exec(args []string) error {
 	itemPath := args[1]
 
 	if len(args) > 2 {
-		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
+		fmt.Fprint(os.Stderr, "Error: Too many arguments given\n\n")
 		cmdUsage(c)
 	}
 
