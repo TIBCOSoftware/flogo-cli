@@ -1,7 +1,7 @@
 sudo: required
 services:
   - docker
-script: ./scripts/release-build.sh
+script: ./release-build.sh
 after_success:
   - if [ "${TRAVIS_BRANCH}" == "master" ]; then
     docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
