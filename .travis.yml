@@ -1,6 +1,10 @@
 sudo: required
 services:
   - docker
+cache:
+  bundler: false
+  directories:
+  - .cache          # images.txt
 script: ./release-build.sh
 after_success:
   - if [ "${TRAVIS_BRANCH}" == "master" ]; then
