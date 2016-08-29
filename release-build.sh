@@ -6,9 +6,13 @@ readonly SCRIPT_ROOT=$(
   cd "${script_root}"
   pwd
 )
-source ${SCRIPT_ROOT}/scripts/init.sh
-# Build flogo/flogo-web docker image
-pushd ${BUILD_ROOT}
-docker::build flogo/flogo-cli
-# docker::copy_tag_and_push flogo/flogo-cli pdhar/flogo-cli
-popd
+if [ -d "${SCRIPT_ROOT}/submodules/flogo-cicd" ]; then
+  rm -rf ${SCRIPT_ROOT}/submodules/flogo-cicd
+  git submodule update --init --remote --recursive
+  source ${SCRIPT_ROOT}/submodules/flogo-cicd/scripts/init.sh
+  # Build flogo/flogo-cli docker image
+  pushd ${SCRIPT_ROOT}
+  # TODO: change to build_and_push() after 0.2.0
+  docker::build flogo/flogo-cli
+  popd
+fi
