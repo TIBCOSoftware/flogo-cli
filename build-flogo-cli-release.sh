@@ -12,7 +12,8 @@ if [ -d "${SCRIPT_ROOT}/submodules/flogo-cicd" ]; then
   source ${SCRIPT_ROOT}/submodules/flogo-cicd/scripts/init.sh
   # Build flogo/flogo-cli docker image
   pushd ${SCRIPT_ROOT}
+  cp ${SCRIPT_ROOT}/submodules/flogo-cicd/docker/flogo-cli/Dockerfile .
   # TODO: change to build_and_push() after 0.2.0
-  docker::build flogo/flogo-cli
+  docker::build_and_push flogo/flogo-cli
   popd
 fi
