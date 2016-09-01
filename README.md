@@ -1,7 +1,7 @@
 # flogo
 > Command line tool for building **Flogo**-based applications.
 
-![Flogo icon](floyd.png)
+![Flogo icon](flynn.png)
 
 **Flogo** is process-flow engine written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IOT devices.
 
