@@ -12,9 +12,12 @@ import (
 
 var optCreate = &cli.OptionInfo{
 	Name:      "create",
-	UsageLine: "create AppName",
+	UsageLine: "create [-flv version] AppName",
 	Short:     "create a flogo project",
 	Long: `Creates a flogo project.
+
+Options:
+    -flv specify the flogo-lib version
 `,
 }
 
@@ -24,6 +27,7 @@ func init() {
 
 type cmdCreate struct {
 	option *cli.OptionInfo
+	libVersion string
 }
 
 func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
@@ -31,6 +35,7 @@ func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
 }
 
 func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
+	fs.StringVar(&(c.libVersion), "flv", "", "flogo-lib version")
 }
 
 func (c *cmdCreate) Exec(args []string) error {
@@ -69,8 +74,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	fmt.Fprint(os.Stdout, "Installing flogo lib...\n")
 
-	//todo should we add the ability to specify the flogo-lib version
-	err := gb.VendorFetch(pathFlogoLib, "")
+	err := gb.VendorFetch(pathFlogoLib, c.libVersion)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(2)

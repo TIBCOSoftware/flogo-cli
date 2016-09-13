@@ -21,8 +21,8 @@ var optAdd = &cli.OptionInfo{
 	Long: `Add an activity, flow, model, trigger or palette to a flogo project
 
 Options:
-    -src       copy contents to source (only when using file url)
-    -v version specifiy the version (resolves to a git tag with format 'v'{version}
+    -src        copy contents to source (only when using file url)
+    -v version  specifiy the version (resolves to a git tag with format 'v'{version}
 `,
 }
 

@@ -73,6 +73,12 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 
 	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
+	itemVersion := "latest"
+
+	if version != "" {
+		itemVersion = version
+	}
+
 	if ContainsItemPath(items, itemPath) {
 
 		if (ignoreDup) {
@@ -147,7 +153,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 
 		fgutil.CopyDir(fromDir, toDir)
 
-		return &ItemDescriptor{Name: itemName, Path: itemImportPath, Version: "latest", LocalPath: itemPath}, itemConfigPath
+		return &ItemDescriptor{Name: itemName, Path: itemImportPath, Version: itemVersion, LocalPath: itemPath}, itemConfigPath
 
 	} else {
 
@@ -173,7 +179,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		itemName, _ = getItemInfo(itemFile, itemType)
 		itemFile.Close()
 
-		return &ItemDescriptor{Name: itemName, Path: itemPath, Version: "latest"}, itemConfigPath
+		return &ItemDescriptor{Name: itemName, Path: itemPath, Version: itemVersion}, itemConfigPath
 	}
 }
 
