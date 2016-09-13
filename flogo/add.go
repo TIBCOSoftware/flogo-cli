@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"net/http"
 	"io/ioutil"
+	"strconv"
 )
 
 var optAdd = &cli.OptionInfo{
@@ -75,9 +76,46 @@ func (c *cmdAdd) Exec(args []string) error {
 		cmdUsage(c)
 	}
 
-	installItem(projectDescriptor, itemType, itemPath,  c.version, c.addToSrc)
+	version := c.version
+
+	idx := strings.LastIndex(itemPath, "@")
+
+	if idx > -1 {
+		v := itemPath[idx + 1:]
+
+		if isValidVersion(v) {
+			version = v
+			itemPath = itemPath[0:idx]
+		}
+	}
+
+	installItem(projectDescriptor, itemType, itemPath, version, c.addToSrc)
 
 	return nil
+}
+
+//todo validate that "s" a valid semver
+func isValidVersion(s string) bool {
+
+	if s == "" {
+		//assume latest version
+		return true
+	}
+
+	if s[0] == 'v' && len(s) > 1 && isNumeric(string(s[1])) {
+		return true
+	}
+
+	if isNumeric(string(s[0])) {
+		return true
+	}
+
+	return false;
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
 }
 
 func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, itemPath string, version string, addToSrc bool) {
@@ -230,7 +268,7 @@ func addPalette(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 
 	pathInfo, err := fgutil.GetPathInfo(itemPath)
 
-	if err != nil || (!pathInfo.IsLocal && !pathInfo.IsURL){
+	if err != nil || (!pathInfo.IsLocal && !pathInfo.IsURL) {
 		fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
 		os.Exit(2)
 	}
