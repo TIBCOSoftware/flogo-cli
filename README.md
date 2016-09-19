@@ -32,9 +32,9 @@ logo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 flogo add flow myflow.json
 flogo build
 ```
-```
-cd bin folder and open trigger.json
-Copy below trigger configuration into trigger.json.
+
+Cd bin folder and open trigger.json in a text editor
+Replace content of trigger.json with the following
 
 {
   "triggers": [
@@ -60,9 +60,9 @@ Copy below trigger configuration into trigger.json.
 }
 
 Start flogo engine by running ./myflow
-Flogo will start a REST Server and host GET resource /flow
-Request GET request to run the flow. eg: http://localhost:9999/flow
-```
+Flogo will start a REST server
+Send GET request to run the flow. eg: http://localhost:9999/flow
+
 For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
 ## Documentation
