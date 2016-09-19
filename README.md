@@ -36,6 +36,7 @@ flogo build
 Cd bin folder and open trigger.json in a text editor
 Replace content of trigger.json with the following
 
+```json
 {
   "triggers": [
     {
@@ -58,7 +59,7 @@ Replace content of trigger.json with the following
     }
   ]
 }
-
+```
 Start flogo engine by running ./myflow
 Flogo will start a REST server
 Send GET request to run the flow. eg: http://localhost:9999/flow
