@@ -20,15 +20,52 @@
 ## Getting Started
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
 
+
+- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json)
+
 ```bash
 flogo create myApp
 cd myApp
 
 flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
-flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
+logo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 flogo add flow myflow.json
 flogo build
 ```
+
+- Cd bin folder and open trigger.json in a text editor
+- Replace content of trigger.json with the following
+
+```json
+{
+  "triggers": [
+    {
+      "name": "tibco-rest",
+      "settings": {
+        "port": "9999"
+      },
+      "endpoints": [
+        {
+          "actionType": "flow",
+          "actionURI": "embedded://myflow",
+          "settings": {
+            "autoIdReply": "true",
+            "method": "GET",
+            "path": "/flow",
+            "useReplyHandler": "true"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+- Start flogo engine by running ./myflow
+- Flogo will start a REST server
+- Send GET request to run the flow. eg: http://localhost:9999/flow
+
+For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
 ## Documentation
 Additional documentation on flogo and the CLI tool
