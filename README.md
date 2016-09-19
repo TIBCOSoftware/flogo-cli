@@ -21,7 +21,7 @@
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
 
 
-Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json)
+- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json)
 
 ```bash
 flogo create myApp
@@ -33,8 +33,8 @@ flogo add flow myflow.json
 flogo build
 ```
 
-Cd bin folder and open trigger.json in a text editor
-Replace content of trigger.json with the following
+- Cd bin folder and open trigger.json in a text editor
+- Replace content of trigger.json with the following
 
 ```json
 {
@@ -60,9 +60,10 @@ Replace content of trigger.json with the following
   ]
 }
 ```
-Start flogo engine by running ./myflow
-Flogo will start a REST server
-Send GET request to run the flow. eg: http://localhost:9999/flow
+
+- Start flogo engine by running ./myflow
+- Flogo will start a REST server
+- Send GET request to run the flow. eg: http://localhost:9999/flow
 
 For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
