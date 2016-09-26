@@ -28,7 +28,7 @@ flogo create myApp
 cd myApp
 
 flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
-logo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
+flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 flogo add flow myflow.json
 flogo build
 ```
