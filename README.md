@@ -1,9 +1,9 @@
-# flogo
+# flogo-cli
 > Command line tool for building **Flogo**-based applications.
 
 ![Flogo icon](flynn.png)
 
-**Flogo** is process-flow engine written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IOT devices.
+**Flogo** is an IoT Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IoT devices.
 
 
 ## Installation
@@ -21,7 +21,7 @@
 This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
 
 
-- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json)
+- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json) to build your first application. You can also download more samples from the [samples folder](https://github.com/TIBCOSoftware/flogo/tree/master/samples) in the flogo repo. 
 
 ```bash
 flogo create myApp
@@ -93,4 +93,4 @@ Pull requests are also welcome. If you would like to submit one, please follow t
 Please submit a github issue if you would like to propose a significant change or request a new feature.
 
 ### Support
-For Q&A you can post your questions on [Slack](https://tibco-cloud.slack.com/messages/flogo-general/)
+You can post your questions via [GitHub issues](https://github.com/TIBCOSoftware/flogo/issues)
