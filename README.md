@@ -1,8 +1,6 @@
 # flogo-cli
 > Command line tool for building **Flogo**-based applications.
 
-![Flogo icon](flynn.png)
-
 **Flogo** is an IoT Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IoT devices.
 
 
@@ -93,6 +91,10 @@ Pull requests are also welcome. If you would like to submit one, please follow t
 
 
 Please submit a github issue if you would like to propose a significant change or request a new feature.
+
+##License
+flogo-cli is licensed under a BSD-type license. See TIBCO LICENSE.txt for license text.
+
 
 ### Support
 You can post your questions via [GitHub issues](https://github.com/TIBCOSoftware/flogo/issues)
