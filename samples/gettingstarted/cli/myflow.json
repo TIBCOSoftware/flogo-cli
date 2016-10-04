@@ -14,7 +14,7 @@
                     {
                         "name": "message",
                         "type": "string",
-                        "value": "Recevied rest request"
+                        "value": "Received rest request"
                     },
                     {
                         "name": "flowInfo",
