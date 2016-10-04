@@ -9,6 +9,7 @@
 ## Installation
 ### Prerequisites
 * The Go programming language should be [installed](https://golang.org/doc/install).
+* Set GOPATH environment variable on your system
 * In order to simplify development and building in Go, we are using the **gb** build tool.  It can be downloaded from [here](https://getgb.io).  
 
 ### Install flogo
@@ -29,6 +30,7 @@ cd myApp
 
 flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
 flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
+#Make sure myflow.json file under current location
 flogo add flow myflow.json
 flogo build
 ```
@@ -61,7 +63,7 @@ flogo build
 }
 ```
 
-- Start flogo engine by running ./myflow
+- Start flogo engine by running ./myApp
 - Flogo will start a REST server
 - Send GET request to run the flow. eg: http://localhost:9999/flow
 
