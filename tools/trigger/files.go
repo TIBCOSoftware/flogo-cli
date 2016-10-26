@@ -91,8 +91,9 @@ func (t *MyTrigger) Start() error {
 }
 
 // Stop implements trigger.Trigger.Start
-func (t *MyTrigger) Stop() {
+func (t *MyTrigger) Stop() error {
 	// stop the trigger
+	return nil
 }
 `
 
@@ -105,6 +106,7 @@ func createTriggerTestGoFile(codeSourcePath string, data interface{}) {
 var tplTriggerTestGoFile = `package {{.Name}}
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TIBCOSoftware/flogo-lib/core/action"
@@ -116,7 +118,6 @@ type TestRunner struct {
 
 // Run implements action.Runner.Run
 func (tr *TestRunner) Run(context context.Context, action action.Action, uri string, options interface{}) (code int, data interface{}, err error) {
-	log.Debugf("Ran Action: %v", uri)
 	return 0, nil, nil
 }
 
