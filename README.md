@@ -6,7 +6,7 @@
 
 ## Installation
 ### Prerequisites
-* The Go programming language should be [installed](https://golang.org/doc/install).
+* The Go programming language 1.7 or later should be [installed](https://golang.org/doc/install).
 * Set GOPATH environment variable on your system
 * In order to simplify development and building in Go, we are using the **gb** build tool.  It can be downloaded from [here](https://getgb.io).  
 
