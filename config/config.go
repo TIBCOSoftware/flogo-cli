@@ -1,4 +1,14 @@
-package main
+package fgutil
+
+import (
+	"os"
+	"fmt"
+	"encoding/json"
+)
+
+const (
+	projectDescriptorFile string = "flogo.json"
+)
 
 //////////////////////////////////////////////////////////////
 // ProjectDescriptor
@@ -9,24 +19,23 @@ type FlogoProjectDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Models     []*ItemDescriptor `json:"models"`
-	Activities []*ItemDescriptor `json:"activities"`
-	Triggers   []*ItemDescriptor `json:"triggers"`
+	Models      []*ItemDescriptor `json:"models"`
+	Activities  []*ItemDescriptor `json:"activities"`
+	Triggers    []*ItemDescriptor `json:"triggers"`
 }
 
 // FlogoPaletteDescriptor is the flogo palette descriptor object
 
 type FlogoExtensions struct {
-
 	Models     []*ItemDescriptor `json:"models"`
 	Activities []*ItemDescriptor `json:"activities"`
 	Triggers   []*ItemDescriptor `json:"triggers"`
 }
 
 type FlogoPaletteDescriptor struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
+	Name            string `json:"name"`
+	Version         string `json:"version"`
+	Description     string `json:"description"`
 
 	FlogoExtensions *FlogoExtensions `json:"extensions"`
 }
@@ -49,10 +58,10 @@ type TriggerProjectDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Settings []*ConfigValue `json:"settings"`
-	Outputs  []*ConfigValue `json:"outputs"`
+	Settings    []*ConfigValue `json:"settings"`
+	Outputs     []*ConfigValue `json:"outputs"`
 
-	Endpoint *EndpointDescriptor `json:"endpoint"`
+	Endpoint    *EndpointDescriptor `json:"endpoint"`
 }
 
 // EndpointDescriptor is the trigger endpoint descriptor object
@@ -82,7 +91,7 @@ type EngineConfig struct {
 
 // TriggersConfig is the triggers configuration object
 type TriggersConfig struct {
-	Triggers     []*TriggerConfig `json:"triggers"`
+	Triggers []*TriggerConfig `json:"triggers"`
 }
 
 // RunnerConfig is the runner configuration object
@@ -105,12 +114,14 @@ type PooledConfig struct {
 // TriggerConfig is the trigger configuration object
 type TriggerConfig struct {
 	Name      string            `json:"name"`
+	Type      string            `json:"type,omitempty"`
 	Settings  map[string]string `json:"settings"`
 	Endpoints []*EndpointConfig `json:"endpoints"`
 }
 
 // EndpointConfig is the endpoint configuration object
 type EndpointConfig struct {
+	ID         string            `json:"id,omitempty"`
 	ActionType string            `json:"actionType"`
 	ActionURI  string            `json:"actionURI"`
 	Settings   map[string]string `json:"settings"`
@@ -146,4 +157,26 @@ func DefaultTriggersConfig() *TriggersConfig {
 	tc.Triggers = make([]*TriggerConfig, 0)
 
 	return &tc
+}
+
+func LoadProjectDescriptor() *FlogoProjectDescriptor {
+
+	projectDescriptorFile, err := os.Open(projectDescriptorFile)
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Current working directory is not a flogo-based engine project.\n\n")
+		os.Exit(2)
+	}
+
+	projectDescriptor := &FlogoProjectDescriptor{}
+	jsonParser := json.NewDecoder(projectDescriptorFile)
+
+	if err = jsonParser.Decode(projectDescriptor); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Unable to parse flogo.json, file may be corrupted.\n - %s\n", err.Error())
+		os.Exit(2)
+	}
+
+	projectDescriptorFile.Close()
+
+	return projectDescriptor
 }
