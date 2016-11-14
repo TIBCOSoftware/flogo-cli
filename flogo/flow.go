@@ -15,11 +15,12 @@ import (
 	"net/url"
 	"net/http"
 	"path/filepath"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/flow/flowdef/schema.json"
 
-func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[string]string {
+func ImportFlows(projectDescriptor *config.FlogoProjectDescriptor, flowDir string) map[string]string {
 
 	flows := make(map[string]string)
 
@@ -87,7 +88,7 @@ func gzipAndB64(flowFilePath string) string {
 	return base64.StdEncoding.EncodeToString(b.Bytes())
 }
 
-func ValidateFlow(projectDescriptor *FlogoProjectDescriptor, flowPath string, isURL bool) {
+func ValidateFlow(projectDescriptor *config.FlogoProjectDescriptor, flowPath string, isURL bool) {
 
 	// first validate the flow json
 	validateFlowSchema(flowPath, isURL)

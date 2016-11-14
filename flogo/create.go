@@ -8,6 +8,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -81,13 +82,13 @@ func (c *cmdCreate) Exec(args []string) error {
 	}
 
 	// create flogo.json file
-	projectDescriptor := &FlogoProjectDescriptor{
+	projectDescriptor := &config.FlogoProjectDescriptor{
 		Name:        appName,
 		Version:     "0.0.1",
 		Description: "My flogo application description",
-		Activities:  make([]*ItemDescriptor, 0),
-		Triggers:    make([]*ItemDescriptor, 0),
-		Models:      make([]*ItemDescriptor, 0),
+		Activities:  make([]*config.ItemDescriptor, 0),
+		Triggers:    make([]*config.ItemDescriptor, 0),
+		Models:      make([]*config.ItemDescriptor, 0),
 	}
 
 	// todo: add ability to create project from existing project descriptor
@@ -104,11 +105,11 @@ func (c *cmdCreate) Exec(args []string) error {
 	createFlowsGoFile(gb.CodeSourcePath, make(map[string]string))
 
 	// create config.json file
-	engineConfig := DefaultEngineConfig()
+	engineConfig := config.DefaultEngineConfig()
 	fgutil.WriteJSONtoFile(gb.NewBinFilePath(fileEngineConfig), engineConfig)
 
 	// create triggers.json file
-	triggersConfig := DefaultTriggersConfig()
+	triggersConfig := config.DefaultTriggersConfig()
 	fgutil.WriteJSONtoFile(gb.NewBinFilePath(fileTriggersConfig), triggersConfig)
 
 	return nil

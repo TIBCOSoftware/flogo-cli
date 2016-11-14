@@ -3,170 +3,141 @@ package device
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
-	"encoding/json"
+	"text/template"
+	"strings"
+	"io"
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
-	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
-var optBuild = &cli.OptionInfo{
-	Name:      "build",
-	UsageLine: "build [-o][-i][-c configDir]",
-	Short:     "build the flogo application",
-	Long: `Build the flogo application.
-
-Options:
-    -o   optimize for embedded flows
-    -i   incorporate config into application
-    -c   specifiy configration directory
+var optPrepare = &cli.OptionInfo{
+	Name:      "prepare",
+	UsageLine: "prepare",
+	Short:     "prepare the device code",
+	Long: `Prepare the device code.
 `,
 }
 
-const fileFlowsGo string = "flows.go"
 
 func init() {
-	commandRegistry.RegisterCommand(&cmdBuild{option: optBuild})
+	Tool().CommandRegistry().RegisterCommand(&cmdPrepare{option: optPrepare})
 }
 
-type cmdBuild struct {
+type cmdPrepare struct {
 	option     *cli.OptionInfo
 	optimize   bool
 	includeCfg bool
 	configDir  string
 }
 
-func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
+func (c *cmdPrepare) OptionInfo() *cli.OptionInfo {
 	return c.option
 }
 
-func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
-	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
-	fs.StringVar(&(c.configDir), "c", "bin", "config directory")
+func (c *cmdPrepare) AddFlags(fs *flag.FlagSet) {
+
 }
 
-func (c *cmdBuild) Exec(args []string) error {
+func (c *cmdPrepare) Exec(args []string) error {
 
-	projectDescriptor := loadProjectDescriptor()
-
-	if len(args) > 1 {
-		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
-		cmdUsage(c)
+	if len(args) != 0 {
+		fmt.Fprint(os.Stderr, "Error: Too many arguments given\n\n")
+		Tool().CmdUsage(c)
 	}
 
-	gb := fgutil.NewGb(projectDescriptor.Name)
+	validateDependencies()
 
-	flows := ImportFlows(projectDescriptor, dirFlows)
-	createFlowsGoFile(gb.CodeSourcePath, flows)
+	descriptor := config.LoadProjectDescriptor();
+	triggersConfig := config.LoadTriggersConfig()
 
-	if len(projectDescriptor.Models) == 0 {
-		fmt.Fprint(os.Stderr, "Error: Project must have a least one model.\n\n")
-		os.Exit(2)
-	}
+	workingDir, _ := os.Getwd()
 
-	//if len(projectDescriptor.Triggers) == 0 {
-	//	fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
-	//	os.Exit(2)
-	//}
+	os.Mkdir("devices", 0777);
 
-	//allFlowExprs := getAllFlowExprs(dirFlows)
-	//fmt.Printf("all flow exprs: %v\n", allFlowExprs)
-	//
-	//allFlowTransExprs := make(map[string]map[int]string)
-	//
-	//if len(allFlowExprs) > 0 {
-	//
-	//	for flowURI, exprs := range allFlowExprs {
-	//
-	//		transExprs := convertExprsToGo(exprs)
-	//		allFlowTransExprs[flowURI] = transExprs
-	//	}
-	//}
-	//
-	//createExprsGoFile(gb.CodeSourcePath, allFlowTransExprs)
+	for  _, trigger := range triggersConfig.Triggers {
 
-	if c.optimize {
+		if trigger.Type == "device" {
 
-		//optimize activities
+			dirName := "devices/"+trigger.Name
 
-		activityTypes := getAllActivityTypes(dirFlows)
+			if !PioDirIsProject(dirName) {
+				os.Mkdir(dirName, 0777);
+				os.Chdir(dirName)
 
-		var activities []*ItemDescriptor
+				boardName := trigger.Settings["device:board"]
 
-		for  _, activity := range projectDescriptor.Activities {
+				triggerSourcePath := path(workingDir,findTriggerSourcePath(descriptor, trigger.Name))
+				devicesConfig := LoadDevicesConfig(triggerSourcePath)
 
-			if _, ok := activityTypes[activity.Name]; ok {
-				activities = append(activities, activity)
+				var device *DeviceConfig
+
+				for  _, deviceConfig := range devicesConfig.Devices {
+
+					if deviceConfig.Board == boardName {
+						device = deviceConfig
+						break
+					}
+				}
+
+				if device == nil {
+					fmt.Fprint(os.Stderr, "Error: device [%s] not supported\n\n")
+					os.Exit(2)
+				}
+
+				PioInit(boardName)
+				createSource(triggerSourcePath, path(dirName, "src"), device, trigger.Settings)
+
+				for  _, libConfig := range devicesConfig.Libs {
+
+					PioInstallLib(libConfig.ID)
+				}
+
+			} else {
+				fmt.Fprintf(os.Stdout, "Warning: Device Trigger %s has not been prepared.\n", trigger.Name)
 			}
+
+			os.Chdir(workingDir)
 		}
-
-		projectDescriptor.Activities = activities
-
-		//optimize triggers
-
-		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
-		triggersConfigFile, err := os.Open(triggersConfigPath)
-
-		triggersConfig := &TriggersConfig{}
-		jsonParser := json.NewDecoder(triggersConfigFile)
-
-		if err = jsonParser.Decode(triggersConfig); err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
-			os.Exit(2)
-		}
-
-		triggersConfigFile.Close()
-
-		if triggersConfig.Triggers == nil {
-			triggersConfig.Triggers = make([]*TriggerConfig, 0)
-		}
-
-		var triggers []*ItemDescriptor
-
-		for  _, trigger := range projectDescriptor.Triggers {
-
-			if ContainsTriggerConfig(triggersConfig.Triggers, trigger.Name)  {
-				triggers = append(triggers, trigger)
-			}
-		}
-
-		projectDescriptor.Triggers = triggers
-
-		createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
-	}
-
-	if c.includeCfg {
-
-		engineCfg, err := ioutil.ReadFile(filepath.Join(c.configDir, fileEngineConfig))
-
-		if err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to read engine.config -\n%s\n", err.Error())
-			os.Exit(2)
-		}
-
-		triggersCfg, err := ioutil.ReadFile(filepath.Join(c.configDir, fileTriggersConfig))
-
-		if err != nil {
-			fmt.Fprint(os.Stderr, "Error: Unable to read triggers.config -\n%s\n", err.Error())
-			os.Exit(2)
-		}
-
-		configInfo := &ConfigInfo{Include:true, ConfigJSON:string(engineCfg), TriggerJSON:string(triggersCfg)}
-
-		createEngineConfigGoFile(gb.CodeSourcePath, configInfo)
-
-	} else {
-		createEngineConfigGoFile(gb.CodeSourcePath, nil)
-	}
-
-	err := gb.Build()
-	if err != nil {
-		os.Exit(2)
 	}
 
 	return nil
 }
 
+func createSource(triggerSourcePath string, devicePath string, deviceConfig DeviceConfig, settings map[string]string) {
+
+	f, _ := os.Create(path(devicePath, deviceConfig.Source))
+	RenderFileTemplate(f, path(triggerSourcePath,deviceConfig.Template), settings)
+	f.Close()
+}
+
+func findTriggerSourcePath(descriptor *config.FlogoProjectDescriptor, triggerName string) string {
+
+	var triggerPath string;
+
+	for  _, trigger := range descriptor.Triggers {
+		if trigger.Name == triggerName {
+			triggerPath = "vendor/src/" + trigger.Path
+			break
+		}
+	}
+
+	return triggerPath
+}
+
+func path(parts ...string) string {
+	return strings.Join(parts[:], string(os.PathSeparator))
+}
+
+//RenderFileTemplate renders the specified template
+func RenderFileTemplate(w io.Writer, templateFile string, data interface{}) {
+
+	t := template.New("source")
+	t.Funcs(template.FuncMap{"trim": strings.TrimSpace})
+	t.ParseFiles(templateFile)
+
+	if err := t.Execute(w, data); err != nil {
+		panic(err)
+	}
+}

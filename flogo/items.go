@@ -8,6 +8,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"path/filepath"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 )
 
 // ContainsItemPath determines if the path exists in  list of ItemConfigs
-func ContainsItemPath(list []*ItemDescriptor, path string) bool {
+func ContainsItemPath(list []*config.ItemDescriptor, path string) bool {
 	for _, v := range list {
 		if v.Path == path {
 			return true
@@ -29,7 +30,7 @@ func ContainsItemPath(list []*ItemDescriptor, path string) bool {
 }
 
 // ContainsItemName determines if the path exists in  list of ItemConfigs
-func ContainsItemName(list []*ItemDescriptor, name string) bool {
+func ContainsItemName(list []*config.ItemDescriptor, name string) bool {
 	for _, v := range list {
 		if v.Name == name {
 			return true
@@ -39,7 +40,7 @@ func ContainsItemName(list []*ItemDescriptor, name string) bool {
 }
 
 // GetItemConfig gets the item config for the specified path or name
-func GetItemConfig(list []*ItemDescriptor, itemNameOrPath string) (int, *ItemDescriptor) {
+func GetItemConfig(list []*config.ItemDescriptor, itemNameOrPath string) (int, *config.ItemDescriptor) {
 
 	isPath := strings.Contains(itemNameOrPath, "/")
 
@@ -69,7 +70,7 @@ func getItemInfo(itemFile *os.File, itemType string) (string, string) {
 }
 
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
-func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version string, items []*ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *ItemDescriptor, itemConfigPath string) {
+func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version string, items []*config.ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *config.ItemDescriptor, itemConfigPath string) {
 
 	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
@@ -153,7 +154,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 
 		fgutil.CopyDir(fromDir, toDir)
 
-		return &ItemDescriptor{Name: itemName, Path: itemImportPath, Version: itemVersion, LocalPath: itemPath}, itemConfigPath
+		return &config.ItemDescriptor{Name: itemName, Path: itemImportPath, Version: itemVersion, LocalPath: itemPath}, itemConfigPath
 
 	} else {
 
@@ -179,12 +180,12 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		itemName, _ = getItemInfo(itemFile, itemType)
 		itemFile.Close()
 
-		return &ItemDescriptor{Name: itemName, Path: itemPath, Version: itemVersion}, itemConfigPath
+		return &config.ItemDescriptor{Name: itemName, Path: itemPath, Version: itemVersion}, itemConfigPath
 	}
 }
 
 // DelFlogoItem deletes an item(activity, model or trigger) from the flogo project
-func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items []*ItemDescriptor, useSrc bool) []*ItemDescriptor {
+func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items []*config.ItemDescriptor, useSrc bool) []*config.ItemDescriptor {
 
 	itemNameOrPath = strings.Replace(itemNameOrPath, "local://", fgutil.FileURIPrefix, 1)
 

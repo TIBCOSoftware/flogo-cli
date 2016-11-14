@@ -17,6 +17,7 @@ import (
 	_ "github.com/TIBCOSoftware/flogo-cli/tools/activity"
 	_ "github.com/TIBCOSoftware/flogo-cli/tools/model"
 	_ "github.com/TIBCOSoftware/flogo-cli/tools/trigger"
+	_ "github.com/TIBCOSoftware/flogo-cli/tools/device"
 )
 
 var (

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"strconv"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optAdd = &cli.OptionInfo{
@@ -50,7 +51,7 @@ func (c *cmdAdd) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdAdd) Exec(args []string) error {
 
-	projectDescriptor := loadProjectDescriptor()
+	projectDescriptor := config.LoadProjectDescriptor()
 
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, "Error: item type not specified\n\n")
@@ -118,7 +119,7 @@ func isNumeric(s string) bool {
 	return err == nil
 }
 
-func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, itemPath string, version string, addToSrc bool) {
+func installItem(projectDescriptor *config.FlogoProjectDescriptor, itemType string, itemPath string, version string, addToSrc bool) {
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
@@ -146,9 +147,9 @@ func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, ite
 	}
 }
 
-func addActivity(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addActivity(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
 
-	var itemConfig *ItemDescriptor
+	var itemConfig *config.ItemDescriptor
 
 	itemConfig, _ = AddFlogoItem(gb, itActivity, itemPath, version, projectDescriptor.Activities, addToSrc, ignoreDup)
 
@@ -158,9 +159,9 @@ func addActivity(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemP
 	}
 }
 
-func addModel(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addModel(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
 
-	var itemConfig *ItemDescriptor
+	var itemConfig *config.ItemDescriptor
 
 	itemConfig, _ = AddFlogoItem(gb, itModel, itemPath, version, projectDescriptor.Models, addToSrc, ignoreDup)
 	if itemConfig != nil {
@@ -169,9 +170,9 @@ func addModel(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath
 	}
 }
 
-func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addTrigger(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
 
-	var itemConfig *ItemDescriptor
+	var itemConfig *config.ItemDescriptor
 	var itemConfigPath string
 
 	itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, version, projectDescriptor.Triggers, addToSrc, ignoreDup)
@@ -190,7 +191,7 @@ func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 		os.Exit(2)
 	}
 
-	triggerProjectDescriptor := &TriggerProjectDescriptor{}
+	triggerProjectDescriptor := &config.TriggerProjectDescriptor{}
 	jsonParser := json.NewDecoder(triggerConfigFile)
 
 	if err = jsonParser.Decode(triggerProjectDescriptor); err != nil {
@@ -204,7 +205,7 @@ func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 	triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
 	triggersConfigFile, err := os.Open(triggersConfigPath)
 
-	triggersConfig := &TriggersConfig{}
+	triggersConfig := &config.TriggersConfig{}
 	jsonParser = json.NewDecoder(triggersConfigFile)
 
 	if err = jsonParser.Decode(triggersConfig); err != nil {
@@ -215,12 +216,12 @@ func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 	triggersConfigFile.Close()
 
 	if triggersConfig.Triggers == nil {
-		triggersConfig.Triggers = make([]*TriggerConfig, 0)
+		triggersConfig.Triggers = make([]*config.TriggerConfig, 0)
 	}
 
 	if !ContainsTriggerConfig(triggersConfig.Triggers, itemConfig.Name) {
 
-		triggerConfig := &TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
+		triggerConfig := &config.TriggerConfig{Name: itemConfig.Name, Settings: make(map[string]string)}
 
 		for _, v := range triggerProjectDescriptor.Settings {
 
@@ -235,7 +236,7 @@ func addTrigger(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 	fmt.Fprintf(os.Stdout, "Added Trigger: %s [%s]\n", itemConfig.Name, itemConfig.Path)
 }
 
-func addFlow(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool) {
+func addFlow(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, addToSrc bool) {
 
 	pathInfo, err := fgutil.GetPathInfo(itemPath)
 
@@ -264,7 +265,7 @@ func addFlow(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath 
 	createFlowsGoFile(gb.CodeSourcePath, flows)
 }
 
-func addPalette(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath string, addToSrc bool) {
+func addPalette(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, addToSrc bool) {
 
 	pathInfo, err := fgutil.GetPathInfo(itemPath)
 
@@ -307,7 +308,7 @@ func addPalette(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 		file, _ = ioutil.ReadFile(itemPath)
 	}
 
-	var paletteDescriptor *FlogoPaletteDescriptor
+	var paletteDescriptor *config.FlogoPaletteDescriptor
 	err = json.Unmarshal(file, &paletteDescriptor)
 
 	if err != nil {
@@ -331,7 +332,7 @@ func addPalette(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPa
 }
 
 // ContainsTriggerConfig determines if the list of TriggerConfigs contains the specified one
-func ContainsTriggerConfig(list []*TriggerConfig, triggerName string) bool {
+func ContainsTriggerConfig(list []*config.TriggerConfig, triggerName string) bool {
 	for _, v := range list {
 		if v.Name == triggerName {
 			return true

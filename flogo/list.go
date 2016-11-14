@@ -8,6 +8,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optList = &cli.OptionInfo{
@@ -36,7 +37,7 @@ func (c *cmdList) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdList) Exec(args []string) error {
 
-	projectDescriptor := loadProjectDescriptor()
+	projectDescriptor := config.LoadProjectDescriptor()
 
 	if len(args) > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")

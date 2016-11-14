@@ -8,6 +8,7 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"strings"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optDel = &cli.OptionInfo{
@@ -36,7 +37,7 @@ func (c *cmdDel) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdDel) Exec(args []string) error {
 
-	projectDescriptor := loadProjectDescriptor()
+	projectDescriptor := config.LoadProjectDescriptor()
 
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, "Error: item type not specified\n\n")

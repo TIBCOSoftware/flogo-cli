@@ -4,53 +4,54 @@ import (
 	"flag"
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"os"
+	"fmt"
 )
 
-var optBuild = &cli.OptionInfo{
-	Name:      "build",
-	UsageLine: "build",
-	Short:     "build the device firmware",
-	Long: `Build the device firmware.
+var optUpload = &cli.OptionInfo{
+	Name:      "upload",
+	UsageLine: "upload",
+	Short:     "upload the device firmware",
+	Long: `Upload the device firmware.
 `,
 }
 
 func init() {
-	Tool().CommandRegistry().RegisterCommand(&cmdBuild{option: optBuild})
+	Tool().CommandRegistry().RegisterCommand(&cmdUpload{option: optUpload})
 }
 
-type cmdBuild struct {
+type cmdUpload struct {
 	option     *cli.OptionInfo
 	optimize   bool
 	includeCfg bool
 	configDir  string
 }
 
-func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
+func (c *cmdUpload) OptionInfo() *cli.OptionInfo {
 	return c.option
 }
 
-func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
+func (c *cmdUpload) AddFlags(fs *flag.FlagSet) {
 
 }
 
-func (c *cmdBuild) Exec(args []string) error {
+func (c *cmdUpload) Exec(args []string) error {
 
-	//if cwd has platformio.ini
-	//   platformio run
+	if len(args) != 0 {
+		fmt.Fprint(os.Stderr, "Error: Too many arguments given\n\n")
+		Tool().CmdUsage(c)
+	}
 
-	//else
-	// load triggers file
-	// load project file
+	validateDependencies()
 
-	//  validate prepare step
-	//  for each trigger
-	//    if "device" trigger
-	//      check if devices/trigger/platformio.ini file exists
-    //
-	//  for each trigger
-	//    if "device" trigger
-	//      cd devices/trigger
-	//      platformio run
+	//todo support named triggers, for now only allow upload from device/trigger directory
+
+	if !PioIsProject() {
+		fmt.Fprint(os.Stderr, "Error: upload can only be run within the device trigger directory\n\n")
+		os.Exit(2)
+	}
+
+	PioUpload()
 
 	return nil
 }

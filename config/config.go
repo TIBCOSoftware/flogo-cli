@@ -1,13 +1,11 @@
-package fgutil
-
-import (
-	"os"
-	"fmt"
-	"encoding/json"
-)
+package config
 
 const (
-	projectDescriptorFile string = "flogo.json"
+	FileProjectDescriptor string = "flogo.json"
+	FileEngineConfig      string = "config.json"
+	FileTriggersConfig    string = "triggers.json"
+
+	PathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
 
 //////////////////////////////////////////////////////////////
@@ -159,24 +157,3 @@ func DefaultTriggersConfig() *TriggersConfig {
 	return &tc
 }
 
-func LoadProjectDescriptor() *FlogoProjectDescriptor {
-
-	projectDescriptorFile, err := os.Open(projectDescriptorFile)
-
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Error: Current working directory is not a flogo-based engine project.\n\n")
-		os.Exit(2)
-	}
-
-	projectDescriptor := &FlogoProjectDescriptor{}
-	jsonParser := json.NewDecoder(projectDescriptorFile)
-
-	if err = jsonParser.Decode(projectDescriptor); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Unable to parse flogo.json, file may be corrupted.\n - %s\n", err.Error())
-		os.Exit(2)
-	}
-
-	projectDescriptorFile.Close()
-
-	return projectDescriptor
-}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optBuild = &cli.OptionInfo{
@@ -50,7 +51,7 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 
 func (c *cmdBuild) Exec(args []string) error {
 
-	projectDescriptor := loadProjectDescriptor()
+	projectDescriptor := config.LoadProjectDescriptor()
 
 	if len(args) > 1 {
 		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
@@ -94,7 +95,7 @@ func (c *cmdBuild) Exec(args []string) error {
 
 		activityTypes := getAllActivityTypes(dirFlows)
 
-		var activities []*ItemDescriptor
+		var activities []*config.ItemDescriptor
 
 		for  _, activity := range projectDescriptor.Activities {
 
@@ -110,7 +111,7 @@ func (c *cmdBuild) Exec(args []string) error {
 		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
 		triggersConfigFile, err := os.Open(triggersConfigPath)
 
-		triggersConfig := &TriggersConfig{}
+		triggersConfig := &config.TriggersConfig{}
 		jsonParser := json.NewDecoder(triggersConfigFile)
 
 		if err = jsonParser.Decode(triggersConfig); err != nil {
@@ -121,10 +122,10 @@ func (c *cmdBuild) Exec(args []string) error {
 		triggersConfigFile.Close()
 
 		if triggersConfig.Triggers == nil {
-			triggersConfig.Triggers = make([]*TriggerConfig, 0)
+			triggersConfig.Triggers = make([]*config.TriggerConfig, 0)
 		}
 
-		var triggers []*ItemDescriptor
+		var triggers []*config.ItemDescriptor
 
 		for  _, trigger := range projectDescriptor.Triggers {
 

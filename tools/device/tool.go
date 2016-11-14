@@ -1,29 +1,39 @@
-package activity
+package device
 
 import (
 	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"fmt"
+	"os"
 )
 
-var optActivity = &cli.OptionInfo{
+var optDevice = &cli.OptionInfo{
 	IsTool:    true,
-	Name:      "activity",
-	UsageLine: "activity <command>",
-	Short:     "tool to manage an activity project",
-	Long:      "Tool for managing an activity project.",
+	Name:      "device",
+	UsageLine: "device <command>",
+	Short:     "tool to manage project devices",
+	Long:      "Tool for managing project devices.",
 }
 
-var activityTool *cli.Tool
+var deviceTool *cli.Tool
 
-// Tool gets or create the activity tool
+// Tool gets or create the device tool
 func Tool() *cli.Tool {
-	if activityTool == nil {
-		activityTool = cli.NewTool(optActivity)
-		cli.RegisterTool(activityTool)
+	if deviceTool == nil {
+		deviceTool = cli.NewTool(optDevice)
+		cli.RegisterTool(deviceTool)
 	}
 
-	return activityTool
+	return deviceTool
 }
 
 func init() {
 	Tool()
+}
+
+func validateDependencies() {
+
+	if !PioInstalled(){
+		fmt.Fprint(os.Stderr, "Error: platformio not installed on your system\n\n")
+		os.Exit(2)
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
 
-func createMainGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
+func createMainGoFile(codeSourcePath string, projectDescriptor *config.FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplMainGoFile, projectDescriptor)
 	f.Close()
@@ -171,7 +172,7 @@ func GetTriggersConfig() *engine.TriggersConfig {
 }
 `
 
-func createImportsGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
+func createImportsGoFile(codeSourcePath string, projectDescriptor *config.FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, projectDescriptor)
 	f.Close()
