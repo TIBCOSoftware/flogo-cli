@@ -241,7 +241,6 @@ func DeleteFilesWithPrefix(dir string, filePrefix string) int {
 	return deleted
 }
 
-
 func IsDirectoryEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {
@@ -256,3 +255,4 @@ func IsDirectoryEmpty(name string) (bool, error) {
 	}
 	return false, err
 }
+

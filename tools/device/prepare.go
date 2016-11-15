@@ -10,6 +10,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/config"
+	"io/ioutil"
 )
 
 var optPrepare = &cli.OptionInfo{
@@ -60,7 +61,9 @@ func (c *cmdPrepare) Exec(args []string) error {
 
 		if trigger.Type == "device" {
 
-			dirName := "devices/"+trigger.Name
+			dirName := path(workingDir,"devices",trigger.Name)
+
+			fmt.Printf("PioDir File: %s\n", dirName)
 
 			if !PioDirIsProject(dirName) {
 				os.Mkdir(dirName, 0777);
@@ -75,6 +78,8 @@ func (c *cmdPrepare) Exec(args []string) error {
 
 				for  _, deviceConfig := range devicesConfig.Devices {
 
+					fmt.Printf("Device: %v\n", deviceConfig)
+
 					if deviceConfig.Board == boardName {
 						device = deviceConfig
 						break
@@ -82,12 +87,23 @@ func (c *cmdPrepare) Exec(args []string) error {
 				}
 
 				if device == nil {
-					fmt.Fprint(os.Stderr, "Error: device [%s] not supported\n\n")
+					fmt.Fprintf(os.Stderr, "Error: device [%s] not supported\n\n", boardName)
 					os.Exit(2)
 				}
 
 				PioInit(boardName)
-				createSource(triggerSourcePath, path(dirName, "src"), device, trigger.Settings)
+
+				epSettings := make([]map[string]string, len(trigger.Endpoints))
+
+				//var epSettings = [len(trigger.Endpoints)]map[string]string{}
+
+				for  i, endpoint := range trigger.Endpoints {
+					epSettings[i] = endpoint.Settings
+				}
+
+				settingsConfig := &SettingsConfig{Settings:trigger.Settings, EndpointSettings:epSettings}
+
+				createSource(triggerSourcePath, path(dirName, "src"), device, settingsConfig)
 
 				for  _, libConfig := range devicesConfig.Libs {
 
@@ -95,7 +111,7 @@ func (c *cmdPrepare) Exec(args []string) error {
 				}
 
 			} else {
-				fmt.Fprintf(os.Stdout, "Warning: Device Trigger %s has not been prepared.\n", trigger.Name)
+				fmt.Fprintf(os.Stdout, "Warning: Device Trigger %s has already been prepared.\n", trigger.Name)
 			}
 
 			os.Chdir(workingDir)
@@ -105,7 +121,7 @@ func (c *cmdPrepare) Exec(args []string) error {
 	return nil
 }
 
-func createSource(triggerSourcePath string, devicePath string, deviceConfig DeviceConfig, settings map[string]string) {
+func createSource(triggerSourcePath string, devicePath string, deviceConfig *DeviceConfig, settings *SettingsConfig) {
 
 	f, _ := os.Create(path(devicePath, deviceConfig.Source))
 	RenderFileTemplate(f, path(triggerSourcePath,deviceConfig.Template), settings)
@@ -133,11 +149,34 @@ func path(parts ...string) string {
 //RenderFileTemplate renders the specified template
 func RenderFileTemplate(w io.Writer, templateFile string, data interface{}) {
 
+	if (!fileExists(templateFile)) {
+		fmt.Fprint(os.Stderr, "Error: template file not found\n\n")
+		os.Exit(2)
+	}
+
 	t := template.New("source")
-	t.Funcs(template.FuncMap{"trim": strings.TrimSpace})
-	t.ParseFiles(templateFile)
+	t.Funcs(DeviceFuncMap)
+
+	fmt.Printf("Template File: %s\n", templateFile)
+
+	b, err := ioutil.ReadFile(templateFile)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: unable to read template file\n\n")
+		os.Exit(2)
+	}
+	s := string(b)
+
+	t.Parse(s)
 
 	if err := t.Execute(w, data); err != nil {
 		panic(err)
 	}
+}
+
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }
