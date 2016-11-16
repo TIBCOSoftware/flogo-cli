@@ -12,10 +12,10 @@ import (
 
 const (
 	itActivity = "activity"
-	itTrigger = "trigger"
-	itModel = "model"
-	itFlow = "flow"
-	itPalette = "palette"
+	itTrigger  = "trigger"
+	itModel    = "model"
+	itFlow     = "flow"
+	itPalette  = "palette"
 )
 
 // ContainsItemPath determines if the path exists in  list of ItemConfigs
@@ -79,22 +79,19 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		itemVersion = version
 	}
 
-	if ContainsItemPath(items, itemPath) {
-
-		if (ignoreDup) {
-			fmt.Fprintf(os.Stdout, "Warning: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
+	if err := checkPathDuplicate(items, itemPath, itemType); err != nil {
+		if ignoreDup {
+			fmt.Fprintf(os.Stdout, "Warning: %s\n\n", err.Error())
 			return nil, ""
-
-		} else {
-			fmt.Fprintf(os.Stderr, "Error: %s '%s' is already in the project.\n\n", fgutil.Capitalize(itemType), itemPath)
-			os.Exit(2)
 		}
+		fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
+		os.Exit(2)
 	}
 
 	pathInfo, err := fgutil.GetPathInfo(itemPath)
 
 	if err != nil {
-		fmt.Fprint(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
+		fmt.Fprintf(os.Stderr, "Error: Invalid path '%s'\n", itemPath)
 		os.Exit(2)
 	}
 
@@ -109,12 +106,12 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 
 		usesGb := false
 
-		itemConfigPath = filepath.Join(pathInfo.FilePath, itemType + ".json")
+		itemConfigPath = filepath.Join(pathInfo.FilePath, itemType+".json")
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
 			itemFile.Close()
-			itemConfigPath = path(pathInfo.FilePath, "src", itemType + ".json")
+			itemConfigPath = path(pathInfo.FilePath, "src", itemType+".json")
 			itemFile, err = os.Open(itemConfigPath)
 
 			usesGb = true
@@ -133,7 +130,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		if len(itemImportPath) > 0 {
 
 			if itemType != itModel && filepath.Base(itemImportPath) == "runtime" {
-				itemImportPath = itemImportPath[:len(itemImportPath) - 8]
+				itemImportPath = itemImportPath[:len(itemImportPath)-8]
 			}
 		} else {
 			itemImportPath = filepath.Join(itemType, itemName)
@@ -153,6 +150,15 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 
 		fgutil.CopyDir(fromDir, toDir)
 
+		if err = checkNameDuplicate(items, itemName, itemType); err != nil {
+			if ignoreDup {
+				fmt.Fprintf(os.Stdout, "Warning: %s\n\n", err.Error())
+				return nil, ""
+			}
+			fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
+			os.Exit(2)
+		}
+
 		return &ItemDescriptor{Name: itemName, Path: itemImportPath, Version: itemVersion, LocalPath: itemPath}, itemConfigPath
 
 	} else {
@@ -167,7 +173,7 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 			os.Exit(2)
 		}
 
-		itemConfigPath = filepath.Join(gb.VendorPath, itemPath, itemType + ".json")
+		itemConfigPath = filepath.Join(gb.VendorPath, itemPath, itemType+".json")
 		itemFile, err := os.Open(itemConfigPath)
 
 		if err != nil {
@@ -179,8 +185,31 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		itemName, _ = getItemInfo(itemFile, itemType)
 		itemFile.Close()
 
+		if err = checkNameDuplicate(items, itemName, itemType); err != nil {
+			if ignoreDup {
+				fmt.Fprintf(os.Stdout, "Warning: %s\n\n", err.Error())
+				return nil, ""
+			}
+			fmt.Fprintf(os.Stderr, "Error: %s\n\n", err.Error())
+			os.Exit(2)
+		}
+
 		return &ItemDescriptor{Name: itemName, Path: itemPath, Version: itemVersion}, itemConfigPath
 	}
+}
+
+func checkPathDuplicate(items []*ItemDescriptor, itemPath, itemType string) error {
+	if ContainsItemPath(items, itemPath) {
+		return fmt.Errorf("%s '%s' is already in the project.", fgutil.Capitalize(itemType), itemPath)
+	}
+	return nil
+}
+
+func checkNameDuplicate(items []*ItemDescriptor, itemName, itemType string) error {
+	if ContainsItemName(items, itemName) {
+		return fmt.Errorf("%s '%s' is already in the project.", fgutil.Capitalize(itemType), itemName)
+	}
+	return nil
 }
 
 // DelFlogoItem deletes an item(activity, model or trigger) from the flogo project
@@ -198,7 +227,7 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 	if itemConfig.Local() {
 
 		// delete it from source and vendor
-		toVendorDir :=filepath.Join(gb.VendorPath, itemConfig.Path)
+		toVendorDir := filepath.Join(gb.VendorPath, itemConfig.Path)
 		toSourceDir := filepath.Join(gb.SourcePath, itemConfig.Path)
 
 		os.RemoveAll(toVendorDir)
@@ -215,5 +244,5 @@ func DelFlogoItem(gb *fgutil.Gb, itemType string, itemNameOrPath string, items [
 		}
 	}
 
-	return append(items[:toRemove], items[toRemove + 1:]...)
+	return append(items[:toRemove], items[toRemove+1:]...)
 }
