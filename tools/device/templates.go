@@ -21,7 +21,7 @@ var DeviceFuncMap = template.FuncMap {
 	},
 
 	"getPinNum": func(pinName string) string {
-		return pinName[1:];
+		return pinName[2:];
 	},
 
 	"setting": func(ctx interface{}, key string) string {

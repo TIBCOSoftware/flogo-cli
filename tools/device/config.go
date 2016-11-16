@@ -12,6 +12,7 @@ type DevicesConfig struct {
 }
 
 type DeviceConfig struct {
+	Type     string  `json:"type"`
 	Board    string  `json:"board"`
 	Template string  `json:"template"`
 	Source   string  `json:"source"`

@@ -69,7 +69,7 @@ func (c *cmdPrepare) Exec(args []string) error {
 				os.Mkdir(dirName, 0777);
 				os.Chdir(dirName)
 
-				boardName := trigger.Settings["device:board"]
+				deviceType := trigger.Settings["device:type"]
 
 				triggerSourcePath := path(workingDir,findTriggerSourcePath(descriptor, trigger.Name))
 				devicesConfig := LoadDevicesConfig(triggerSourcePath)
@@ -80,18 +80,18 @@ func (c *cmdPrepare) Exec(args []string) error {
 
 					fmt.Printf("Device: %v\n", deviceConfig)
 
-					if deviceConfig.Board == boardName {
+					if deviceConfig.Type == deviceType {
 						device = deviceConfig
 						break
 					}
 				}
 
 				if device == nil {
-					fmt.Fprintf(os.Stderr, "Error: device [%s] not supported\n\n", boardName)
+					fmt.Fprintf(os.Stderr, "Error: device type [%s] not supported\n\n", deviceType)
 					os.Exit(2)
 				}
 
-				PioInit(boardName)
+				PioInit(device.Board)
 
 				epSettings := make([]map[string]string, len(trigger.Endpoints))
 
@@ -107,6 +107,7 @@ func (c *cmdPrepare) Exec(args []string) error {
 
 				for  _, libConfig := range devicesConfig.Libs {
 
+					fmt.Fprintf(os.Stdout, "Installing Lib: %v\n", libConfig)
 					PioInstallLib(libConfig.ID)
 				}
 
