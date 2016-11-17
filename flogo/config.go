@@ -17,7 +17,6 @@ type FlogoProjectDescriptor struct {
 // FlogoPaletteDescriptor is the flogo palette descriptor object
 
 type FlogoExtensions struct {
-
 	Models     []*ItemDescriptor `json:"models"`
 	Activities []*ItemDescriptor `json:"activities"`
 	Triggers   []*ItemDescriptor `json:"triggers"`
@@ -82,7 +81,7 @@ type EngineConfig struct {
 
 // TriggersConfig is the triggers configuration object
 type TriggersConfig struct {
-	Triggers     []*TriggerConfig `json:"triggers"`
+	Triggers []*TriggerConfig `json:"triggers"`
 }
 
 // RunnerConfig is the runner configuration object

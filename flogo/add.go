@@ -9,9 +9,9 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"net/url"
-	"net/http"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -81,7 +81,7 @@ func (c *cmdAdd) Exec(args []string) error {
 	idx := strings.LastIndex(itemPath, "@")
 
 	if idx > -1 {
-		v := itemPath[idx + 1:]
+		v := itemPath[idx+1:]
 
 		if isValidVersion(v) {
 			version = v
@@ -110,7 +110,7 @@ func isValidVersion(s string) bool {
 		return true
 	}
 
-	return false;
+	return false
 }
 
 func isNumeric(s string) bool {
@@ -121,6 +121,11 @@ func isNumeric(s string) bool {
 func installItem(projectDescriptor *FlogoProjectDescriptor, itemType string, itemPath string, version string, addToSrc bool) {
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
+
+	if !gb.Installed() {
+		fmt.Fprintf(os.Stderr, "Error: gb builder is not installed\n")
+		os.Exit(2)
+	}
 
 	updateFiles := true
 
@@ -254,9 +259,9 @@ func addFlow(gb *fgutil.Gb, projectDescriptor *FlogoProjectDescriptor, itemPath 
 
 	ValidateFlow(projectDescriptor, itemPath, pathInfo.IsURL)
 
-	if (pathInfo.IsLocal) {
+	if pathInfo.IsLocal {
 		fgutil.CopyFile(pathInfo.FilePath, path("flows", pathInfo.FileName))
-	} else if (pathInfo.IsURL) {
+	} else if pathInfo.IsURL {
 		fgutil.CopyRemoteFile(pathInfo.FileURL.String(), path("flows", pathInfo.FileName))
 	}
 

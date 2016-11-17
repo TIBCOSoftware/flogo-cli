@@ -64,7 +64,7 @@ func (e *Gb) VendorFetch(path string, version string) error {
 			tag = version
 		}
 
-		cmd = exec.Command("gb", "vendor", "fetch","-tag", tag , path)
+		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, path)
 	}
 
 	cmd.Stdout = os.Stdout
