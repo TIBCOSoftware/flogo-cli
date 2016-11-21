@@ -18,13 +18,14 @@ import (
 
 var optAdd = &cli.OptionInfo{
 	Name:      "add",
-	UsageLine: "add [-src] [-v version[ <activity|model|trigger|flow> <path>",
+	UsageLine: "add [-src] [-v version[ [-b branch] <activity|model|trigger|flow> <path>",
 	Short:     "add an activity, flow, model, trigger or palette to a flogo project",
 	Long: `Add an activity, flow, model, trigger or palette to a flogo project
 
 Options:
     -src        copy contents to source (only when using file url)
     -v version  specifiy the version (resolves to a git tag with format 'v'{version}
+    -b branch   specify the branch to use
 `,
 }
 
@@ -38,6 +39,7 @@ type cmdAdd struct {
 	option   *cli.OptionInfo
 	addToSrc bool
 	version  string
+	branch   string
 }
 
 func (c *cmdAdd) OptionInfo() *cli.OptionInfo {
@@ -47,6 +49,7 @@ func (c *cmdAdd) OptionInfo() *cli.OptionInfo {
 func (c *cmdAdd) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.addToSrc), "src", false, "copy contents to source (only when using local/file)")
 	fs.StringVar(&(c.version), "v", "", "version")
+	fs.StringVar(&(c.branch), "b", "", "branch")
 }
 
 func (c *cmdAdd) Exec(args []string) error {
@@ -77,20 +80,30 @@ func (c *cmdAdd) Exec(args []string) error {
 		cmdUsage(c)
 	}
 
-	version := c.version
+	label := ""
+	isBranch := false
 
-	idx := strings.LastIndex(itemPath, "@")
+	if c.branch != "" {
+		label = c.branch
+		isBranch = true
 
-	if idx > -1 {
-		v := itemPath[idx + 1:]
+	} else {
 
-		if isValidVersion(v) {
-			version = v
-			itemPath = itemPath[0:idx]
+		label = c.version
+
+		idx := strings.LastIndex(itemPath, "@")
+
+		if idx > -1 {
+			v := itemPath[idx + 1:]
+
+			if isValidVersion(v) {
+				label = v
+				itemPath = itemPath[0:idx]
+			}
 		}
 	}
 
-	installItem(projectDescriptor, itemType, itemPath, version, c.addToSrc)
+	installItem(projectDescriptor, itemType, itemPath, label, isBranch, c.addToSrc)
 
 	return nil
 }
@@ -119,7 +132,7 @@ func isNumeric(s string) bool {
 	return err == nil
 }
 
-func installItem(projectDescriptor *config.FlogoProjectDescriptor, itemType string, itemPath string, version string, addToSrc bool) {
+func installItem(projectDescriptor *config.FlogoProjectDescriptor, itemType string, itemPath string, label string, isBranch bool, addToSrc bool) {
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
@@ -127,11 +140,11 @@ func installItem(projectDescriptor *config.FlogoProjectDescriptor, itemType stri
 
 	switch itemType {
 	case itActivity:
-		addActivity(gb, projectDescriptor, itemPath, version, addToSrc, false)
+		addActivity(gb, projectDescriptor, itemPath, label, isBranch, addToSrc, false)
 	case itModel:
-		addModel(gb, projectDescriptor, itemPath, version, addToSrc, false)
+		addModel(gb, projectDescriptor, itemPath, label, isBranch, addToSrc, false)
 	case itTrigger:
-		addTrigger(gb, projectDescriptor, itemPath, version, addToSrc, false)
+		addTrigger(gb, projectDescriptor, itemPath, label, isBranch, addToSrc, false)
 	case itFlow:
 		updateFiles = false
 		addFlow(gb, projectDescriptor, itemPath, addToSrc)
@@ -147,11 +160,11 @@ func installItem(projectDescriptor *config.FlogoProjectDescriptor, itemType stri
 	}
 }
 
-func addActivity(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addActivity(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, label string, isBranch bool, addToSrc bool, ignoreDup bool) {
 
 	var itemConfig *config.ItemDescriptor
 
-	itemConfig, _ = AddFlogoItem(gb, itActivity, itemPath, version, projectDescriptor.Activities, addToSrc, ignoreDup)
+	itemConfig, _ = AddFlogoItem(gb, itActivity, itemPath, label, isBranch, projectDescriptor.Activities, addToSrc, ignoreDup)
 
 	if itemConfig != nil {
 		projectDescriptor.Activities = append(projectDescriptor.Activities, itemConfig)
@@ -159,23 +172,23 @@ func addActivity(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor
 	}
 }
 
-func addModel(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addModel(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, label string, isBranch bool, addToSrc bool, ignoreDup bool) {
 
 	var itemConfig *config.ItemDescriptor
 
-	itemConfig, _ = AddFlogoItem(gb, itModel, itemPath, version, projectDescriptor.Models, addToSrc, ignoreDup)
+	itemConfig, _ = AddFlogoItem(gb, itModel, itemPath, label, isBranch, projectDescriptor.Models, addToSrc, ignoreDup)
 	if itemConfig != nil {
 		projectDescriptor.Models = append(projectDescriptor.Models, itemConfig)
 		fmt.Fprintf(os.Stdout, "Added Model: %s [%s]\n", itemConfig.Name, itemConfig.Path)
 	}
 }
 
-func addTrigger(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, version string, addToSrc bool, ignoreDup bool) {
+func addTrigger(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor, itemPath string, label string, isBranch bool, addToSrc bool, ignoreDup bool) {
 
 	var itemConfig *config.ItemDescriptor
 	var itemConfigPath string
 
-	itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, version, projectDescriptor.Triggers, addToSrc, ignoreDup)
+	itemConfig, itemConfigPath = AddFlogoItem(gb, itTrigger, itemPath, label, isBranch, projectDescriptor.Triggers, addToSrc, ignoreDup)
 
 	if itemConfig == nil {
 		return
@@ -321,13 +334,13 @@ func addPalette(gb *fgutil.Gb, projectDescriptor *config.FlogoProjectDescriptor,
 	activities := paletteDescriptor.FlogoExtensions.Activities
 
 	for _, activity := range activities {
-		addActivity(gb, projectDescriptor, activity.Path, activity.Version, true, true)
+		addActivity(gb, projectDescriptor, activity.Path, activity.Version, false, true, true)
 	}
 
 	triggers := paletteDescriptor.FlogoExtensions.Triggers
 
 	for _, trigger := range triggers {
-		addTrigger(gb, projectDescriptor, trigger.Path, trigger.Version, true, true)
+		addTrigger(gb, projectDescriptor, trigger.Path, trigger.Version, false, true, true)
 	}
 }
 

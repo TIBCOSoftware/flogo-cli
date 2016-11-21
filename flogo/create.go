@@ -95,7 +95,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	// install default model
 	fmt.Fprint(os.Stdout, "Installing default flow model...\n")
-	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", "", false)
+	installItem(projectDescriptor, itModel, "github.com/TIBCOSoftware/flogo-contrib/model/simple", "", false, false)
 
 	createMainGoFile(gb.CodeSourcePath, projectDescriptor)
 	createEngineConfigGoFile(gb.CodeSourcePath, nil)

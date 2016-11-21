@@ -34,7 +34,7 @@ var DeviceFuncMap = template.FuncMap {
 		return config.EndpointSettings[id][key]
 	},
 
-	"debug": func(ctx interface{}) string {
+	"debug": func(ctx interface{}) bool {
 		config := ctx.(*SettingsConfig)
 		debug := config.Settings["device:debug"]
 		return debug == "true"

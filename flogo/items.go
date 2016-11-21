@@ -70,14 +70,14 @@ func getItemInfo(itemFile *os.File, itemType string) (string, string) {
 }
 
 // AddFlogoItem adds an item(activity, model or trigger) to the flogo project
-func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version string, items []*config.ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *config.ItemDescriptor, itemConfigPath string) {
+func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, label string, isBranch bool, items []*config.ItemDescriptor, addToSrc bool, ignoreDup bool) (itemConfig *config.ItemDescriptor, itemConfigPath string) {
 
 	itemPath = strings.Replace(itemPath, "local://", fgutil.FileURIPrefix, 1)
 
 	itemVersion := "latest"
 
-	if version != "" {
-		itemVersion = version
+	if !isBranch && label != "" {
+		itemVersion = label
 	}
 
 	if ContainsItemPath(items, itemPath) {
@@ -163,10 +163,19 @@ func AddFlogoItem(gb *fgutil.Gb, itemType string, itemPath string, version strin
 		//gb vendor delete for now, need proper cleanup on error
 		gb.VendorDeleteSilent(itemPath)
 
-		err := gb.VendorFetch(itemPath, version)
-		if err != nil {
-			os.Exit(2)
+		if isBranch && label != "" {
+			err := gb.VendorFetchBranch(itemPath, label)
+			if err != nil {
+				os.Exit(2)
+			}
+
+		} else {
+			err := gb.VendorFetch(itemPath, label)
+			if err != nil {
+				os.Exit(2)
+			}
 		}
+
 
 		itemConfigPath = filepath.Join(gb.VendorPath, itemPath, itemType + ".json")
 		itemFile, err := os.Open(itemConfigPath)
