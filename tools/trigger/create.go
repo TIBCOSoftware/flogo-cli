@@ -12,12 +12,11 @@ import (
 
 var optCreate = &cli.OptionInfo{
 	Name:      "create",
-	UsageLine: "create [-no_ui] [-no_gb] triggerName",
+	UsageLine: "create [-no_gb] triggerName",
 	Short:     "create an trigger project",
 	Long: `Creates a flogo trigger project.
 
 Options:
-    -no_ui    generate trigger ui
     -no_gb       generate without gb structure
 
 `,
@@ -29,7 +28,6 @@ func init() {
 
 type cmdCreate struct {
 	option *cli.OptionInfo
-	noUI   bool
 	noGB   bool
 }
 
@@ -38,7 +36,6 @@ func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
 }
 
 func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&(c.noUI), "no-ui", false, "generate ui components")
 	fs.BoolVar(&(c.noGB), "nogb", false, "generate without gb structure")
 }
 
@@ -89,20 +86,11 @@ func (c *cmdCreate) Exec(args []string) error {
 		srcPath = gb.SourcePath
 		codeSrcPath = gb.CodeSourcePath
 
-		if !c.noUI {
-			// create ui directory
-			os.Mkdir(path(gb.SourcePath, dirUI), 0777)
-		}
-
 	} else {
 		os.MkdirAll(dirRT, 0777)
 		srcPath = ""
 		codeSrcPath = dirRT
 
-		if !c.noUI {
-			// create ui directory
-			os.Mkdir(dirUI, 0777)
-		}
 	}
 
 	data := struct {
