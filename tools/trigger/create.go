@@ -12,12 +12,11 @@ import (
 
 var optCreate = &cli.OptionInfo{
 	Name:      "create",
-	UsageLine: "create [-no_ui] [-no_gb] triggerName",
+	UsageLine: "create [-no_gb] triggerName",
 	Short:     "create an trigger project",
 	Long: `Creates a flogo trigger project.
 
 Options:
-    -no_ui    generate trigger ui
     -no_gb       generate without gb structure
 
 `,

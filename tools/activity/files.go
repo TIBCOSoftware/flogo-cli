@@ -12,7 +12,6 @@ const (
 	fileActivityTestGo string = "activity_test.go"
 	fileActivityMdGo   string = "activity_metadata.go"
 
-	dirUI string = "ui"
 	dirRT string = "runtime"
 )
 
