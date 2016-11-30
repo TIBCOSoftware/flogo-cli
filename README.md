@@ -75,7 +75,8 @@ Additional documentation on flogo and the CLI tool
     - creating an [activity](docs/activity.md)
     - creating a [trigger](docs/trigger.md)
     - creating a [model](docs/model.md)
-
+    - working with a [device](docs/device.md)
+    
 ## Contributing and support
 
 ### Contributing
