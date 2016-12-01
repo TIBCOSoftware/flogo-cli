@@ -89,8 +89,8 @@ flogo add flow myflow.json
 
 ```
 
-- Cd bin folder and open trigger.json in a text editor
-- Replace content of trigger.json with the following
+- Cd bin folder and open triggers.json in a text editor
+- Replace content of triggers.json with the following
 
 ```json
 {
