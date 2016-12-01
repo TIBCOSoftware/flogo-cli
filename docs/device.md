@@ -73,3 +73,69 @@ The device trigger must be configured in the *triggers.json* prior to using the 
 }
 
 ```
+## Getting Started
+This simple example demonstrates how to create a simple flogo application that has a log activity and device trigger.  The device used for this example is an [Adafruit Feather M0 WiFi](https://learn.adafruit.com/adafruit-feather-m0-wifi-atwinc1500).  It also assumes that you have a digital button attached to pin A3 which will trigger the flow.
+
+- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json) to build your application. You can also download more samples from the [samples folder](https://github.com/TIBCOSoftware/flogo/tree/master/samples) in the flogo repo. 
+
+```bash
+flogo create myDeviceApp
+cd myDeviceApp
+
+flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
+flogo add -b device-trigger trigger github.com/TIBCOSoftware/flogo-contrib/trigger/device
+#Make sure myflow.json file under current location
+flogo add flow myflow.json
+
+```
+
+- Cd bin folder and open trigger.json in a text editor
+- Replace content of trigger.json with the following
+
+```json
+{
+  "triggers": [
+    {
+      "name": "tibco-device",
+      "type": "device",
+      "settings": {
+        "mqtt_server":"192.168.1.50",
+        "mqtt_user":"",
+        "mqtt_pass":"",
+        "device:name":"myarduino",
+        "device:type":"feather_m0_wifi",
+        "device:ssid":"mynetwork",
+        "device:wifi_password": "mypass"
+      },
+      "endpoints": [
+        {
+          "actionType": "flow",
+          "actionURI": "embedded://myflow",
+          "settings": {
+            "device:pin": "D:A3",
+            "device:condition": "== HIGH",
+            "device:response_pin": "D:A4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+- Prepare and build the device
+- Build the flogo application
+- Upload the device firmware
+
+```bash
+flogo device prepare
+flogo device build
+flogo build
+
+cd devices/tibco-device
+flogo device upload
+```
+- Note: Your MQTT server needs to be running.
+- Start flogo engine by running ./myDeviceApp
+- Press the button to trigger the flow
+
+For more details about the Device Trigger go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/device-trigger/trigger/device)
