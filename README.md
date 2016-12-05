@@ -92,6 +92,21 @@ Pull requests are also welcome. If you would like to submit one, please follow t
 
 Please submit a github issue if you would like to propose a significant change or request a new feature.
 
+### Build flogo from source
+```
+$go get github.com/TIBCOSoftware/flogo-cli/...
+
+$cd $GOPATH/src/github.com/TIBCOSoftware/flogo-cli
+
+[optional, only if building from branch] 
+$git checkout my_branch
+
+[need to manually go get all dependencies for example:] 
+$go get github.com/xeipuuv/gojsonschema
+
+$go install ./... 
+```
+
 ##License
 flogo-cli is licensed under a BSD-type license. See TIBCO LICENSE.txt for license text.
 
