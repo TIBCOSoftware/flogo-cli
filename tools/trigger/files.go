@@ -12,7 +12,6 @@ const (
 	fileTriggerTestGo string = "trigger_test.go"
 	fileTriggerMdGo   string = "trigger_metadata.go"
 
-	dirUI string = "ui"
 	dirRT string = "runtime"
 )
 
