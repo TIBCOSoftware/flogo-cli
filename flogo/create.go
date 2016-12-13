@@ -26,7 +26,7 @@ func init() {
 }
 
 type cmdCreate struct {
-	option *cli.OptionInfo
+	option     *cli.OptionInfo
 	libVersion string
 }
 

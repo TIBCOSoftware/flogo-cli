@@ -128,7 +128,7 @@ func DefaultEngineConfig() *EngineConfig {
 	var ec EngineConfig
 
 	ec.LogLevel = "INFO"
-	ec.RunnerConfig = &RunnerConfig{Type: "pooled", Pooled: &PooledConfig{NumWorkers: 5, WorkQueueSize: 50}}
+	ec.RunnerConfig = &RunnerConfig{Type: "pooled"}
 	ec.Services = make([]*ServiceConfig, 0)
 
 	ec.Services = append(ec.Services, &ServiceConfig{Name: "stateRecorder", Enabled: false, Settings: map[string]string{"host": "", "port": ""}})
