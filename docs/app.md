@@ -154,11 +154,7 @@ The *config.json* file contains the configration for application.  It is used to
 	{
 	  "loglevel": "INFO",
 	  "actionRunner": {
-	    "type": "pooled",
-	    "pooled": {
-	      "numWorkers": 5,
-	      "workQueueSize": 50,
-	    }
+	    "type": "pooled"
 	  },
 	  "services": [
 	    {

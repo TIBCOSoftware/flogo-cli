@@ -119,7 +119,7 @@ type ConfigInfo struct {
 func createEngineConfigGoFile(codeSourcePath string, configInfo *ConfigInfo) {
 
 	if configInfo == nil {
-		configInfo = &ConfigInfo{Include:false, ConfigJSON:"", TriggerJSON:""}
+		configInfo = &ConfigInfo{Include: false, ConfigJSON: "", TriggerJSON: ""}
 	}
 
 	f, _ := os.Create(path(codeSourcePath, fileConfigGo))
@@ -253,7 +253,6 @@ func createExprsGoFile(codeSourcePath string, flows map[string]map[int]string) {
 	fgutil.RenderTemplate(f, tplExprsGoFile, flows)
 	f.Close()
 }
-
 
 var tplExprsGoFile = `package main
 
