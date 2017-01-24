@@ -3,48 +3,16 @@ package main
 //////////////////////////////////////////////////////////////
 // ProjectDescriptor
 
-// FlogoAppDescriptor is the flogo project descriptor object
-type FlogoAppDescriptor struct {
+// FlogoProjectDescriptor is the flogo project descriptor object
+type FlogoProjectDescriptor struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
-	Type        string `json:"type"`
 
-	Actions    []*ActionDescriptor `json:"actions"`
-	Triggers   []*TriggerDescriptor `json:"triggers"`
+	Models     []*ItemDescriptor `json:"models"`
+	Activities []*ItemDescriptor `json:"activities"`
+	Triggers   []*ItemDescriptor `json:"triggers"`
 }
-
-type TriggerDescriptor struct {
-	ID        string `json:"actionId"`
-	Ref       string `json:"ref"`
-	Outputs  []*ConfigValue `json:"outputs,omitempty"`
-}
-
-type ActionDescriptor struct {
-	ID        string `json:"id"`
-	Ref       string `json:"ref"`
-	Data struct {
-		Flows struct {
-			RootTask struct {
-				Tasks []*Task `json:"tasks"`
-			}`json:"rootTask"`
-		}`json:"flow"`
-	} `json:"data"`
-}
-
-type Task struct {
-	Ref string `json:"activityRef"`
-	Inputs  []*ConfigValue `json:"inputs,omitempty"`
-	Outputs  []*ConfigValue `json:"outputs,omitempty"`
-}
-
-
-type ConfigValue struct {
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Value string `json:"value,omitempty"`
-}
-
 
 // FlogoPaletteDescriptor is the flogo palette descriptor object
 
@@ -74,6 +42,29 @@ func (d *ItemDescriptor) Local() bool {
 	return len(d.LocalPath) > 0
 }
 
+// TriggerProjectDescriptor is the trigger project descriptor object
+type TriggerProjectDescriptor struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+
+	Settings []*ConfigValue `json:"settings"`
+	Outputs  []*ConfigValue `json:"outputs"`
+
+	Endpoint *EndpointDescriptor `json:"endpoint"`
+}
+
+// EndpointDescriptor is the trigger endpoint descriptor object
+type EndpointDescriptor struct {
+	Settings []*ConfigValue `json:"settings"`
+}
+
+// ConfigValue struct describes a configuration value
+type ConfigValue struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value string `json:"value,omitempty"`
+}
 
 ///////////////////////////////////////////////////////////////
 // Engine Config
@@ -130,6 +121,37 @@ type ServiceConfig struct {
 	Enabled  bool              `json:"enabled"`
 	Settings map[string]string `json:"settings,omitempty"`
 }
+// New application model
+type FlogoAppDescriptor struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+
+	Actions    []*ActionDescriptor `json:"actions"`
+	Triggers   []*TriggerDescriptor `json:"triggers"`
+}
+
+type TriggerDescriptor struct {
+	ID        string `json:"id"`
+	Ref       string `json:"ref"`
+}
+
+type ActionDescriptor struct {
+	ID        string `json:"id"`
+	Ref       string `json:"ref"`
+	Data struct {
+			RootTask struct {
+				Tasks []*Task `json:"tasks"`
+			}`json:"rootTask"`
+	} `json:"data"`
+}
+
+type Task struct {
+	Ref string `json:"ref"`
+	Inputs  []*ConfigValue `json:"inputs,omitempty"`
+	Outputs  []*ConfigValue `json:"outputs,omitempty"`
+}
 
 // DefaultEngineConfig returns the default engine configuration
 func DefaultEngineConfig() *EngineConfig {
@@ -155,3 +177,4 @@ func DefaultTriggersConfig() *TriggersConfig {
 
 	return &tc
 }
+

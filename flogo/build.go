@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"encoding/json"
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
@@ -14,7 +14,7 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-i][-c configDir][-f appFile]",
+	UsageLine: "build [-o][-i][-c configDir]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
@@ -22,7 +22,6 @@ Options:
     -o   optimize for embedded flows
     -i   incorporate config into application
     -c   specifiy configration directory
-    -f   Application configration file 
 `,
 }
 
@@ -37,11 +36,9 @@ type cmdBuild struct {
 	optimize   bool
 	includeCfg bool
 	configDir  string
-	appFile    string
 }
 
 func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
-
 	return c.option
 }
 
@@ -49,27 +46,9 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
 	fs.StringVar(&(c.configDir), "c", "bin", "config directory")
-	fs.StringVar(&(c.appFile), "f", "", "application file")
-}
-
-func Exists(name string) bool {
-	_, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
 
 func (c *cmdBuild) Exec(args []string) error {
-
-	if len(c.appFile) > 0 {
-		if Exists(c.appFile) {
-			fgutil.CopyFile(c.appFile, "flogo.json")
-		} else {
-			fmt.Fprint(os.Stderr, "Error: Invalid application configuration file.\n\n", c.appFile)
-			os.Exit(2)
-		}
-	}
 
 	projectDescriptor := loadProjectDescriptor()
 
@@ -80,50 +59,84 @@ func (c *cmdBuild) Exec(args []string) error {
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
 
-	if len(c.appFile) > 0 {
-		
-		os.MkdirAll(projectDescriptor.Name, 0777)
-		os.Chdir(projectDescriptor.Name)
-		gb.Init(true)
-		err := gb.VendorFetch(pathFlogoLib, "")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(2)
-		}
+	flows := ImportFlows(projectDescriptor, dirFlows)
+	createFlowsGoFile(gb.CodeSourcePath, flows)
 
-		for _, triggerConfig := range projectDescriptor.Triggers {
-			err := gb.VendorFetch(triggerConfig.Ref+"/runtime", "")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(2)
-			}
-
-		}
-
-		for _, actionConfig := range projectDescriptor.Actions {
-			err := gb.VendorFetch(actionConfig.Ref, "")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(2)
-			}
-			for _, taskConfig := range actionConfig.Data.Flows.RootTask.Tasks {
-				err := gb.VendorFetch(taskConfig.Ref+"/runtime", "")
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-					os.Exit(2)
-				}
-			}
-
-		}
-		createMainGoFile(gb.CodeSourcePath, projectDescriptor)
-	}
-
-	if len(projectDescriptor.Triggers) == 0 {
-		fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
+	if len(projectDescriptor.Models) == 0 {
+		fmt.Fprint(os.Stderr, "Error: Project must have a least one model.\n\n")
 		os.Exit(2)
 	}
 
-	createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
+	//if len(projectDescriptor.Triggers) == 0 {
+	//	fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
+	//	os.Exit(2)
+	//}
+
+	//allFlowExprs := getAllFlowExprs(dirFlows)
+	//fmt.Printf("all flow exprs: %v\n", allFlowExprs)
+	//
+	//allFlowTransExprs := make(map[string]map[int]string)
+	//
+	//if len(allFlowExprs) > 0 {
+	//
+	//	for flowURI, exprs := range allFlowExprs {
+	//
+	//		transExprs := convertExprsToGo(exprs)
+	//		allFlowTransExprs[flowURI] = transExprs
+	//	}
+	//}
+	//
+	//createExprsGoFile(gb.CodeSourcePath, allFlowTransExprs)
+
+	if c.optimize {
+
+		//optimize activities
+
+		activityTypes := getAllActivityTypes(dirFlows)
+
+		var activities []*ItemDescriptor
+
+		for  _, activity := range projectDescriptor.Activities {
+
+			if _, ok := activityTypes[activity.Name]; ok {
+				activities = append(activities, activity)
+			}
+		}
+
+		projectDescriptor.Activities = activities
+
+		//optimize triggers
+
+		triggersConfigPath := gb.NewBinFilePath(fileTriggersConfig)
+		triggersConfigFile, err := os.Open(triggersConfigPath)
+
+		triggersConfig := &TriggersConfig{}
+		jsonParser := json.NewDecoder(triggersConfigFile)
+
+		if err = jsonParser.Decode(triggersConfig); err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to parse application triggers.json, file may be corrupted.\n\n")
+			os.Exit(2)
+		}
+
+		triggersConfigFile.Close()
+
+		if triggersConfig.Triggers == nil {
+			triggersConfig.Triggers = make([]*TriggerConfig, 0)
+		}
+
+		var triggers []*ItemDescriptor
+
+		for  _, trigger := range projectDescriptor.Triggers {
+
+			if ContainsTriggerConfig(triggersConfig.Triggers, trigger.Name)  {
+				triggers = append(triggers, trigger)
+			}
+		}
+
+		projectDescriptor.Triggers = triggers
+
+		createImportsGoFile(gb.CodeSourcePath, projectDescriptor)
+	}
 
 	if c.includeCfg {
 
@@ -134,7 +147,14 @@ func (c *cmdBuild) Exec(args []string) error {
 			os.Exit(2)
 		}
 
-		configInfo := &ConfigInfo{Include: true, ConfigJSON: string(engineCfg)}
+		triggersCfg, err := ioutil.ReadFile(filepath.Join(c.configDir, fileTriggersConfig))
+
+		if err != nil {
+			fmt.Fprint(os.Stderr, "Error: Unable to read triggers.config -\n%s\n", err.Error())
+			os.Exit(2)
+		}
+
+		configInfo := &ConfigInfo{Include:true, ConfigJSON:string(engineCfg), TriggerJSON:string(triggersCfg)}
 
 		createEngineConfigGoFile(gb.CodeSourcePath, configInfo)
 
@@ -149,3 +169,4 @@ func (c *cmdBuild) Exec(args []string) error {
 
 	return nil
 }
+

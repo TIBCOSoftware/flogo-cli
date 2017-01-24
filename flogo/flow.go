@@ -19,7 +19,7 @@ import (
 
 const flowSchemaFilePath string = "/vendor/src/github.com/TIBCOSoftware/flogo-lib/flow/flowdef/schema.json"
 
-func ImportFlows(projectDescriptor *FlogoAppDescriptor, flowDir string) map[string]string {
+func ImportFlows(projectDescriptor *FlogoProjectDescriptor, flowDir string) map[string]string {
 
 	flows := make(map[string]string)
 
@@ -87,7 +87,7 @@ func gzipAndB64(flowFilePath string) string {
 	return base64.StdEncoding.EncodeToString(b.Bytes())
 }
 
-func ValidateFlow(projectDescriptor *FlogoAppDescriptor, flowPath string, isURL bool) {
+func ValidateFlow(projectDescriptor *FlogoProjectDescriptor, flowPath string, isURL bool) {
 
 	// first validate the flow json
 	validateFlowSchema(flowPath, isURL)
@@ -127,9 +127,9 @@ func ValidateFlow(projectDescriptor *FlogoAppDescriptor, flowPath string, isURL 
 
 	getActivityTypes(flowObj, activityTypes)
 
-//	for _, desc := range projectDescriptor.Activities {
-//		delete(activityTypes, desc.Name)
-//	}
+	for _, desc := range projectDescriptor.Activities {
+		delete(activityTypes, desc.Name)
+	}
 
 	if len(activityTypes) > 0 {
 		fmt.Fprintf(os.Stderr, "Error: cannot embed '%s', the activites required to run the flow have not been added to your project\n", flowPath)

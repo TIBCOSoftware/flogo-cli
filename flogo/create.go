@@ -22,7 +22,7 @@ Options:
 }
 
 func init() {
-//	commandRegistry.RegisterCommand(&cmdCreate{option: optCreate})
+	commandRegistry.RegisterCommand(&cmdCreate{option: optCreate})
 }
 
 type cmdCreate struct {
@@ -81,12 +81,13 @@ func (c *cmdCreate) Exec(args []string) error {
 	}
 
 	// create flogo.json file
-	projectDescriptor := &FlogoAppDescriptor{
+	projectDescriptor := &FlogoProjectDescriptor{
 		Name:        appName,
 		Version:     "0.0.1",
 		Description: "My flogo application description",
-		Triggers:    make([]*TriggerDescriptor, 0),
-		Actions:      make([]*ActionDescriptor, 0),
+		Activities:  make([]*ItemDescriptor, 0),
+		Triggers:    make([]*ItemDescriptor, 0),
+		Models:      make([]*ItemDescriptor, 0),
 	}
 
 	// todo: add ability to create project from existing project descriptor
