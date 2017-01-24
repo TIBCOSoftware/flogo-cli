@@ -118,6 +118,13 @@ func (c *cmdBuildApp) Exec(args []string) error {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
 			}
+			
+			gb.VendorDeleteSilent(actionConfig.Data.Ref)
+			err = gb.VendorFetch(actionConfig.Data.Ref, "")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(2)
+			}
 			for _, taskConfig := range actionConfig.Data.RootTask.Tasks {
 				gb.VendorDeleteSilent(taskConfig.Ref)
 				err := gb.VendorFetch(taskConfig.Ref, "")
