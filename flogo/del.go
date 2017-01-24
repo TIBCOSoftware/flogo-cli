@@ -19,7 +19,7 @@ var optDel = &cli.OptionInfo{
 }
 
 func init() {
-	commandRegistry.RegisterCommand(&cmdDel{option: optDel})
+//	commandRegistry.RegisterCommand(&cmdDel{option: optDel})
 }
 
 type cmdDel struct {
@@ -70,13 +70,13 @@ func (c *cmdDel) Exec(args []string) error {
 
 	switch itemType {
 	case itActivity:
-		projectDescriptor.Activities = DelFlogoItem(gb, itActivity, itemNameOrPath, projectDescriptor.Activities, c.useSrc)
+//		projectDescriptor.Activities = DelFlogoItem(gb, itActivity, itemNameOrPath, projectDescriptor.Activities, c.useSrc)
 
 	case itModel:
-		projectDescriptor.Models = DelFlogoItem(gb, itModel, itemNameOrPath, projectDescriptor.Models, c.useSrc)
+//		projectDescriptor.Models = DelFlogoItem(gb, itModel, itemNameOrPath, projectDescriptor.Models, c.useSrc)
 
 	case itTrigger:
-		projectDescriptor.Triggers = DelFlogoItem(gb, itTrigger, itemNameOrPath, projectDescriptor.Triggers, c.useSrc)
+//		projectDescriptor.Triggers = DelFlogoItem(gb, itTrigger, itemNameOrPath, projectDescriptor.Triggers, c.useSrc)
 
 	case itFlow:
 

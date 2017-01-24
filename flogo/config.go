@@ -3,16 +3,48 @@ package main
 //////////////////////////////////////////////////////////////
 // ProjectDescriptor
 
-// FlogoProjectDescriptor is the flogo project descriptor object
-type FlogoProjectDescriptor struct {
+// FlogoAppDescriptor is the flogo project descriptor object
+type FlogoAppDescriptor struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
+	Type        string `json:"type"`
 
-	Models     []*ItemDescriptor `json:"models"`
-	Activities []*ItemDescriptor `json:"activities"`
-	Triggers   []*ItemDescriptor `json:"triggers"`
+	Actions    []*ActionDescriptor `json:"actions"`
+	Triggers   []*TriggerDescriptor `json:"triggers"`
 }
+
+type TriggerDescriptor struct {
+	ID        string `json:"actionId"`
+	Ref       string `json:"ref"`
+	Outputs  []*ConfigValue `json:"outputs,omitempty"`
+}
+
+type ActionDescriptor struct {
+	ID        string `json:"id"`
+	Ref       string `json:"ref"`
+	Data struct {
+		Flows struct {
+			RootTask struct {
+				Tasks []*Task `json:"tasks"`
+			}`json:"rootTask"`
+		}`json:"flow"`
+	} `json:"data"`
+}
+
+type Task struct {
+	Ref string `json:"activityRef"`
+	Inputs  []*ConfigValue `json:"inputs,omitempty"`
+	Outputs  []*ConfigValue `json:"outputs,omitempty"`
+}
+
+
+type ConfigValue struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value string `json:"value,omitempty"`
+}
+
 
 // FlogoPaletteDescriptor is the flogo palette descriptor object
 
@@ -42,29 +74,6 @@ func (d *ItemDescriptor) Local() bool {
 	return len(d.LocalPath) > 0
 }
 
-// TriggerProjectDescriptor is the trigger project descriptor object
-type TriggerProjectDescriptor struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-
-	Settings []*ConfigValue `json:"settings"`
-	Outputs  []*ConfigValue `json:"outputs"`
-
-	Endpoint *EndpointDescriptor `json:"endpoint"`
-}
-
-// EndpointDescriptor is the trigger endpoint descriptor object
-type EndpointDescriptor struct {
-	Settings []*ConfigValue `json:"settings"`
-}
-
-// ConfigValue struct describes a configuration value
-type ConfigValue struct {
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Value string `json:"value,omitempty"`
-}
 
 ///////////////////////////////////////////////////////////////
 // Engine Config

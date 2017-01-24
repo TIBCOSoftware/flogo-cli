@@ -19,7 +19,7 @@ var optList = &cli.OptionInfo{
 }
 
 func init() {
-	commandRegistry.RegisterCommand(&cmdList{option: optList})
+//	commandRegistry.RegisterCommand(&cmdList{option: optList})
 }
 
 type cmdList struct {

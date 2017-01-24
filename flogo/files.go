@@ -20,7 +20,7 @@ const (
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
 
-func createMainGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
+func createMainGoFile(codeSourcePath string, projectDescriptor *FlogoAppDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplMainGoFile, projectDescriptor)
 	f.Close()
@@ -32,8 +32,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
+	"fmt"
+    "encoding/json"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/types"
 	"github.com/op/go-logging"
 )
 
@@ -52,23 +54,24 @@ var log = logging.MustGetLogger("main")
 
 func main() {
 
-	engineConfig := GetEngineConfig()
-	triggersConfig := GetTriggersConfig()
+	flogo, err := os.Open("flogo.json")
+    if err != nil {
+        fmt.Println(err.Error())
+        os.Exit(1)
+    }
+    
+    jsonParser := json.NewDecoder(flogo)
+    app := &types.AppConfig{}
+    jsonParser.Decode(&app)
+    e, err := engine.New(app)
 
-	logLevel, _ := logging.LogLevel(engineConfig.LogLevel)
-	logging.SetLevel(logLevel, "")
-
-	engine := engine.NewEngine(engineConfig, triggersConfig)
-
-	EnableFlowServices(engine, engineConfig)
-
-	engine.Start()
+	e.Start()
 
 	exitChan := setupSignalHandling()
 
 	code := <-exitChan
 
-	engine.Stop()
+	e.Stop()
 
 	os.Exit(code)
 }
@@ -113,13 +116,12 @@ func setupSignalHandling() chan int {
 type ConfigInfo struct {
 	Include     bool
 	ConfigJSON  string
-	TriggerJSON string
 }
 
 func createEngineConfigGoFile(codeSourcePath string, configInfo *ConfigInfo) {
 
 	if configInfo == nil {
-		configInfo = &ConfigInfo{Include: false, ConfigJSON: "", TriggerJSON: ""}
+		configInfo = &ConfigInfo{Include: false, ConfigJSON: ""}
 	}
 
 	f, _ := os.Create(path(codeSourcePath, fileConfigGo))
@@ -137,10 +139,7 @@ const configFileName string = "config.json"
 const triggersConfigFileName string = "triggers.json"
 
 // can be used to compile in config file
-const configJSON string = ` + "`{{.ConfigJSON}}`" + `
-
-// can be used to compile in triggers config file
-const triggersConfigJSON string = ` + "`{{.TriggerJSON}}`" + `
+const configJSON string = ` + "`{{.ConfigJSON}}`" +  `
 
 // GetEngineConfig gets the engine configuration
 func GetEngineConfig() *engine.Config {
@@ -155,23 +154,9 @@ func GetEngineConfig() *engine.Config {
 
 	return config
 }
-
-// GetTriggersConfig gets the triggers configuration
-func GetTriggersConfig() *engine.TriggersConfig {
-
-	{{ if .Include }}//{{ end }}config := engine.LoadTriggersConfigFromFile(triggersConfigFileName)
-	{{ if not .Include }}//{{ end }}config := engine.LoadTriggersConfigFromJSON(triggersConfigJSON)
-
-	if config == nil {
-		config = engine.DefaultTriggersConfig()
-		log.Warningf("Configuration file '%s' not found, using defaults", triggersConfigFileName)
-	}
-
-	return config
-}
 `
 
-func createImportsGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
+func createImportsGoFile(codeSourcePath string, projectDescriptor *FlogoAppDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, projectDescriptor)
 	f.Close()
@@ -181,14 +166,13 @@ var tplImportsGoFile = `package main
 
 import (
 
-	// activities
-{{range .Activities}}	_ "{{.Path}}/runtime"
+// triggers
+{{range .Triggers}}	_ "{{.Ref}}/runtime"
 {{end}}
-	// triggers
-{{range .Triggers}}	_ "{{.Path}}/runtime"
-{{end}}
-	// models
-{{range .Models}}	_ "{{.Path}}"
+// flows and activities
+{{range .Actions}}    _ "{{.Ref}}"
+   {{range .Data.Flows.RootTask.Tasks}} _ "{{.Ref}}/runtime"
+   {{end}}                   
 {{end}}
 )
 `

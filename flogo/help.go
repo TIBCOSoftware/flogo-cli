@@ -15,8 +15,8 @@ import (
 var optHelp = &cli.OptionInfo{
 	Name:      "help",
 	UsageLine: "help [command]",
-	Short:     "Get help for a command or tool",
-	Long: `Get help for a flogo command or tool.
+	Short:     "Get help for a command",
+	Long: `Get help for a flogo command.
 
 `,
 }

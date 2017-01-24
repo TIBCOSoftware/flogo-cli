@@ -98,14 +98,9 @@ func printUsage(w io.Writer) {
 
 var usageTpl = `Usage:
 
-    flogo <command/tool> [arguments]
+    flogo <command> [arguments]
 
 Commands:
 {{range .}}{{if not .IsTool}}
     {{.Name | printf "%-12s"}} {{.Short}}{{end}}{{end}}
-
-Tools:
-{{range .}}{{if .IsTool}}
-    {{.Name | printf "%-12s"}} {{.Short}}{{end}}{{end}}
-
 `
