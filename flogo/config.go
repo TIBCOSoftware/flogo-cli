@@ -121,6 +121,38 @@ type ServiceConfig struct {
 	Enabled  bool              `json:"enabled"`
 	Settings map[string]string `json:"settings,omitempty"`
 }
+// New application model
+type FlogoAppDescriptor struct {
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+
+	Actions    []*ActionDescriptor `json:"actions"`
+	Triggers   []*TriggerDescriptor `json:"triggers"`
+}
+
+type TriggerDescriptor struct {
+	ID        string `json:"id"`
+	Ref       string `json:"ref"`
+}
+
+type ActionDescriptor struct {
+	ID        string `json:"id"`
+	Ref       string `json:"ref"`
+	Data struct {
+		Ref       string `json:"ref"`
+		RootTask struct {
+			Tasks []*Task `json:"tasks"`
+		}`json:"rootTask"`
+	} `json:"data"`
+}
+
+type Task struct {
+	Ref string `json:"ref"`
+	Inputs  []*ConfigValue `json:"inputs,omitempty"`
+	Outputs  []*ConfigValue `json:"outputs,omitempty"`
+}
 
 // DefaultEngineConfig returns the default engine configuration
 func DefaultEngineConfig() *EngineConfig {
@@ -146,3 +178,4 @@ func DefaultTriggersConfig() *TriggersConfig {
 
 	return &tc
 }
+

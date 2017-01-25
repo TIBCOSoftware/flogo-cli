@@ -116,6 +116,99 @@ type ConfigInfo struct {
 	TriggerJSON string
 }
 
+func createNewMainGoFile(codeSourcePath string, projectDescriptor *FlogoAppDescriptor) {
+	f, _ := os.Create(path(codeSourcePath, fileMainGo))
+	fgutil.RenderTemplate(f, tplNewMainGoFile, projectDescriptor)
+	f.Close()
+}
+
+var tplNewMainGoFile = `package main
+
+import (
+	"os"
+	"os/signal"
+	"syscall"
+	"fmt"
+    "encoding/json"
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/types"
+	"github.com/op/go-logging"
+)
+
+func init() {
+	var format = logging.MustStringFormatter(
+		"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
+	)
+
+	backend := logging.NewLogBackend(os.Stderr, "", 0)
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	logging.SetBackend(backendFormatter)
+	logging.SetLevel(logging.INFO, "")
+}
+
+var log = logging.MustGetLogger("main")
+
+func main() {
+
+	flogo, err := os.Open("flogo.json")
+    if err != nil {
+        fmt.Println(err.Error())
+        os.Exit(1)
+    }
+    
+    jsonParser := json.NewDecoder(flogo)
+    app := &types.AppConfig{}
+    jsonParser.Decode(&app)
+    e, err := engine.New(app)
+
+	e.Start()
+
+	exitChan := setupSignalHandling()
+
+	code := <-exitChan
+
+	e.Stop()
+
+	os.Exit(code)
+}
+
+func setupSignalHandling() chan int {
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	exitChan := make(chan int)
+	go func() {
+		for {
+			s := <-signalChan
+			switch s {
+			// kill -SIGHUP
+			case syscall.SIGHUP:
+				exitChan <- 0
+			// kill -SIGINT/Ctrl+c
+			case syscall.SIGINT:
+				exitChan <- 0
+			// kill -SIGTERM
+			case syscall.SIGTERM:
+				exitChan <- 0
+			// kill -SIGQUIT
+			case syscall.SIGQUIT:
+				exitChan <- 0
+			default:
+				log.Debug("Unknown signal.")
+				exitChan <- 1
+			}
+		}
+	}()
+
+	return exitChan
+}
+`
+
 func createEngineConfigGoFile(codeSourcePath string, configInfo *ConfigInfo) {
 
 	if configInfo == nil {
@@ -171,6 +264,40 @@ func GetTriggersConfig() *engine.TriggersConfig {
 }
 `
 
+func createNewEngineConfigGoFile(codeSourcePath string, configInfo *ConfigInfo) {
+
+	if configInfo == nil {
+		configInfo = &ConfigInfo{Include: false, ConfigJSON: ""}
+	}
+	f, _ := os.Create(path(codeSourcePath, fileConfigGo))
+	fgutil.RenderTemplate(f, tplNewEngineConfigGoFile, configInfo)
+	f.Close()
+}
+
+var tplNewEngineConfigGoFile = `package main
+
+import (
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+)
+
+const configFileName string = "config.json"
+
+// can be used to compile in config file
+const configJSON string = ` + "`{{.ConfigJSON}}`" +  `
+
+// GetEngineConfig gets the engine configuration
+func GetEngineConfig() *engine.Config {
+
+	{{ if .Include }}//{{ end }}config := engine.LoadConfigFromFile(configFileName)
+
+	if config == nil {
+		config = engine.DefaultConfig()
+		log.Warningf("Configuration file '%s' not found, using defaults", configFileName)
+	}
+
+	return config
+}`
+
 func createImportsGoFile(codeSourcePath string, projectDescriptor *FlogoProjectDescriptor) {
 	f, _ := os.Create(path(codeSourcePath, fileImportsGo))
 	fgutil.RenderTemplate(f, tplImportsGoFile, projectDescriptor)
@@ -189,6 +316,28 @@ import (
 {{end}}
 	// models
 {{range .Models}}	_ "{{.Path}}"
+{{end}}
+)
+`
+
+func createNewImportsGoFile(codeSourcePath string, projectDescriptor *FlogoAppDescriptor) {
+	f, _ := os.Create(path(codeSourcePath, fileImportsGo))
+	fgutil.RenderTemplate(f, tplNewImportsGoFile, projectDescriptor)
+	f.Close()
+}
+
+var tplNewImportsGoFile = `package main
+
+import (
+
+// triggers
+{{range .Triggers}}	_ "{{.Ref}}"
+{{end}}
+// flows and activities
+{{range .Actions}}    _ "{{.Ref}}"
+      _ "{{.Data.Ref}}"
+     {{range .Data.RootTask.Tasks}} _ "{{.Ref}}"
+     {{end}}                  
 {{end}}
 )
 `
