@@ -13,12 +13,12 @@ import (
 
 var optBuildApp = &cli.OptionInfo{
 	Name:      "build-app",
-	UsageLine: "build-app [-i][-c configDir][-flv version][-f application]",
+	UsageLine: "build-app [-flv version][-app application]",
 	Short:     "Build new flogo application",
 	Long: `Build new flogo application.
 Options:
     -flv specify the flogo-lib version
-    -f   specify application
+    -app specify application location
 `,
 }
 
@@ -44,7 +44,7 @@ func (c *cmdBuildApp) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
 	fs.StringVar(&(c.configDir), "c", "bin", "config directory")
 	fs.StringVar(&(c.flvVersion), "flv", "", "flogo-lib version")
-	fs.StringVar(&(c.appFile), "f", "", "application")
+	fs.StringVar(&(c.appFile), "app", "", "application")
 }
 
 func Exists(name string) bool {
