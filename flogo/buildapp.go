@@ -17,8 +17,6 @@ var optBuildApp = &cli.OptionInfo{
 	Short:     "Build new flogo application",
 	Long: `Build new flogo application.
 Options:
-    -i   incorporate engine config into application
-    -c   specifiy configration directory
     -flv specify the flogo-lib version
     -f   specify application
 `,
