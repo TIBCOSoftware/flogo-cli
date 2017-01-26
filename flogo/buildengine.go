@@ -3,25 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"github.com/TIBCOSoftware/flogo-cli/cli"
-	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 var optBuildApp = &cli.OptionInfo{
-	Name:      "build-app",
-	UsageLine: "build-app [-flv version][-app application]",
-	Short:     "Build new flogo application",
-	Long: `Build new flogo application.
+	Name:      "build-engine",
+	UsageLine: "build-engine [-app application]",
+	Short:     "Build engine based on flogo application",
+	Long: `Build Flogo engine based on flogo application.
 Options:
     -flv specify the flogo-lib version
     -app specify application location
 `,
 }
-
 
 func init() {
 	commandRegistry.RegisterCommand(&cmdBuildApp{option: optBuildApp})
@@ -32,7 +31,9 @@ type cmdBuildApp struct {
 	includeCfg bool
 	configDir  string
 	flvVersion string
+	ctbVersion string
 	appFile    string
+	localDep   string
 }
 
 func (c *cmdBuildApp) OptionInfo() *cli.OptionInfo {
@@ -44,7 +45,9 @@ func (c *cmdBuildApp) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
 	fs.StringVar(&(c.configDir), "c", "bin", "config directory")
 	fs.StringVar(&(c.flvVersion), "flv", "", "flogo-lib version")
+	fs.StringVar(&(c.ctbVersion), "cv", "", "contrib version")
 	fs.StringVar(&(c.appFile), "app", "", "application")
+	fs.StringVar(&(c.localDep), "d", "", "copy dependencies from directory")
 }
 
 func Exists(name string) bool {
@@ -65,12 +68,11 @@ func Local(appPath string) bool {
 
 func (c *cmdBuildApp) Exec(args []string) error {
 
-
 	if len(args) > 0 {
 		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
 		cmdUsage(c)
 	}
-	
+
 	if len(c.appFile) > 0 {
 		if Remote(c.appFile) {
 			fgutil.CopyRemoteFile(c.appFile, "flogo.json")
@@ -87,12 +89,19 @@ func (c *cmdBuildApp) Exec(args []string) error {
 	projectDescriptor := loadAppDescriptor()
 
 	gb := fgutil.NewGb(projectDescriptor.Name)
+	os.MkdirAll(projectDescriptor.Name, 0777)
+	os.Chdir(projectDescriptor.Name)
+	gb.Init(true)
 
-	if len(c.appFile) > 0 {
-		
-		os.MkdirAll(projectDescriptor.Name, 0777)
-		os.Chdir(projectDescriptor.Name)
-		gb.Init(true)
+	if len(c.localDep) > 0 {
+	     if Exists(c.localDep) {
+				fgutil.CopyDir(c.localDep, gb.VendorPath)
+			} else {
+				fmt.Fprint(os.Stderr, "Error: Invalid dependency location.\n\n", c.localDep)
+				os.Exit(2)
+			}
+	} else {
+		gb.VendorDeleteSilent(pathFlogoLib)
 		err := gb.VendorFetch(pathFlogoLib, c.flvVersion)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -101,41 +110,38 @@ func (c *cmdBuildApp) Exec(args []string) error {
 
 		for _, triggerConfig := range projectDescriptor.Triggers {
 			gb.VendorDeleteSilent(triggerConfig.Ref)
-			err := gb.VendorFetch(triggerConfig.Ref, "")
+			err = gb.VendorFetch(triggerConfig.Ref, c.ctbVersion)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(2)
+			}
+		}
+		//
+		for _, actionConfig := range projectDescriptor.Actions {
+			gb.VendorDeleteSilent(actionConfig.Ref)
+			err := gb.VendorFetch(actionConfig.Ref, c.flvVersion)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
 			}
 
-		}
-//
-		for _, actionConfig := range projectDescriptor.Actions {
-			gb.VendorDeleteSilent(actionConfig.Ref)
-			err := gb.VendorFetch(actionConfig.Ref, "")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(2)
-			}
-			
 			gb.VendorDeleteSilent(actionConfig.Data.Ref)
-			err = gb.VendorFetch(actionConfig.Data.Ref, "")
+			err = gb.VendorFetch(actionConfig.Data.Ref, c.flvVersion)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
 			}
 			for _, taskConfig := range actionConfig.Data.RootTask.Tasks {
 				gb.VendorDeleteSilent(taskConfig.Ref)
-				err := gb.VendorFetch(taskConfig.Ref, "")
+				err = gb.VendorFetch(taskConfig.Ref, c.ctbVersion)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 					os.Exit(2)
 				}
 			}
-
 		}
-		createNewMainGoFile(gb.CodeSourcePath, projectDescriptor)
 	}
-
+	createNewMainGoFile(gb.CodeSourcePath, projectDescriptor)
 	if len(projectDescriptor.Triggers) == 0 {
 		fmt.Fprint(os.Stderr, "Error: Project must have a least one trigger.\n\n")
 		os.Exit(2)
@@ -158,6 +164,10 @@ func (c *cmdBuildApp) Exec(args []string) error {
 
 	} else {
 		createNewEngineConfigGoFile(gb.CodeSourcePath, nil)
+	}
+
+	if len(c.localDep) > 0 {
+
 	}
 
 	err := gb.Build()
