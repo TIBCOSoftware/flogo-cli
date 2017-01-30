@@ -141,10 +141,12 @@ type ActionDescriptor struct {
 	ID        string `json:"id"`
 	Ref       string `json:"ref"`
 	Data struct {
-		Ref       string `json:"ref"`
-		RootTask struct {
-			Tasks []*Task `json:"tasks"`
-		}`json:"rootTask"`
+		Flow struct {
+			Ref string `json:"ref"`
+			RootTask struct {
+				Tasks []*Task `json:"tasks"`
+			}`json:"rootTask"`
+		}`json:"flow"`
 	} `json:"data"`
 }
 

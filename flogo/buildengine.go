@@ -125,13 +125,14 @@ func (c *cmdBuildApp) Exec(args []string) error {
 				os.Exit(2)
 			}
 
-			gb.VendorDeleteSilent(actionConfig.Data.Ref)
-			err = gb.VendorFetch(actionConfig.Data.Ref, c.flvVersion)
+			gb.VendorDeleteSilent(actionConfig.Data.Flow.Ref)
+			err = gb.VendorFetch(actionConfig.Data.Flow.Ref, c.flvVersion)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
 			}
-			for _, taskConfig := range actionConfig.Data.RootTask.Tasks {
+			
+			for _, taskConfig := range actionConfig.Data.Flow.RootTask.Tasks {
 				gb.VendorDeleteSilent(taskConfig.Ref)
 				err = gb.VendorFetch(taskConfig.Ref, c.ctbVersion)
 				if err != nil {
