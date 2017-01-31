@@ -34,6 +34,7 @@ type cmdBuildApp struct {
 	ctbVersion string
 	appFile    string
 	localDep   string
+	name       string
 }
 
 func (c *cmdBuildApp) OptionInfo() *cli.OptionInfo {
@@ -48,6 +49,7 @@ func (c *cmdBuildApp) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&(c.ctbVersion), "cv", "", "contrib version")
 	fs.StringVar(&(c.appFile), "app", "", "application")
 	fs.StringVar(&(c.localDep), "d", "", "copy dependencies from directory")
+	fs.StringVar(&(c.name), "n", "", "Override application name")
 }
 
 func Exists(name string) bool {
@@ -88,9 +90,16 @@ func (c *cmdBuildApp) Exec(args []string) error {
 
 	projectDescriptor := loadAppDescriptor()
 
-	gb := fgutil.NewGb(projectDescriptor.Name)
-	os.MkdirAll(projectDescriptor.Name, 0777)
-	os.Chdir(projectDescriptor.Name)
+    var name string;
+    
+    if len(c.name) > 0 {
+    	name = c.name
+    } else {
+    	name = projectDescriptor.Name
+    }
+	gb := fgutil.NewGb(name)
+	os.MkdirAll(name, 0777)
+	os.Chdir(name)
 	gb.Init(true)
 
 	if len(c.localDep) > 0 {
