@@ -151,7 +151,7 @@ type ActionDescriptor struct {
 }
 
 type Task struct {
-	Ref string `json:"ref"`
+	Ref string `json:"activityRef"`
 	Inputs  []*ConfigValue `json:"inputs,omitempty"`
 	Outputs  []*ConfigValue `json:"outputs,omitempty"`
 }
