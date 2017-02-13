@@ -49,52 +49,47 @@ var tplActionDescriptor = `{
 var tplActionGo = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"context"
+
+	"github.com/TIBCOSoftware/flogo-lib/core/action"
 )
 
-// MyActivity is a stub for your Activity implementation
-type MyActivity struct {
-	metadata *activity.Metadata
+// MyAction is a stub for your Activity implementation
+type MyAction struct {
+
 }
 
-// init create & register activity
+// init create & register action
 func init() {
-	md := activity.NewMetadata(jsonMetadata)
-	activity.Register(&MyActivity{metadata: md})
+	action.Register("{{.Name}}", &MyAction{})) {
 }
 
-// Metadata implements activity.Activity.Metadata
-func (a *MyActivity) Metadata() *activity.Metadata {
-	return a.metadata
-}
+// Eval implements action.Action.Run
+func (a *MyAction) Run(context context.Context, uri string, options interface{}, handler ResultHandler) error  {
 
-// Eval implements activity.Activity.Eval
-func (a *MyActivity) Eval(context activity.Context) (done bool, err error)  {
-
-	// do eval
-
-	return true, nil
+	// perform action
+	return nil
 }
 `
 var tplActionGoTest = `package {{.Name}}
 
 import (
 	"testing"
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
-	"github.com/TIBCOSoftware/flogo-lib/flow/test"
+
+	"github.com/TIBCOSoftware/flogo-lib/core/action"
 )
 
 func TestRegistered(t *testing.T) {
-	act := activity.Get("{{.Name}}")
+	act := action.Get("{{.Name}}")
 
 	if act == nil {
-		t.Error("Activity Not Registered")
+		t.Error("Action Not Registered")
 		t.Fail()
 		return
 	}
 }
 
-func TestEval(t *testing.T) {
+func TestRun(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -103,14 +98,10 @@ func TestEval(t *testing.T) {
 		}
 	}()
 
-	md := activity.NewMetadata(jsonMetadata)
-	act := &MyActivity{metadata: md}
+	act := &MyAction{}
 
-	tc := test.NewTestActivityContext(md)
-	//setup attrs
+	//setup context
 
-	act.Eval(tc)
-
-	//check result attr
+	act.Run(ctx, "", nil, nil)
 }
 `
