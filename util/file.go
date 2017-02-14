@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"net/http"
 	"io/ioutil"
+	"os/exec"
 )
 
 const FileURIPrefix = "file://"
@@ -239,4 +240,29 @@ func DeleteFilesWithPrefix(dir string, filePrefix string) int {
 		}
 	}
 	return deleted
+}
+
+// ExecutableExists checks if the specified executable
+// exists in the users PATH
+func ExecutableExists(execName string) bool {
+	_, err := exec.LookPath(execName)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// FileExists determines if the named file exists
+func FileExists(filePath string) bool {
+
+	f, err := os.Open(filePath)
+	f.Close()
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func Path(parts ...string) string {
+	return strings.Join(parts[:], string(os.PathSeparator))
 }

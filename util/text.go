@@ -6,7 +6,20 @@ import (
 	"text/template"
 	"unicode"
 	"unicode/utf8"
+	"os"
 )
+
+func CreateFileFromTemplate(basePath string, fileName string, template string, data interface{} ) error {
+	filePath := Path(basePath, fileName)
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	RenderTemplate(f, template, data)
+	f.Close()
+
+	return nil
+}
 
 //RenderTemplate renders the specified template
 func RenderTemplate(w io.Writer, text string, data interface{}) {
