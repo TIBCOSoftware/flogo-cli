@@ -73,6 +73,32 @@ func (e *Gb) VendorFetch(path string, version string) error {
 	return cmd.Run()
 }
 
+// VendorFetch performs a 'gb vendor fetch'
+func (e *Gb) VendorFetchWithBranch(path string, version string, branch string) error {
+
+	var cmd *exec.Cmd
+
+	if version == "" {
+		cmd = exec.Command("gb", "vendor", "fetch","-branch", branch,  path)
+	} else {
+
+		var tag string
+
+		if version[0] != 'v' {
+			tag = "v" + version
+		} else {
+			tag = version
+		}
+
+		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, "-branch", branch, path)
+	}
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 // VendorDeleteSilent performs a 'gb vendor delete' silently
 func (e *Gb) VendorDeleteSilent(path string) error {
 	cmd := exec.Command("gb", "vendor", "delete", path)

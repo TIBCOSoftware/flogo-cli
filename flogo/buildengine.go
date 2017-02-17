@@ -34,6 +34,7 @@ type cmdBuildApp struct {
 	ctbVersion string
 	appFile    string
 	localDep   string
+	branchName string
 	name       string
 }
 
@@ -50,6 +51,7 @@ func (c *cmdBuildApp) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&(c.appFile), "app", "", "application")
 	fs.StringVar(&(c.localDep), "d", "", "copy dependencies from directory")
 	fs.StringVar(&(c.name), "n", "", "Override application name")
+	fs.StringVar(&(c.branchName), "b", "master", "Branch name")
 }
 
 func Exists(name string) bool {
@@ -119,7 +121,7 @@ func (c *cmdBuildApp) Exec(args []string) error {
 
 		for _, triggerConfig := range projectDescriptor.Triggers {
 			gb.VendorDeleteSilent(triggerConfig.Ref)
-			err = gb.VendorFetch(triggerConfig.Ref, c.ctbVersion)
+			err = gb.VendorFetchWithBranch(triggerConfig.Ref, c.ctbVersion, c.branchName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
@@ -133,17 +135,10 @@ func (c *cmdBuildApp) Exec(args []string) error {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(2)
 			}
-
-			gb.VendorDeleteSilent(actionConfig.Data.Flow.Ref)
-			err = gb.VendorFetch(actionConfig.Data.Flow.Ref, c.flvVersion)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(2)
-			}
 			
 			for _, taskConfig := range actionConfig.Data.Flow.RootTask.Tasks {
 				gb.VendorDeleteSilent(taskConfig.Ref)
-				err = gb.VendorFetch(taskConfig.Ref, c.ctbVersion)
+				err = gb.VendorFetchWithBranch(taskConfig.Ref, c.ctbVersion, c.branchName)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 					os.Exit(2)

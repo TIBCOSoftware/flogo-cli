@@ -335,7 +335,6 @@ import (
 {{end}}
 // flows and activities
 {{range .Actions}}    _ "{{.Ref}}"
-     _ "{{.Data.Flow.Ref}}"
      {{range .Data.Flow.RootTask.Tasks}} _ "{{.Ref}}"
      {{end}}                  
 {{end}}

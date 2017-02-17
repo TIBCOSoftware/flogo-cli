@@ -142,7 +142,6 @@ type ActionDescriptor struct {
 	Ref       string `json:"ref"`
 	Data struct {
 		Flow struct {
-			Ref string `json:"ref"`
 			RootTask struct {
 				Tasks []*Task `json:"tasks"`
 			}`json:"rootTask"`
