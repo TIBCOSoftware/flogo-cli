@@ -1,3 +1,7 @@
+// Command, OptionInfo, help and command execution pattern derived from
+// github.com/constabulary/gb, released under MIT license
+// https://github.com/constabulary/gb/blob/master/LICENSE
+
 package cli
 
 import (
