@@ -165,6 +165,37 @@ func CopyFile(source string, dest string) (err error) {
 	return
 }
 
+func IsRemote(path string) bool {
+	return strings.HasPrefix(path, "http")
+}
+
+func LoadRemoteFile(sourceURL string) (string, error) {
+
+	resp, err := http.Get(sourceURL)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buf), nil
+}
+
+func LoadLocalFile(path string) (string, error) {
+
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buf), nil
+}
+
 func CopyRemoteFile(sourceURL string, dest string) (err error) {
 
 	resp, err := http.Get(sourceURL)
@@ -222,6 +253,31 @@ func CopyDir(source string, dest string) (err error) {
 			if err != nil {
 				fmt.Println(err)
 			}
+		}
+
+	}
+	return
+}
+
+func MoveFiles(source string, dest string) (err error) {
+
+	// get properties of source dir
+	_, err = os.Stat(source)
+	if err != nil {
+		return err
+	}
+
+	directory, _ := os.Open(source)
+
+	objects, err := directory.Readdir(-1)
+
+	for _, obj := range objects {
+
+		srcFile := Path(source,obj.Name())
+		destFile := Path(dest,obj.Name())
+
+		if !obj.IsDir() {
+			err = os.Rename(srcFile, destFile)
 		}
 
 	}

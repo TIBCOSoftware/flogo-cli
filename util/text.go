@@ -7,6 +7,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 	"os"
+	"io/ioutil"
 )
 
 func CreateFileFromTemplate(basePath string, fileName string, template string, data interface{} ) error {
@@ -19,6 +20,11 @@ func CreateFileFromTemplate(basePath string, fileName string, template string, d
 	f.Close()
 
 	return nil
+}
+
+func CreateFileFromString(filePath string, data string) error {
+	d1 := []byte(data)
+	return ioutil.WriteFile(filePath, d1, 0644)
 }
 
 //RenderTemplate renders the specified template

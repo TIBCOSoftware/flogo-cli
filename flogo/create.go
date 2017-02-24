@@ -41,12 +41,12 @@ func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
 func (c *cmdCreate) Exec(args []string) error {
 
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "Error: Application name not specified\n\n")
+		fmt.Fprint(os.Stderr, "Error: Application name not specified\n\n")
 		cmdUsage(c)
 	}
 
 	if len(args) != 1 {
-		fmt.Fprintf(os.Stderr, "Error: Too many arguments given\n\n")
+		fmt.Fprint(os.Stderr, "Error: Too many arguments given\n\n")
 		cmdUsage(c)
 	}
 

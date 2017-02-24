@@ -92,7 +92,7 @@ func (c *cmdBuildApp) Exec(args []string) error {
 
 	projectDescriptor := loadAppDescriptor()
 
-    var name string;
+    var name string
     
     if len(c.name) > 0 {
     	name = c.name
