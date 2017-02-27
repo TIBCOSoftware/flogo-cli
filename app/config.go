@@ -37,14 +37,14 @@ type FlogoAppDescriptor struct {
 // TriggerDescriptor is the config descriptor for a Trigger
 type TriggerDescriptor struct {
 	ID  string `json:"id"`
-	Ref string `json:"Ref"`
+	Ref string `json:"ref"`
 }
 
 // todo make make ActionDescriptor generic
 // ActionDescriptor is the config descriptor for an Action
 type ActionDescriptor struct {
 	ID  string `json:"id"`
-	Ref string `json:"Ref"`
+	Ref string `json:"ref"`
 	Data *struct {
 		Flow *struct {
 			RootTask *Task `json:"rootTask"`
@@ -61,7 +61,7 @@ type Task struct {
 // FlogoPaletteDescriptor is the flogo palette descriptor object
 type FlogoExtension struct {
 	Type string `json:"type"`
-	Ref  string `json:"Ref"`
+	Ref  string `json:"ref"`
 }
 
 //FlogoPaletteDescriptor a package: just change to a list of references
