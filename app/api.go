@@ -18,11 +18,16 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson string) error {
+func CreateApp(env env.Project, appJson string, appName string) error {
 
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
 		return err
+	}
+
+	if appName != "" {
+		appJson = strings.Replace(appJson, `"` + descriptor.Name + `"`, `"` + appName + `"`, 1)
+		descriptor.Name = appName
 	}
 
 	currentDir, err := os.Getwd()
