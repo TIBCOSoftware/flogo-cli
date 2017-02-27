@@ -26,8 +26,21 @@ func CreateApp(env env.Project, appJson string, appName string) error {
 	}
 
 	if appName != "" {
-		appJson = strings.Replace(appJson, `"` + descriptor.Name + `"`, `"` + appName + `"`, 1)
-		descriptor.Name = appName
+		var appObj map[string]interface{}
+
+		err := json.Unmarshal([]byte(appJson), &appObj)
+		if err != nil {
+			return err
+		}
+
+		appObj["name"] = appName
+
+		updApp, err := json.Marshal(appObj)
+		if err != nil {
+			return err
+		}
+
+		appJson = string(updApp)
 	}
 
 	currentDir, err := os.Getwd()
