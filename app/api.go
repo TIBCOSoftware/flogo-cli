@@ -41,6 +41,7 @@ func CreateApp(env env.Project, appJson string, appName string) error {
 		}
 
 		appJson = string(updApp)
+		descriptor.Name = appName
 	}
 
 	currentDir, err := os.Getwd()
