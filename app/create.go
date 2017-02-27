@@ -90,7 +90,7 @@ var tplSimpleApp = `
   "triggers": [
     {
       "id": "my_rest_trigger",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/incubator/rest",
+      "Ref": "github.com/TIBCOSoftware/flogo-contrib/incubator/rest",
       "settings": {
         "port": "9233"
       },
@@ -108,7 +108,7 @@ var tplSimpleApp = `
   "actions": [
     {
       "id": "my_simple_flow",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+      "Ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
       "data": {
         "flow": {
           "attributes": [],
