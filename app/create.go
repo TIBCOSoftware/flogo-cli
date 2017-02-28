@@ -28,6 +28,7 @@ type cmdCreate struct {
 	option   *cli.OptionInfo
 	libVersion string
 	fileName string
+	vendorDir string
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -39,6 +40,7 @@ func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
 func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&(c.libVersion), "flv", "", "flogo-lib version")
 	fs.StringVar(&(c.fileName), "f", "", "flogo app file")
+	fs.StringVar(&(c.vendorDir), "vendor", "", "vendor dir")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -83,7 +85,7 @@ func (c *cmdCreate) Exec(args []string) error {
 		appJson = tplSimpleApp //strings.Replace(tplSimpleApp, "AppName", args[0], 1)
 	}
 
-	return CreateApp(SetupNewProjectEnv(), appJson, appName)
+	return CreateApp(SetupNewProjectEnv(), appJson, appName, c.vendorDir)
 }
 
 var tplSimpleApp = `{

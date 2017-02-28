@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
@@ -14,6 +15,7 @@ type GbProject struct {
 	RootDir        string
 	SourceDir      string
 	VendorDir      string
+	VendorSrcDir   string
 	CodeSourcePath string
 }
 
@@ -21,7 +23,8 @@ func NewGbProjectEnv() Project {
 
 	env := &GbProject{}
 	env.SourceDir = "src"
-	env.VendorDir = fgutil.Path("vendor", "src")
+	env.VendorSrcDir = "vendor"
+	env.VendorSrcDir = fgutil.Path("vendor", "src")
 
 	return env
 }
@@ -36,13 +39,14 @@ func (e *GbProject) Init(path string) error {
 
 	e.RootDir = path
 	e.SourceDir = fgutil.Path(path, "src")
-	e.VendorDir = fgutil.Path(path, "vendor", "src")
+	e.VendorDir = fgutil.Path(path, "vendor")
+	e.VendorSrcDir = fgutil.Path(path, "vendor", "src")
 
 	return nil
 }
 
 // Init creates directories for the gb project
-func (e *GbProject) Create(createBin bool) error {
+func (e *GbProject) Create(createBin bool, vendorDir string) error {
 
 	if _, err := os.Stat(e.RootDir); err == nil {
 		return fmt.Errorf("Cannot create project, directory '%s' already exists", e.RootDir)
@@ -50,7 +54,24 @@ func (e *GbProject) Create(createBin bool) error {
 
 	os.MkdirAll(e.RootDir, os.ModePerm)
 	os.MkdirAll(e.SourceDir, os.ModePerm)
-	os.MkdirAll(e.VendorDir, os.ModePerm)
+
+	if vendorDir != "" {
+
+		if _, err := os.Stat(vendorDir); err != nil {
+			return fmt.Errorf("Vendor directory '%s' not found", vendorDir)
+		}
+
+		if strings.HasSuffix(vendorDir, "vendor") || strings.HasSuffix(vendorDir, "vendor" + string(os.PathSeparator)) {
+			err:=fgutil.CopyDir(vendorDir, e.VendorDir)
+			if err != nil {
+				fmt.Println("Error: " + err.Error())
+			}
+		} else {
+			fgutil.CopyDir(vendorDir, e.VendorSrcDir)
+		}
+	} else {
+		os.MkdirAll(e.VendorSrcDir, os.ModePerm)
+	}
 
 	if createBin {
 		e.BinDir = fgutil.Path(e.RootDir, "bin")
@@ -75,7 +96,7 @@ func (e *GbProject) Open() error {
 		return errors.New("Invalid project, source directory doesn't exists")
 	}
 
-	info, err = os.Stat(e.VendorDir)
+	info, err = os.Stat(e.VendorSrcDir)
 
 	if err != nil || !info.IsDir() {
 		return errors.New("Invalid project, vendor directory doesn't exists")
@@ -107,11 +128,22 @@ func (e *GbProject) GetVendorDir() string {
 	return e.VendorDir
 }
 
+func (e *GbProject) GetVendorSrcDir() string {
+	return e.VendorSrcDir
+}
+
 func (e *GbProject) InstallDependency(path string, version string) error {
 	var cmd *exec.Cmd
 
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)
+
+	//check if dependency is installed
+	if _, err := os.Stat(fgutil.Path(e.VendorSrcDir, path)); err == nil {
+		//todo ignore installed dependencies for now
+		//exists, return
+		return nil
+	}
 
 	if version == "" {
 		cmd = exec.Command("gb", "vendor", "fetch", path)
