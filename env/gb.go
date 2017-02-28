@@ -1,7 +1,6 @@
 package env
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"io"
 )
 
 type GbProject struct {
@@ -140,6 +138,13 @@ func (e *GbProject) InstallDependency(path string, version string) error {
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)
 
+	//check if dependency is installed
+	if _, err := os.Stat(fgutil.Path(e.VendorSrcDir, path)); err == nil {
+		//todo ignore installed dependencies for now
+		//exists, return
+		return nil
+	}
+
 	if version == "" {
 		cmd = exec.Command("gb", "vendor", "fetch", path)
 	} else {
@@ -156,20 +161,10 @@ func (e *GbProject) InstallDependency(path string, version string) error {
 
 	os.Chdir(e.RootDir)
 
-	//todo ignore already vendored dependencies for now
-	var errout bytes.Buffer
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = &errout
-	err := cmd.Run()
-	if err != nil {
+	cmd.Stderr = os.Stderr
 
-		if !strings.Contains(errout.String(), "already vendored") {
-			io.Copy(os.Stderr, bytes.NewReader(errout.Bytes()))
-			return err
-		}
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func (e *GbProject) Build() error {
