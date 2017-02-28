@@ -225,9 +225,9 @@ func CopyDir(source string, dest string) (err error) {
 	}
 
 	// create dest dir
-
 	err = os.MkdirAll(dest, sourceinfo.Mode())
 	if err != nil {
+		fmt.Println("copydir-mkdir dest: " + dest)
 		return err
 	}
 

@@ -18,7 +18,7 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson string, appName string) error {
+func CreateApp(env env.Project, appJson string, appName string, vendorDir string) error {
 
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -62,7 +62,7 @@ func CreateApp(env env.Project, appJson string, appName string) error {
 
 	appDir := fgutil.Path(currentDir, descriptor.Name)
 	env.Init(appDir)
-	err = env.Create(false)
+	err = env.Create(false, vendorDir)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func InstallDependency(env env.Project, path string, version string) error {
 // ListDependencies lists all installed dependencies
 func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error) {
 
-	vendorSrc := env.GetVendorDir()
+	vendorSrc := env.GetVendorSrcDir()
 	var deps []*Dependency
 
 	err := filepath.Walk(vendorSrc, func(path string, info os.FileInfo, _ error) error {
