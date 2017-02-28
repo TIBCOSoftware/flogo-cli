@@ -7,7 +7,6 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"strings"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -46,6 +45,7 @@ func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
 func (c *cmdCreate) Exec(args []string) error {
 
 	var appJson string
+	var appName string
 	var err error
 
 	if c.fileName != "" {
@@ -63,6 +63,10 @@ func (c *cmdCreate) Exec(args []string) error {
 				fmt.Fprintf(os.Stderr, "Error: Error loading app file '%s' - %s\n\n", c.fileName, err.Error())
 				os.Exit(2)
 			}
+
+			if len(args) != 0 {
+				appName = args[0]
+			}
 		}
 	} else {
 		if len(args) == 0 {
@@ -75,14 +79,14 @@ func (c *cmdCreate) Exec(args []string) error {
 			cmdUsage(c)
 		}
 
-		appJson = strings.Replace(tplSimpleApp, "AppName", args[0], 1)
+		appName = args[0]
+		appJson = tplSimpleApp //strings.Replace(tplSimpleApp, "AppName", args[0], 1)
 	}
 
-	return CreateApp(SetupNewProjectEnv(), appJson)
+	return CreateApp(SetupNewProjectEnv(), appJson, appName)
 }
 
-var tplSimpleApp = `
-{
+var tplSimpleApp = `{
   "name": "AppName",
   "type": "flogo:app",
   "version": "0.0.1",
@@ -121,11 +125,11 @@ var tplSimpleApp = `
                 "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
                 "name": "log",
                 "attributes": [
-				  {
-					"name": "message",
-					"value": "Simple Log",
-					"type": "string"
-				  }
+                  {
+                    "name": "message",
+                    "value": "Simple Log",
+                    "type": "string"
+                  }
                 ]
               }
             ],
