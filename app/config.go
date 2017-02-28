@@ -130,3 +130,4 @@ func extractRefsFromTask(task *Task, rh *refHolder) {
 		extractRefsFromTask(childTask, rh)
 	}
 }
+

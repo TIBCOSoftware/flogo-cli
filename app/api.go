@@ -26,21 +26,31 @@ func CreateApp(env env.Project, appJson string, appName string) error {
 	}
 
 	if appName != "" {
-		var appObj map[string]interface{}
+		// override the application name
 
-		err := json.Unmarshal([]byte(appJson), &appObj)
-		if err != nil {
-			return err
+		altJson := strings.Replace(appJson, `"`+descriptor.Name+`"`, `"`+appName+`"`, 1)
+		altDescriptor, err := ParseAppDescriptor(altJson)
+
+		//see if we can get away with simple replace so we don't reorder the existing json
+		if err == nil && altDescriptor.Name == appName {
+			appJson = altJson
+		} else {
+			//simple replace didn't work so we have to unmarshal & re-marshal the supplied json
+			var appObj map[string]interface{}
+			err := json.Unmarshal([]byte(appJson), &appObj)
+			if err != nil {
+				return err
+			}
+
+			appObj["name"] = appName
+
+			updApp, err := json.MarshalIndent(appObj, "", "  ")
+			if err != nil {
+				return err
+			}
+			appJson = string(updApp)
 		}
 
-		appObj["name"] = appName
-
-		updApp, err := json.Marshal(appObj)
-		if err != nil {
-			return err
-		}
-
-		appJson = string(updApp)
 		descriptor.Name = appName
 	}
 
