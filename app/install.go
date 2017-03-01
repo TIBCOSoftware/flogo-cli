@@ -57,6 +57,13 @@ func (c *cmdInstall) Exec(args []string) error {
 		version = c.version
 	}
 
-	return InstallDependency(SetupExistingProjectEnv(), contribPath, version)
+	appDir, err := os.Getwd()
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to determine working directory\n\n")
+		os.Exit(2)
+	}
+
+	return InstallDependency(SetupExistingProjectEnv(appDir), contribPath, version)
 }
 

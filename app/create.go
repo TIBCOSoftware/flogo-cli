@@ -11,13 +11,16 @@ import (
 
 var optCreate = &cli.OptionInfo{
 	Name:      "create",
-	UsageLine: "create [-flv version] AppName",
+	UsageLine: "create AppName",
 	Short:     "create a flogo project",
 	Long: `Creates a flogo project.
 
 Options:
-    -flv specify the flogo-lib version
-`,
+    -flv     specify the flogo-lib version
+    -f       specify the flogo.json to create project from
+    -vendor  specify existing vendor directory to copy
+
+ `,
 }
 
 func init() {
@@ -82,10 +85,18 @@ func (c *cmdCreate) Exec(args []string) error {
 		}
 
 		appName = args[0]
-		appJson = tplSimpleApp //strings.Replace(tplSimpleApp, "AppName", args[0], 1)
+		appJson = tplSimpleApp
 	}
 
-	return CreateApp(SetupNewProjectEnv(), appJson, appName, c.vendorDir)
+	currentDir, err := os.Getwd()
+
+	if err != nil {
+		return err
+	}
+
+	appDir := fgutil.Path(currentDir, appName)
+
+	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
 }
 
 var tplSimpleApp = `{

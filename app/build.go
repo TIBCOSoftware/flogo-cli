@@ -4,6 +4,8 @@ import (
 	"flag"
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"os"
+	"fmt"
 )
 
 var optBuild = &cli.OptionInfo{
@@ -42,5 +44,12 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 // Exec implementation of cli.Command.Exec
 func (c *cmdBuild) Exec(args []string) error {
 
-	return BuildApp(SetupExistingProjectEnv(), nil)
+	appDir, err := os.Getwd()
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to determine working directory\n\n")
+		os.Exit(2)
+	}
+
+	return BuildApp(SetupExistingProjectEnv(appDir), nil)
 }

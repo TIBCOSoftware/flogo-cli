@@ -20,15 +20,9 @@ func SetupNewProjectEnv() env.Project {
 	return env.NewGbProjectEnv()
 }
 
-func SetupExistingProjectEnv() env.Project {
+func SetupExistingProjectEnv(appDir string) env.Project {
 
 	env := env.NewGbProjectEnv()
-	appDir, err := os.Getwd()
-
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Error: Unable to determine working directory\n\n")
-		os.Exit(2)
-	}
 
 	if err := env.Init(appDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing flogo app project: %s\n\n", err.Error())
