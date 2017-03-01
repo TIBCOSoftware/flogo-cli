@@ -57,15 +57,33 @@ func (e *GbProject) Create(createBin bool, vendorDir string) error {
 
 	if vendorDir != "" {
 
+		if strings.HasSuffix(vendorDir, string(os.PathSeparator)) {
+			vendorDir = vendorDir[:len(vendorDir)-1]
+		}
+
 		if _, err := os.Stat(vendorDir); err != nil {
 			return fmt.Errorf("Vendor directory '%s' not found", vendorDir)
 		}
 
-		if strings.HasSuffix(vendorDir, "vendor") || strings.HasSuffix(vendorDir, "vendor" + string(os.PathSeparator)) {
-			err:=fgutil.CopyDir(vendorDir, e.VendorDir)
-			if err != nil {
-				fmt.Println("Error: " + err.Error())
+		if strings.HasSuffix(vendorDir, "vendor") {
+
+			isGBVendor := false
+
+			if _, err := os.Stat(fgutil.Path(vendorDir, "src")); err == nil {
+				if _, err := os.Stat(fgutil.Path(vendorDir, "manifest")); err == nil {
+					isGBVendor = true
+				}
 			}
+
+			if isGBVendor {
+				// is gb vendor dir, so copy to vendor dir
+				fgutil.CopyDir(vendorDir, e.VendorDir)
+
+			} else {
+				// go vendor dir, so copy to vendor src sir
+				fgutil.CopyDir(vendorDir, e.VendorSrcDir)
+			}
+
 		} else {
 			fgutil.CopyDir(vendorDir, e.VendorSrcDir)
 		}

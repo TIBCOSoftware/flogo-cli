@@ -73,7 +73,14 @@ func (c *cmdList) Exec(args []string) error {
 		}
 	}
 
-	dependencies, err := ListDependencies(SetupExistingProjectEnv(), cType)
+	appDir, err := os.Getwd()
+
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error: Unable to determine working directory\n\n")
+		os.Exit(2)
+	}
+
+	dependencies, err := ListDependencies(SetupExistingProjectEnv(appDir), cType)
 
 	if err != nil {
 		return err
