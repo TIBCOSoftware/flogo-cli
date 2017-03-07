@@ -37,9 +37,6 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/types"
 )
 
-func init() {
-}
-
 func main() {
 
 	flogo, err := os.Open("flogo.json")

@@ -135,9 +135,6 @@ import (
     "github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
-func init() {
-
-}
 
 func main() {
 
