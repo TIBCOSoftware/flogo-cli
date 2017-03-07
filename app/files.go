@@ -32,23 +32,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/op/go-logging"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
 	"github.com/TIBCOSoftware/flogo-lib/types"
 )
-
-func init() {
-	var format = logging.MustStringFormatter(
-		"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
-	)
-
-	backend := logging.NewLogBackend(os.Stderr, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
-	logging.SetBackend(backendFormatter)
-	logging.SetLevel(logging.INFO, "")
-}
-
-var log = logging.MustGetLogger("main")
 
 func main() {
 
@@ -101,7 +88,7 @@ func setupSignalHandling() chan int {
 			case syscall.SIGQUIT:
 				exitChan <- 0
 			default:
-				log.Debug("Unknown signal.")
+				logger.Debug("Unknown signal.")
 				exitChan <- 1
 			}
 		}
