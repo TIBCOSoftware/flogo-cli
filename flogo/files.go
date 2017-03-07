@@ -132,21 +132,12 @@ import (
     "encoding/json"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
 	"github.com/TIBCOSoftware/flogo-lib/types"
-	"github.com/op/go-logging"
+    "github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 func init() {
-	var format = logging.MustStringFormatter(
-		"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
-	)
 
-	backend := logging.NewLogBackend(os.Stderr, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
-	logging.SetBackend(backendFormatter)
-	logging.SetLevel(logging.INFO, "")
 }
-
-var log = logging.MustGetLogger("main")
 
 func main() {
 
@@ -199,7 +190,7 @@ func setupSignalHandling() chan int {
 			case syscall.SIGQUIT:
 				exitChan <- 0
 			default:
-				log.Debug("Unknown signal.")
+				logger.Debug("Unknown signal.")
 				exitChan <- 1
 			}
 		}
@@ -278,6 +269,7 @@ var tplNewEngineConfigGoFile = `package main
 
 import (
 	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 const configFileName string = "config.json"
@@ -292,7 +284,7 @@ func GetEngineConfig() *engine.Config {
 
 	if config == nil {
 		config = engine.DefaultConfig()
-		log.Warningf("Configuration file '%s' not found, using defaults", configFileName)
+		logger.Warnf("Configuration file '%s' not found, using defaults", configFileName)
 	}
 
 	return config
