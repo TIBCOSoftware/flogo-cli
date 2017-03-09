@@ -34,29 +34,12 @@ import (
 	"syscall"
 
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/op/go-logging"
 )
-
-func init() {
-	var format = logging.MustStringFormatter(
-		"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.5s} %{color:reset} %{message}",
-	)
-
-	backend := logging.NewLogBackend(os.Stderr, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
-	logging.SetBackend(backendFormatter)
-	logging.SetLevel(logging.INFO, "")
-}
-
-var log = logging.MustGetLogger("main")
 
 func main() {
 
 	engineConfig := GetEngineConfig()
 	triggersConfig := GetTriggersConfig()
-
-	logLevel, _ := logging.LogLevel(engineConfig.LogLevel)
-	logging.SetLevel(logLevel, "")
 
 	engine := engine.NewEngine(engineConfig, triggersConfig)
 
@@ -100,7 +83,6 @@ func setupSignalHandling() chan int {
 			case syscall.SIGQUIT:
 				exitChan <- 0
 			default:
-				log.Debug("Unknown signal.")
 				exitChan <- 1
 			}
 		}
@@ -212,6 +194,7 @@ var tplEngineConfigGoFile = `package main
 
 import (
 	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 const configFileName string = "config.json"
@@ -231,7 +214,7 @@ func GetEngineConfig() *engine.Config {
 
 	if config == nil {
 		config = engine.DefaultConfig()
-		log.Warningf("Configuration file '%s' not found, using defaults", configFileName)
+		logger.Warnf("Configuration file '%s' not found, using defaults", configFileName)
 	}
 
 	return config
@@ -245,7 +228,7 @@ func GetTriggersConfig() *engine.TriggersConfig {
 
 	if config == nil {
 		config = engine.DefaultTriggersConfig()
-		log.Warningf("Configuration file '%s' not found, using defaults", triggersConfigFileName)
+		logger.Warnf("Configuration file '%s' not found, using defaults", triggersConfigFileName)
 	}
 
 	return config
@@ -347,6 +330,7 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/flow/service/staterecorder"
 	"github.com/TIBCOSoftware/flogo-lib/flow/service/tester"
 	"github.com/TIBCOSoftware/flogo-lib/flow/support"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 var embeddedJSONFlows map[string]string
@@ -362,7 +346,7 @@ func init() {
 // EnableFlowServices enables flow services and action for engine
 func EnableFlowServices(engine *engine.Engine, engineConfig *engine.Config) {
 
-	log.Debug("Flow Services and Actions enabled")
+	logger.Debug("Flow Services and Actions enabled")
 
 	embeddedFlowMgr := support.NewEmbeddedFlowManager(true, embeddedJSONFlows)
 
