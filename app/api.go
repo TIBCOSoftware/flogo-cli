@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -95,8 +96,11 @@ func BuildApp(env env.Project, customPreProcessor BuildPreProcessor) (err error)
 		customPreProcessor.PrepareForBuild(env)
 	}
 
-	//todo do standard pre-processing
-	// regenerate imports?
+	//generate metadatas
+	err = generateGoMetadatas(env)
+	if err != nil {
+		return err
+	}
 
 	err = env.Build()
 	if err != nil {
@@ -127,11 +131,10 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 
 		if !info.IsDir() {
 
-			ref := refPath(vendorSrc, path)
-
 			switch info.Name() {
 			case "action.json":
 				if cType == 0 || cType == ACTION {
+					ref := refPath(vendorSrc, path)
 					desc, err := readDescriptor(path, info)
 					if err == nil && desc.Type == "flogo:action" {
 						deps = append(deps, &Dependency{ContribType: ACTION, Ref: ref})
@@ -139,6 +142,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "trigger.json":
 				if cType == 0 || cType == TRIGGER {
+					ref := refPath(vendorSrc, path)
 					desc, err := readDescriptor(path, info)
 					if err == nil && desc.Type == "flogo:trigger" {
 						deps = append(deps, &Dependency{ContribType: TRIGGER, Ref: ref})
@@ -146,6 +150,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "activity.json":
 				if cType == 0 || cType == ACTIVITY {
+					ref := refPath(vendorSrc, path)
 					desc, err := readDescriptor(path, info)
 					if err == nil && desc.Type == "flogo:activity" {
 						deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: ref})
@@ -153,6 +158,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "flow-model.json":
 				if cType == 0 || cType == FLOW_MODEL {
+					ref := refPath(vendorSrc, path)
 					desc, err := readDescriptor(path, info)
 					if err == nil && desc.Type == "flogo:flow-model" {
 						deps = append(deps, &Dependency{ContribType: FLOW_MODEL, Ref: ref})
@@ -186,6 +192,68 @@ func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
 
 	return ParseDescriptor(string(raw))
 }
+
+func generateGoMetadatas(env env.Project) error {
+
+	dependencies, err := ListDependencies(env, 0)
+
+	if err != nil {
+		return err
+	}
+
+	for _, dependency := range dependencies {
+		createMetadata(env, dependency)
+	}
+
+	return nil
+}
+
+func createMetadata(env env.Project, dependency *Dependency) error {
+
+	vendorSrc := env.GetVendorSrcDir()
+	mdFilePath := path.Join(vendorSrc, dependency.Ref)
+	mdGoFilePath := path.Join(vendorSrc, dependency.Ref)
+	pkg := path.Base(mdFilePath)
+
+	switch dependency.ContribType {
+	case ACTION:
+		mdFilePath = fgutil.Path(mdFilePath, "action.json")
+		mdGoFilePath = fgutil.Path(mdGoFilePath, "action_metadata.go")
+	case TRIGGER:
+		mdFilePath = fgutil.Path(mdFilePath, "trigger.json")
+		mdGoFilePath = fgutil.Path(mdGoFilePath, "trigger_metadata.go")
+	case ACTIVITY:
+		mdFilePath = fgutil.Path(mdFilePath, "activity.json")
+		mdGoFilePath = fgutil.Path(mdGoFilePath, "activity_metadata.go")
+	default:
+		return nil
+	}
+
+	raw, err := ioutil.ReadFile(mdFilePath)
+	if err != nil {
+		return err
+	}
+
+	info := &struct {
+		Package      string
+		MetadataJSON string
+	}{
+		Package:      pkg,
+		MetadataJSON: string(raw),
+	}
+
+	f, _ := os.Create(mdGoFilePath)
+	fgutil.RenderTemplate(f, tplMetadataGoFile, info)
+	f.Close()
+
+	return nil
+}
+
+var tplMetadataGoFile = `package {{.Package}}
+
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" +  `
+
+`
 
 // ParseAppDescriptor parse the application descriptor
 func ParseDescriptor(descJson string) (*Descriptor, error) {
