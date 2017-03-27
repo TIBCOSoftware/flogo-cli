@@ -107,10 +107,10 @@ func BuildApp(env env.Project, customPreProcessor BuildPreProcessor) (err error)
 		return err
 	}
 
-	err = fgutil.MoveFiles(env.GetBinDir(), env.GetRootDir())
-	if err != nil {
-		return err
-	}
+	//err = fgutil.MoveFiles(env.GetBinDir(), env.GetRootDir())
+	//if err != nil {
+	//	return err
+	//}
 
 	return
 }
