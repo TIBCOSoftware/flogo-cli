@@ -131,6 +131,7 @@ var tplSimpleApp = `{
           "attributes": [],
           "rootTask": {
             "id": 1,
+            "type": 1,
             "tasks": [
               {
                 "id": 2,

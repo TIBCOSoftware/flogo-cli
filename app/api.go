@@ -107,10 +107,10 @@ func BuildApp(env env.Project, customPreProcessor BuildPreProcessor) (err error)
 		return err
 	}
 
-	//err = fgutil.MoveFiles(env.GetBinDir(), env.GetRootDir())
-	//if err != nil {
-	//	return err
-	//}
+	fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+	if err != nil {
+		return err
+	}
 
 	return
 }
@@ -251,7 +251,7 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 
 var tplMetadataGoFile = `package {{.Package}}
 
-var jsonMetadata = ` + "`{{.MetadataJSON}}`" +  `
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
 
 `
 
