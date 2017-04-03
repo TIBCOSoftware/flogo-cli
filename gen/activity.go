@@ -69,10 +69,9 @@ type MyActivity struct {
 	metadata *activity.Metadata
 }
 
-// init create & register activity
-func init() {
-	md := activity.NewMetadata(jsonMetadata)
-	activity.Register(&MyActivity{metadata: md})
+// NewActivity creates a new activity
+func NewActivity(metadata *activity.Metadata) activity.Activity {
+	return &MyActivity{metadata: metadata}
 }
 
 // Metadata implements activity.Activity.Metadata
@@ -92,16 +91,35 @@ func (a *MyActivity) Eval(context activity.Context) (done bool, err error)  {
 var tplActivityGoTest = `package {{.Name}}
 
 import (
+	"io/ioutil"
 	"testing"
+
 	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
 	"github.com/TIBCOSoftware/flogo-lib/flow/test"
 )
 
-func TestRegistered(t *testing.T) {
-	act := activity.Get("{{.Name}}")
+var activityMetadata *activity.Metadata
+
+func getActivityMetadata() *activity.Metadata {
+
+	if activityMetadata == nil {
+		jsonMetadataBytes, err := ioutil.ReadFile("activity.json")
+		if err != nil{
+			panic("No Json Metadata found for activity.json path")
+		}
+
+		activityMetadata = activity.NewMetadata(string(jsonMetadataBytes))
+	}
+
+	return activityMetadata
+}
+
+func TestCreate(t *testing.T) {
+
+	act := NewActivity(getActivityMetadata())
 
 	if act == nil {
-		t.Error("Activity Not Registered")
+		t.Error("Activity Not Created")
 		t.Fail()
 		return
 	}
@@ -116,10 +134,9 @@ func TestEval(t *testing.T) {
 		}
 	}()
 
-	md := activity.NewMetadata(jsonMetadata)
-	act := &MyActivity{metadata: md}
+	act := NewActivity(getActivityMetadata())
+	tc := test.NewTestActivityContext(getActivityMetadata())
 
-	tc := test.NewTestActivityContext(md)
 	//setup attrs
 
 	act.Eval(tc)

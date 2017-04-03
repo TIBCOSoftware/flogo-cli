@@ -251,10 +251,16 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 
 var tplMetadataGoFile = `package {{.Package}}
 
+import (
+	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+)
+
 var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
 
-func getJsonMetadata() string {
-	return jsonMetadata
+// init create & register activity
+func init() {
+	md := activity.NewMetadata(jsonMetadata)
+	activity.Register(NewActivity(md))
 }
 `
 
