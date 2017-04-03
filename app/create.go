@@ -107,7 +107,7 @@ var tplSimpleApp = `{
   "triggers": [
     {
       "id": "my_rest_trigger",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/incubator/rest",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
       "settings": {
         "port": "9233"
       },

@@ -194,7 +194,7 @@ func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
 }
 
 func generateGoMetadatas(env env.Project) error {
-
+	//todo optimize metadata recreation to minimize compile times
 	dependencies, err := ListDependencies(env, 0)
 
 	if err != nil {
@@ -253,6 +253,9 @@ var tplMetadataGoFile = `package {{.Package}}
 
 var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
 
+func getJsonMetadata() string {
+	return jsonMetadata
+}
 `
 
 // ParseAppDescriptor parse the application descriptor
