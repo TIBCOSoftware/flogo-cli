@@ -89,17 +89,54 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	return nil
 }
 
-// BuildApp build the flogo application
-func BuildApp(env env.Project, customPreProcessor BuildPreProcessor) (err error) {
+type PrepareOptions struct {
+	PreProcessor    BuildPreProcessor
+	OptimizeImports bool
+}
 
-	if customPreProcessor != nil {
-		customPreProcessor.PrepareForBuild(env)
+// PrepareApp do all pre-build setup and pre-processing
+func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
+
+	if options == nil {
+		options = &PrepareOptions{}
+	}
+
+	if options.PreProcessor != nil {
+		options.PreProcessor.PrepareForBuild(env)
 	}
 
 	//generate metadatas
 	err = generateGoMetadatas(env)
 	if err != nil {
 		return err
+	}
+
+	// todo
+	// -o extract refs from descriptor and rebuild imports file
+	// other wise add imports for all files
+
+	return
+}
+
+type BuildOptions struct {
+	*PrepareOptions
+
+	SkipPrepare bool
+}
+
+// BuildApp build the flogo application
+func BuildApp(env env.Project, options *BuildOptions) (err error) {
+
+	if options == nil {
+		options = &BuildOptions{}
+	}
+
+	if !options.SkipPrepare {
+		err = PrepareApp(env, options.PrepareOptions)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	err = env.Build()
@@ -215,6 +252,8 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 	mdGoFilePath := path.Join(vendorSrc, dependency.Ref)
 	pkg := path.Base(mdFilePath)
 
+	tplMetadata := tplMetadataGoFile
+
 	switch dependency.ContribType {
 	case ACTION:
 		mdFilePath = fgutil.Path(mdFilePath, "action.json")
@@ -225,6 +264,7 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 	case ACTIVITY:
 		mdFilePath = fgutil.Path(mdFilePath, "activity.json")
 		mdGoFilePath = fgutil.Path(mdGoFilePath, "activity_metadata.go")
+		tplMetadata = tplActivityMetadataGoFile
 	default:
 		return nil
 	}
@@ -243,13 +283,22 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 	}
 
 	f, _ := os.Create(mdGoFilePath)
-	fgutil.RenderTemplate(f, tplMetadataGoFile, info)
+	fgutil.RenderTemplate(f, tplMetadata, info)
 	f.Close()
 
 	return nil
 }
 
 var tplMetadataGoFile = `package {{.Package}}
+
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
+
+func getJsonMetadata() string {
+	return jsonMetadata
+}
+`
+
+var tplActivityMetadataGoFile = `package {{.Package}}
 
 import (
 	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
