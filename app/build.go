@@ -10,13 +10,14 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-i]",
+	UsageLine: "build [-o][-i][-bp]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
     -o   optimize for embedded flows
     -i   incorporate config into application
+    -sp  skip prepare
 `,
 }
 
@@ -25,9 +26,10 @@ func init() {
 }
 
 type cmdBuild struct {
-	option     *cli.OptionInfo
-	optimize   bool
-	includeCfg bool
+	option      *cli.OptionInfo
+	optimize    bool
+	skipPrepare bool
+	includeCfg  bool
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -39,6 +41,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
+	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -51,5 +54,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	return BuildApp(SetupExistingProjectEnv(appDir), nil)
+	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize}}
+	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }
