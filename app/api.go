@@ -15,7 +15,7 @@ import (
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
-	PrepareForBuild(env env.Project)
+	PrepareForBuild(env env.Project) error
 }
 
 // CreateApp creates an application from the specified json application descriptor
@@ -102,7 +102,10 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	}
 
 	if options.PreProcessor != nil {
-		options.PreProcessor.PrepareForBuild(env)
+		err = options.PreProcessor.PrepareForBuild(env)
+		if err != nil {
+			return err
+		}
 	}
 
 	//generate metadatas
@@ -113,7 +116,7 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 
 	// todo
 	// -o extract refs from descriptor and rebuild imports file
-	// other wise add imports for all files
+	// otherwise add imports for all files
 
 	return
 }
@@ -313,7 +316,7 @@ func init() {
 }
 `
 
-// ParseAppDescriptor parse the application descriptor
+// ParseDescriptor parse a descriptor
 func ParseDescriptor(descJson string) (*Descriptor, error) {
 	descriptor := &Descriptor{}
 
