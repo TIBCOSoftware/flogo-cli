@@ -29,6 +29,9 @@ type Project interface {
 	// Install a go dependency
 	InstallDependency(path string, version string) error
 
+	// Uninstall a go dependency
+	UninstallDependency(path string) error
+
 	// Build the project
 	Build() error
 }

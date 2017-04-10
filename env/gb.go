@@ -185,6 +185,28 @@ func (e *GbProject) InstallDependency(path string, version string) error {
 	return cmd.Run()
 }
 
+func (e *GbProject) UninstallDependency(path string) error {
+
+	cwd, _ := os.Getwd()
+	defer os.Chdir(cwd)
+
+	//check if dependency is installed
+	if _, err := os.Stat(fgutil.Path(e.VendorSrcDir, path)); err != nil {
+		//todo ignore dependencies that are not installed for now
+		//exists, return
+		return nil
+	}
+
+	os.Chdir(e.RootDir)
+
+	cmd := exec.Command("gb", "vendor", "delete", path)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 func (e *GbProject) Build() error {
 	cmd := exec.Command("gb", "build")
 	cmd.Stdout = os.Stdout

@@ -197,6 +197,12 @@ func InstallDependency(env env.Project, path string, version string) error {
 	return env.InstallDependency(path, version)
 }
 
+// UninstallDependency uninstall a dependency
+func UninstallDependency(env env.Project, path string) error {
+
+	return env.UninstallDependency(path)
+}
+
 // ListDependencies lists all installed dependencies
 func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error) {
 
