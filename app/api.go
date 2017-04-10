@@ -155,6 +155,42 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 	return
 }
 
+// InstallPalette install a palette
+func InstallPalette(env env.Project, path string) error {
+
+	var file []byte
+
+	file, _ = ioutil.ReadFile(path)
+
+	var paletteDescriptor *FlogoPaletteDescriptor
+	err := json.Unmarshal(file, &paletteDescriptor)
+
+	var deps []Dependency
+
+	if err != nil {
+		err = json.Unmarshal(file, &deps)
+	} else {
+		deps = paletteDescriptor.Extensions
+	}
+
+	if err != nil {
+		return err
+		//fmt.Fprint(os.Stderr, "Error: Unable to parse palette descriptor, file may be corrupted.\n\n")
+		//os.Exit(2)
+	}
+
+	for _, dep := range deps {
+		err = env.InstallDependency(dep.Ref, "")
+		if err != nil {
+			return err
+		}
+	}
+
+	//fmt.Fprintf(os.Stdout, "Adding Palette: %s [%s]\n\n", paletteDescriptor.Name, paletteDescriptor.Description)
+
+	return nil
+}
+
 // InstallDependency install a dependency
 func InstallDependency(env env.Project, path string, version string) error {
 
