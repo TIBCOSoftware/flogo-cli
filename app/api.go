@@ -69,10 +69,10 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	//todo allow ability to specify flogo-lib version
 	env.InstallDependency(pathFlogoLib, "")
 
-	refs := ExtractRefs(descriptor)
+	deps := ExtractDependencies(descriptor)
 
-	for _, ref := range refs {
-		path, version := splitVersion(ref)
+	for _, dep := range deps {
+		path, version := splitVersion(dep.Ref)
 		err = env.InstallDependency(path, version)
 		if err != nil {
 			return err
@@ -83,8 +83,8 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	cmdPath := fgutil.Path(env.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, 0777)
 
-	createMainGoFile(cmdPath)
-	createImportsGoFile(cmdPath, refs)
+	createMainGoFile(cmdPath,"")
+	createImportsGoFile(cmdPath, deps)
 
 	return nil
 }
@@ -92,6 +92,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 type PrepareOptions struct {
 	PreProcessor    BuildPreProcessor
 	OptimizeImports bool
+	EmbedConfig     bool
 }
 
 // PrepareApp do all pre-build setup and pre-processing
@@ -114,9 +115,36 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 		return err
 	}
 
-	// todo
-	// -o extract refs from descriptor and rebuild imports file
-	// otherwise add imports for all files
+	//load descriptor
+	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(),"flogo.json"))
+
+	if err != nil {
+		return err
+	}
+	descriptor, err := ParseAppDescriptor(appJson)
+	if err != nil {
+		return err
+	}
+
+	//generate imports file
+	var deps []*Dependency
+
+	if options.OptimizeImports {
+
+		deps = ExtractDependencies(descriptor)
+
+	} else {
+		deps, err = ListDependencies(env, 0)
+	}
+
+	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
+	createImportsGoFile(cmdPath, deps)
+
+	if options.EmbedConfig {
+		createMainGoFile(cmdPath, appJson)
+	} else {
+		createMainGoFile(cmdPath, "")
+	}
 
 	return
 }
@@ -209,39 +237,51 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 	vendorSrc := env.GetVendorSrcDir()
 	var deps []*Dependency
 
-	err := filepath.Walk(vendorSrc, func(path string, info os.FileInfo, _ error) error {
+	err := filepath.Walk(vendorSrc, func(filePath string, info os.FileInfo, _ error) error {
 
 		if !info.IsDir() {
 
 			switch info.Name() {
 			case "action.json":
 				if cType == 0 || cType == ACTION {
-					ref := refPath(vendorSrc, path)
-					desc, err := readDescriptor(path, info)
+					ref := refPath(vendorSrc, filePath)
+					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:action" {
 						deps = append(deps, &Dependency{ContribType: ACTION, Ref: ref})
 					}
 				}
 			case "trigger.json":
+				//temporary hack to handle old contrib dir layout
+				dir := filePath[0:len(filePath)-12]
+				if _, err := os.Stat(path.Join(dir,"..","trigger.json")); err == nil {
+					//old trigger.json, ignore
+					return nil
+				}
 				if cType == 0 || cType == TRIGGER {
-					ref := refPath(vendorSrc, path)
-					desc, err := readDescriptor(path, info)
+					ref := refPath(vendorSrc, filePath)
+					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:trigger" {
 						deps = append(deps, &Dependency{ContribType: TRIGGER, Ref: ref})
 					}
 				}
 			case "activity.json":
+				//temporary hack to handle old contrib dir layout
+				dir := filePath[0:len(filePath)-13]
+				if _, err := os.Stat(path.Join(dir,"..","activity.json")); err == nil {
+					//old activity.json, ignore
+					return nil
+				}
 				if cType == 0 || cType == ACTIVITY {
-					ref := refPath(vendorSrc, path)
-					desc, err := readDescriptor(path, info)
+					ref := refPath(vendorSrc, filePath)
+					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:activity" {
 						deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: ref})
 					}
 				}
 			case "flow-model.json":
 				if cType == 0 || cType == FLOW_MODEL {
-					ref := refPath(vendorSrc, path)
-					desc, err := readDescriptor(path, info)
+					ref := refPath(vendorSrc, filePath)
+					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:flow-model" {
 						deps = append(deps, &Dependency{ContribType: FLOW_MODEL, Ref: ref})
 					}

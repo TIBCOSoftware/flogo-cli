@@ -15,9 +15,14 @@ const (
 )
 
 
-func createMainGoFile(codeSourcePath string) {
+func createMainGoFile(codeSourcePath string, flogoJSON string) {
 
-	var data struct{}
+	data := struct {
+		FlogoJSON string
+	}{
+		flogoJSON,
+	}
+
 	f, _ := os.Create(fgutil.Path(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplNewMainGoFile, &data)
 	f.Close()
@@ -27,7 +32,7 @@ var tplNewMainGoFile = `package main
 
 import (
 	"fmt"
-    "encoding/json"
+	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
@@ -37,18 +42,44 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/types"
 )
 
+// can be used to compile in flogo app descriptor file
+const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+
 func main() {
 
-	flogo, err := os.Open("flogo.json")
-    if err != nil {
-        fmt.Println(err.Error())
-        os.Exit(1)
-    }
+	app := &types.AppConfig{}
 
-    jsonParser := json.NewDecoder(flogo)
-    app := &types.AppConfig{}
-    jsonParser.Decode(&app)
+
+	if flogoJSON == "" {
+		flogo, err := os.Open("flogo.json")
+    	if err != nil {
+        	fmt.Println(err.Error())
+        	os.Exit(1)
+    	}
+
+    	jsonParser := json.NewDecoder(flogo)
+    	err = jsonParser.Decode(&app)
+
+		if err != nil {
+        	fmt.Println(err.Error())
+        	os.Exit(1)
+		}
+
+	} else {
+		err := json.Unmarshal([]byte(flogoJSON), app)
+
+		if err != nil {
+        	fmt.Println(err.Error())
+        	os.Exit(1)
+		}
+	}
+
     e, err := engine.New(app)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
 	e.Start()
 
@@ -98,10 +129,9 @@ func setupSignalHandling() chan int {
 }
 `
 
-
-func createImportsGoFile(codeSourcePath string, refs []string) {
+func createImportsGoFile(codeSourcePath string, deps []*Dependency) {
 	f, _ := os.Create(fgutil.Path(codeSourcePath, fileImportsGo))
-	fgutil.RenderTemplate(f, tplNewImportsGoFile, refs)
+	fgutil.RenderTemplate(f, tplNewImportsGoFile, deps)
 	f.Close()
 }
 
@@ -109,7 +139,7 @@ var tplNewImportsGoFile = `package main
 
 import (
 
-{{range $i, $ref := .}}	_ "{{ $ref }}"
+{{range $i, $dep := .}}	_ "{{ $dep.Ref }}"
 {{end}}
 )
 `

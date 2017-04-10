@@ -16,7 +16,7 @@ var optPrepare = &cli.OptionInfo{
 
 Options:
     -o   optimize for embedded flows
-    -i   incorporate config into application
+    -i   incorporate application config into executable
 `,
 }
 
@@ -25,9 +25,9 @@ func init() {
 }
 
 type cmdPrepare struct {
-	option     *cli.OptionInfo
-	optimize   bool
-	includeCfg bool
+	option      *cli.OptionInfo
+	optimize    bool
+	embedConfig bool
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -38,7 +38,7 @@ func (c *cmdPrepare) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdPrepare) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize prepare")
-	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
+	fs.BoolVar(&(c.embedConfig), "i", false, "embed config")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -51,6 +51,6 @@ func (c *cmdPrepare) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &PrepareOptions{OptimizeImports:c.optimize}
+	options := &PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig}
 	return PrepareApp(SetupExistingProjectEnv(appDir), options)
 }
