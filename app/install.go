@@ -10,12 +10,13 @@ import (
 
 var optInstall = &cli.OptionInfo{
 	Name:      "install",
-	UsageLine: "install [-v version] contribution",
+	UsageLine: "install [-v version][-p] contribution",
 	Short:     "install a flogo contribution",
 	Long: `Installs a flogo contribution.
 
 Options:
     -v specify the version
+    -p install palette file
 `,
 }
 
@@ -26,6 +27,7 @@ func init() {
 type cmdInstall struct {
 	option   *cli.OptionInfo
 	version string
+	palette bool
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -36,6 +38,8 @@ func (c *cmdInstall) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdInstall) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&(c.version), "v", "", "version")
+	fs.BoolVar(&(c.palette), "p", false, "palette")
+
 }
 
 // Exec implementation of cli.Command.Exec
@@ -62,6 +66,10 @@ func (c *cmdInstall) Exec(args []string) error {
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Error: Unable to determine working directory\n\n")
 		os.Exit(2)
+	}
+
+	if c.palette {
+		return InstallPalette(SetupExistingProjectEnv(appDir), contribPath)
 	}
 
 	return InstallDependency(SetupExistingProjectEnv(appDir), contribPath, version)

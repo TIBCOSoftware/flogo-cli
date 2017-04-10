@@ -23,6 +23,23 @@ var ctStr = [...]string{
 
 func (m ContribType) String() string { return ctStr[m] }
 
+func ToContribType(name string) ContribType {
+	switch name {
+	case "action":
+		return ACTION
+	case "trigger":
+		return TRIGGER
+	case "activity":
+		return ACTIVITY
+	case "flow-model":
+		return FLOW_MODEL
+	case "all":
+		return 0
+	}
+
+	return -1
+}
+
 // FlogoAppDescriptor is the descriptor for a Flogo application
 type FlogoAppDescriptor struct {
 	Name        string `json:"name"`
@@ -58,19 +75,13 @@ type Task struct {
 	Tasks []*Task `json:"tasks"`
 }
 
-// FlogoPaletteDescriptor is the flogo palette descriptor object
-type FlogoExtension struct {
-	Type string `json:"type"`
-	Ref  string `json:"ref"`
-}
-
 //FlogoPaletteDescriptor a package: just change to a list of references
 type FlogoPaletteDescriptor struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Extensions []FlogoExtension `json:"extensions"`
+	Extensions []Dependency `json:"extensions"`
 }
 
 type Descriptor struct {
@@ -94,6 +105,23 @@ func (d *Dependency) MarshalJSON() ([]byte, error) {
 		Ref:         d.Ref,
 	})
 }
+
+func (d *Dependency) UnmarshalJSON(data []byte) error {
+	ser := &struct {
+		ContribType string `json:"type"`
+		Ref         string   `json:"ref"`
+	}{}
+
+	if err := json.Unmarshal(data, ser); err != nil {
+		return err
+	}
+
+	d.Ref = ser.Ref
+	d.ContribType = ToContribType(ser.ContribType)
+
+	return nil
+}
+
 
 type refHolder struct {
 	refs []string
