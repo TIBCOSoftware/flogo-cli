@@ -122,40 +122,38 @@ func (d *Dependency) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
-type refHolder struct {
-	refs []string
+type depHolder struct {
+	deps []*Dependency
 }
 
-// Extract references from from application descriptor
-func ExtractRefs(descriptor *FlogoAppDescriptor) []string {
+// ExtractDependencies extracts dependencies from from application descriptor
+func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 
-	rh := &refHolder{}
+	dh := &depHolder{}
 
 	for _, action := range descriptor.Actions {
-		rh.refs = append(rh.refs, action.Ref)
+		dh.deps = append(dh.deps, &Dependency{ContribType:ACTION, Ref:action.Ref})
 
 		if action.Data != nil && action.Data.Flow != nil {
-			extractRefsFromTask(action.Data.Flow.RootTask, rh)
+			extractDepsFromTask(action.Data.Flow.RootTask, dh)
 		}
 	}
 
 	for _, trigger := range descriptor.Triggers {
-		rh.refs = append(rh.refs, trigger.Ref)
+		dh.deps = append(dh.deps,&Dependency{ContribType:TRIGGER, Ref:trigger.Ref})
 	}
 
-	return rh.refs
+	return dh.deps
 }
 
-// extractRefsFromTask extract references from a task and is children
-func extractRefsFromTask(task *Task, rh *refHolder) {
+// extractDepsFromTask extract dependencies from a task and is children
+func extractDepsFromTask(task *Task, dh *depHolder) {
 
 	if task.Ref != "" {
-		rh.refs = append(rh.refs, task.Ref)
+		dh.deps = append(dh.deps, &Dependency{ContribType:ACTIVITY, Ref:task.Ref})
 	}
 
 	for _, childTask := range task.Tasks {
-		extractRefsFromTask(childTask, rh)
+		extractDepsFromTask(childTask, dh)
 	}
 }
-

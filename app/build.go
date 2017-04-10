@@ -29,7 +29,7 @@ type cmdBuild struct {
 	option      *cli.OptionInfo
 	optimize    bool
 	skipPrepare bool
-	includeCfg  bool
+	embedConfig bool
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -40,7 +40,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
-	fs.BoolVar(&(c.includeCfg), "i", false, "include config")
+	fs.BoolVar(&(c.embedConfig), "i", false, "embed config")
 	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
 }
 
@@ -54,6 +54,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize}}
+	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }
