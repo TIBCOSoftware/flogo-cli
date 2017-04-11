@@ -16,65 +16,102 @@
 ### Update flogo
     go get -u github.com/TIBCOSoftware/flogo-cli/...
     
+### IMPORTANT UPDATE ##
+
+The original **flogo** CLI tool has been deprecated and will be going away in the near future.  It has been temporarily renamed to **flogo_old** and its documentation can still be accessed [here](README_OLD.md).
+    
 ## Getting Started
-This simple example demonstrates how to create a simple flogo application that has a log activity and REST trigger.
+A flogo application is created using the **flogo** CLI tool.  The tool can be used to create an application from an existing *flogo.json* or to create a simple base application to get you started.  In this example we will walk you through creating the base/sample application.
 
+To create the base application, which consists of a REST trigger and a simple flow with a log activity, you use the following commands.
 
-- Download flow [myflow.json](https://github.com/TIBCOSoftware/flogo-cli/blob/master/samples/gettingstarted/cli/myflow.json) to build your first application. You can also download more samples from the [samples folder](https://github.com/TIBCOSoftware/flogo/tree/master/samples) in the flogo repo. 
 
 ```bash
 flogo create myApp
 cd myApp
 
-flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
-flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
-#Make sure myflow.json file under current location
-flogo add flow myflow.json
 flogo build
 ```
 
-- Cd bin folder and open trigger.json in a text editor
-- Replace content of trigger.json with the following
+- Cd bin folder 
+- Start flogo engine by running ./myApp
+- Flogo will start a REST server
+- Send GET request to run the flow. eg: http://localhost: 9233/test
+
+The built in sample application is based of the following flogo.json.  This file can be manually modified to add additional triggers and flow actions.  This file can also be generated using the flogo-web UI.
 
 ```json
 {
+  "name": "myApp",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "description": "My flogo application description",
   "triggers": [
     {
-      "name": "tibco-rest",
+      "id": "my_rest_trigger",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
       "settings": {
-        "port": "9999"
+        "port": "9233"
       },
-      "endpoints": [
+      "handlers": [
         {
-          "actionType": "flow",
-          "actionURI": "embedded://myflow",
+          "actionId": "my_simple_flow",
           "settings": {
-            "autoIdReply": "true",
             "method": "GET",
-            "path": "/flow",
-            "useReplyHandler": "true"
+            "path": "/test"
           }
         }
       ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "my_simple_flow",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+      "data": {
+        "flow": {
+          "attributes": [],
+          "rootTask": {
+            "id": 1,
+            "type": 1,
+            "tasks": [
+              {
+                "id": 2,
+                "type": 1,
+                "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+                "name": "log",
+                "attributes": [
+                  {
+                    "name": "message",
+                    "value": "Simple Log",
+                    "type": "string"
+                  }
+                ]
+              }
+            ],
+            "links": [
+            ]
+          }
+        }
+      }
     }
   ]
 }
 ```
 
-- Start flogo engine by running ./myApp
-- Flogo will start a REST server
-- Send GET request to run the flow. eg: http://localhost:9999/flow
 
 For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
 ## Documentation
 Additional documentation on flogo and the CLI tool
 
-  - **Flogo tool**
+  - **flogo tool**
     - creating an [application](docs/app.md)
-    - creating an [activity](docs/activity.md)
+  - **flogogen tool**
     - creating a [trigger](docs/trigger.md)
-    - creating a [model](docs/model.md)
+    - creating a [action](docs/action.md)
+    - creating an [activity](docs/activity.md)
+    - creating a [flow model](docs/flow_model.md)
 
 ## Contributing and support
 
