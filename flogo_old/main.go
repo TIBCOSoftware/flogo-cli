@@ -98,7 +98,7 @@ func printUsage(w io.Writer) {
 
 var usageTpl = `Usage:
 
-    flogo <command/tool> [arguments]
+    flogo_old <command/tool> [arguments]
 
 Commands:
 {{range .}}{{if not .IsTool}}

@@ -3,72 +3,95 @@
 
 ## Commands
 #### create
-This command creates a flogo application project.
+This command is used to create a flogo application project.
+
+*Create the base sample project with a specific name.*
 	
 	flogo create my_app
 	
-### add
-This command is used to add a activity, trigger, flow or model to the application.
-
-*activity*
-
-	flogo add activity github.com/TIBCOSoftware/flogo-contrib/activity/log
+*Create a flogo application project from an existing flogo application descriptor.*
 	
-*trigger*
-
-	flogo add trigger github.com/TIBCOSoftware/flogo-contrib/trigger/rest
-	
-*model*
-
-	flogo add model github.com/TIBCOSoftware/flogo-contrib/model/simple	  
-	
-*flow*
-
-	flogo add flow file:///tmp/myflow.json
+	flogo create -f myapp.json
 		
-Note: tibco-simple model is added to an application by default 	
-### del
-This command is used to remove a activity, trigger or model from the application.
+### install
+This command is used to install a contribution to your project.
 
 *activity*
 
-	flogo del activity tibco-log
+	flogo install github.com/TIBCOSoftware/flogo-contrib/activity/log
 	
 *trigger*
 
-	flogo del trigger tibco-rest
+	flogo install github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 	
-*model*
+	
+### uninstall
+This command is used to remove a contribution to your project.
 
-	flogo del model tibco-simple	
+*activity*
+
+	flogo uninstall github.com/TIBCOSoftware/flogo-contrib/activity/log
+	
+*trigger*
+
+	flogo uninstall github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 	
 ### list
-This command is used to list the activities, triggers, flows and models added to the application.  
+This command is used to list the activities, triggers, flows and models installed in the application.  
 	 
 	flogo list
 	
-	Activities:
-    	- tibco-log [github.com/TIBCOSoftware/flogo-contrib/activity/log]
+	actions:
+	  github.com/TIBCOSoftware/flogo-contrib/action/flow
+	activities:
+	  github.com/TIBCOSoftware/flogo-contrib/activity/log
+	flow-model:
+	  github.com/TIBCOSoftware/flogo-contrib/model/simple
+	triggers:
+	  github.com/TIBCOSoftware/flogo-contrib/trigger/rest
 
-	Triggers:
-   		- tibco-rest [github.com/TIBCOSoftware/flogo-contrib/trigger/rest]
+The list can be generated in a JSON format using the 'json' flag
 
-	Models:
-   		- tibco-simple [github.com/TIBCOSoftware/flogo-contrib/model/simple]
+	flogo list -json
+	[
+	  {
+	    "type": "action",
+	    "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow"
+	  },
+	  {
+	    "type": "activity",
+	    "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log"
+	  },
+	  {
+	    "type": "flow-model",
+	    "ref": "github.com/TIBCOSoftware/flogo-contrib/model/simple"
+	  },
+	  {
+	    "type": "trigger",
+	    "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest"
+	  }
+	]
 
-	Flows:
-		- myflow
+### prepare
+This command is used to prepare the application. Preperation consist of code generation for contribution metadata and go imports.
+
+ 	flogo prepare
+ 	
+**options**
+	
+- [ -o ] : optimize compilation, compiled application will only contain contribution directly referenced in the flogo.json
+- [ -e ] : embeds the configuration into the compiled application	 	 
 
 ### build
-This command is used to build the application.
+This command is used to build the application.  The *prepare* command is also invoked by default when doing a build.
 
  	flogo build
  	
 **options**
 	
-- [ -o ] : optimize compilation, application will only contain activities and triggers used by its flows
-- [ -i ] : incorporates the configuration into the compiled application	 	 
-- [ -c configDir] : specifies the directory to use for configuration when using the -i flag
+- [ -o ] : optimize compilation, compiled application will only contain contribution directly referenced in the flogo.json
+- [ -e ] : embeds the configuration into the compiled application
+- [ -sp ] : skip *prepare* step
 
 ### help
 This command is used to display help on a particular command
@@ -83,148 +106,93 @@ The create command creates a basic structure and files for an application.
 
 
 	my_app/
-		bin/
-			config.json
-			triggers.json
 		flogo.json
-		flows/
 		src/
 			my_app/
-				config.go
-				env.go
-				flows.go
 				imports.go
 				main.go
 		vendor/
 		
 **files**
 
-- *flogo.json* : flogo project metadata json file
-- *config.json* : configuration for the application
-- *triggers.json* : trigger configuration for the application
-- *config.go* : contains embedded configuration or reference to config.json
-- *env.go* : basic engine environment configuration
-- *flows.go* : contains embedded flows, gzipped and stored in base64
-- *imports.go* : contains go imports for activities, triggers and models used by the application
-- *main.go* : basic/initial test file for the model
+- *flogo.json* : flogo project application configuration descriptor file
+- *imports.go* : contains go imports for contributions (activities, triggers and models) used by the application
+- *main.go* : main file for the engine.
 
 **directories**	
 	
-- *bin* :	contains the application binary and configuration
-- *flows* : contains the flows to embed
 - *vendor* : go libraries
 
-###Metadata
-
-The *flogo.json* file is the metadata describing the application project.  It includes the name, version and the components (activities, triggers and models) that have been installed.
-
-	{
-	  "name": "my_app",
-	  "version": "0.0.1",
-	  "description": "My flogo application description",
-	  "models": [
-	    {
-	      "name": "tibco-simple",
-	      "path": "github.com/TIBCOSoftware/flogo-contrib/model/simple",
-	      "version": "latest"
-	    }
-	  ],
-	  "activities": [
-	    {
-	      "name": "tibco-log",
-	      "path": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
-	      "version": "latest"
-	    }
-	  ],
-	  "triggers": [
-	    {
-	      "name": "tibco-rest",
-	      "path": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
-	      "version": "latest"
-	    }
-	  ]
-	}
 
 ## Application Configuration
 
 ### Application
 
-The *config.json* file contains the configration for application.  It is used to configure the internal process engine and services.
+The *flogo.json* file is the metadata describing the application project.  
 
-	{
-	  "loglevel": "INFO",
-	  "actionRunner": {
-	    "type": "pooled"
-	  },
-	  "services": [
-	    {
-	      "name": "stateRecorder",
-	      "enabled": false,
-	      "settings": {
-	        "host": "",
-	        "port": ""
-	      }
-	    },
-	    {
-	      "name": "engineTester",
-	      "enabled": true,
-	      "settings": {
-	        "port": "8080"
-	      }
-	    }
-	  ]
-	}
-
-***Settings***
-
-- loglevel: set the loglevel for the application
-
-- *actionRunner* runs the action
-	- pooled: uses a worker pool to execute actions
-		- numworkers: the number of action runners
-		- workQueueSize: the max number of queued actionss to execute
-	- direct: actions are executed on the same goroutine/thread of the trigger
-
-***Services***
-
-- *stateRecorder* recordes the full/incremental state of a flow
-	- enabled: true/false
-	- host: the host of the stateRecorder service
-	- port: the port of the stateRecorder service
-- *engineTester* is a simple REST interface used to directly start a flow and bypass a trigger, used the the UI to directly execute a flow
-	- enabled: true/false
-	- port: the local port to expost the engineTester service
-
-### Triggers
-The *triggers.json* contains the configuration for the triggers used by the application.
-
-	{
-      "triggers": [
+```json
+{
+  "name": "myApp",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "description": "My flogo application description",
+  "triggers": [
+    {
+      "id": "my_rest_trigger",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
+      "settings": {
+        "port": "9233"
+      },
+      "handlers": [
         {
-          "name": "tibco-rest",
+          "actionId": "my_simple_flow",
           "settings": {
-            "port": "9090"
-          },
-          "endpoints": [
-            {
-              "actionType": "flow",
-              "actionURI": "embedded://myflow",
-              "settings": {
-                "autoIdReply": "true",
-                "method": "POST",
-                "path": "/device/update"
-              }
-            }
-          ]
+            "method": "GET",
+            "path": "/test"
+          }
         }
       ]
     }
+  ],
+  "actions": [
+    {
+      "id": "my_simple_flow",
+      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+      "data": {
+        "flow": {
+          "attributes": [],
+          "rootTask": {
+            "id": 1,
+            "type": 1,
+            "tasks": [
+              {
+                "id": 2,
+                "type": 1,
+                "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+                "name": "log",
+                "attributes": [
+                  {
+                    "name": "message",
+                    "value": "Simple Log",
+                    "type": "string"
+                  }
+                ]
+              }
+            ],
+            "links": [
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
+```
 
 ***Trigger Configuration***
 
-- name: the name of the trigger
+- id: the ID of the trigger
 - settings: global settings for the trigger
-- *endpoints* the endpoints configured for the trigger
-	- actionType: the type of action the endpoint runs
-	- actionURI: the uri for the action
-	- settings: the endpoint specific settings
+- *handlers* the handlers for endpoints configured for the trigger
+	- actionId: the ID of the action the handler invokes
+	- settings: the handler specific settings

@@ -10,13 +10,13 @@ import (
 
 var optPrepare = &cli.OptionInfo{
 	Name:      "prepare",
-	UsageLine: "prepare [-o][-i]",
+	UsageLine: "prepare [-o][-e]",
 	Short:     "prepare the flogo application",
 	Long: `Prepare the flogo application.
 
 Options:
-    -o   optimize for embedded flows
-    -i   incorporate application config into executable
+    -o   optimize for directly referenced contributions
+    -e   embed application configuration into executable
 `,
 }
 
@@ -38,7 +38,7 @@ func (c *cmdPrepare) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdPrepare) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize prepare")
-	fs.BoolVar(&(c.embedConfig), "i", false, "embed config")
+	fs.BoolVar(&(c.embedConfig), "e", false, "embed config")
 }
 
 // Exec implementation of cli.Command.Exec

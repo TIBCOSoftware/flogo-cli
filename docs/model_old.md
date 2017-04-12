@@ -1,17 +1,17 @@
-# model
+# model - DEPRECATED
 > Details on flogo model related commands.  Used to create a custom model.
 
 ## Commands
 #### create
 This command creates a flogo model project.
 	
-	flogo model create mymodel
+	flogo_old model create mymodel
 	 	 
 
 ### help
 This command is used to display help on a particular command
 	
-	flogo model help create
+	flogo_old model help create
 
 ##Project Structure
 

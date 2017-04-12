@@ -101,7 +101,7 @@ func printUsage(w io.Writer) {
 
 var usageTpl = `Usage:
 
-    flogoapp <command> [arguments]
+    flogo <command> [arguments]
 
 Commands:
 {{range .}}

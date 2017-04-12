@@ -15,8 +15,8 @@ var optBuild = &cli.OptionInfo{
 	Long: `Build the flogo application.
 
 Options:
-    -o   optimize for embedded flows
-    -i   incorporate config into application
+    -o   optimize for directly referenced contributions
+    -e   embed application configuration into executable
     -sp  skip prepare
 `,
 }
@@ -40,7 +40,7 @@ func (c *cmdBuild) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
-	fs.BoolVar(&(c.embedConfig), "i", false, "embed config")
+	fs.BoolVar(&(c.embedConfig), "e", false, "embed config")
 	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
 }
 
