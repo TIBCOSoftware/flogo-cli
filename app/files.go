@@ -47,8 +47,7 @@ const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
 
 func main() {
 
-	app := &types.AppConfig{}
-
+	app := &app.Config{}
 
 	if flogoJSON == "" {
 		flogo, err := os.Open("flogo.json")
