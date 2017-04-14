@@ -346,6 +346,7 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 	case TRIGGER:
 		mdFilePath = fgutil.Path(mdFilePath, "trigger.json")
 		mdGoFilePath = fgutil.Path(mdGoFilePath, "trigger_metadata.go")
+		tplMetadata = tplTriggerMetadataGoFile
 	case ACTIVITY:
 		mdFilePath = fgutil.Path(mdFilePath, "activity.json")
 		mdGoFilePath = fgutil.Path(mdGoFilePath, "activity_metadata.go")
@@ -395,6 +396,21 @@ var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
 func init() {
 	md := activity.NewMetadata(jsonMetadata)
 	activity.Register(NewActivity(md))
+}
+`
+
+var tplTriggerMetadataGoFile = `package {{.Package}}
+
+import (
+	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+)
+
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
+
+// init create & register trigger factory
+func init() {
+	md := trigger.NewMetadata(jsonMetadata)
+	trigger.RegisterFactory(md.ID, NewFactory(md))
 }
 `
 
