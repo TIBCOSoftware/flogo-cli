@@ -387,7 +387,7 @@ func getJsonMetadata() string {
 var tplActivityMetadataGoFile = `package {{.Package}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 )
 
 var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
@@ -402,7 +402,7 @@ func init() {
 var tplTriggerMetadataGoFile = `package {{.Package}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
 var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `

@@ -37,9 +37,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/TIBCOSoftware/flogo-lib/logger"
+	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"github.com/TIBCOSoftware/flogo-lib/types"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
 // can be used to compile in flogo app descriptor file
