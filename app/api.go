@@ -253,7 +253,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 			case "trigger.json":
 				//temporary hack to handle old contrib dir layout
 				dir := filePath[0:len(filePath)-12]
-				if _, err := os.Stat(path.Join(dir,"..","trigger.json")); err == nil {
+				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
 					//old trigger.json, ignore
 					return nil
 				}
@@ -267,7 +267,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 			case "activity.json":
 				//temporary hack to handle old contrib dir layout
 				dir := filePath[0:len(filePath)-13]
-				if _, err := os.Stat(path.Join(dir,"..","activity.json")); err == nil {
+				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
 					//old activity.json, ignore
 					return nil
 				}
@@ -299,9 +299,9 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 func refPath(vendorSrc string, filePath string) string {
 
 	startIdx := len(vendorSrc) + 1
-	endIdx := strings.LastIndex(filePath, "/")
+	endIdx := strings.LastIndex(filePath, string(os.PathSeparator))
 
-	return filePath[startIdx:endIdx]
+	return strings.Replace(filePath[startIdx:endIdx], string(os.PathSeparator), "/", -1)
 }
 
 func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
