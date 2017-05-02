@@ -64,8 +64,9 @@ type ActionDescriptor struct {
 	Ref string `json:"ref"`
 	Data *struct {
 		Flow *struct {
-			RootTask *Task `json:"rootTask"`
-		}`json:"flow"`
+			RootTask         *Task `json:"rootTask"`
+			ErrorHandlerTask *Task `json:"errorHandlerTask"`
+		} `json:"flow"`
 	} `json:"data"`
 }
 
@@ -136,6 +137,10 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 
 		if action.Data != nil && action.Data.Flow != nil {
 			extractDepsFromTask(action.Data.Flow.RootTask, dh)
+			//Error handle flow
+			if action.Data.Flow.ErrorHandlerTask != nil {
+				extractDepsFromTask(action.Data.Flow.ErrorHandlerTask, dh)
+			}
 		}
 	}
 
