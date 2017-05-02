@@ -61,7 +61,7 @@ var tplActivityDescriptor = `{
 var tplActivityGo = `package {{.Name}}
 
 import (
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 )
 
 // MyActivity is a stub for your Activity implementation
@@ -94,7 +94,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/TIBCOSoftware/flogo-lib/flow/activity"
+	"github.com/TIBCOSoftware/flogo-lib/core/activity"
 	"github.com/TIBCOSoftware/flogo-lib/flow/test"
 )
 
