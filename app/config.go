@@ -138,7 +138,9 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 		if action.Data != nil && action.Data.Flow != nil {
 			extractDepsFromTask(action.Data.Flow.RootTask, dh)
 			//Error handle flow
-			extractDepsFromTask(action.Data.Flow.ErrorHandlerTask, dh)
+			if action.Data.Flow.ErrorHandlerTask != nil {
+				extractDepsFromTask(action.Data.Flow.ErrorHandlerTask, dh)
+			}
 		}
 	}
 
