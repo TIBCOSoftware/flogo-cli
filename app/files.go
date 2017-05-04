@@ -32,7 +32,6 @@ var tplNewMainGoFile = `package main
 
 import (
 	"fmt"
-	"encoding/json"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,39 +41,24 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/logger"
 )
 
-// can be used to compile in flogo app descriptor file
-const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+var (
+	appSer app.AppSerializer
+)
 
 func main() {
 
-	app := &app.Config{}
+	if appSer == nil {
+		// Use default serializer
+		appSer = app.DefaultSerializer()
+	}
 
-	if flogoJSON == "" {
-		flogo, err := os.Open("flogo.json")
-    	if err != nil {
+	app, err := appSer.GetApp()
+	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
     	}
 
-    	jsonParser := json.NewDecoder(flogo)
-    	err = jsonParser.Decode(&app)
-
-		if err != nil {
-        	fmt.Println(err.Error())
-        	os.Exit(1)
-		}
-
-	} else {
-		err := json.Unmarshal([]byte(flogoJSON), app)
-
-		if err != nil {
-        	fmt.Println(err.Error())
-        	os.Exit(1)
-		}
-	}
-
-    e, err := engine.New(app)
-
+    	e, err := engine.New(app)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
