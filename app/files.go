@@ -128,10 +128,17 @@ func setupSignalHandling() chan int {
 }
 `
 
-func createImportsGoFile(codeSourcePath string, deps []*Dependency) {
-	f, _ := os.Create(fgutil.Path(codeSourcePath, fileImportsGo))
+func createImportsGoFile(codeSourcePath string, deps []*Dependency) error {
+	f, err := os.Create(fgutil.Path(codeSourcePath, fileImportsGo))
+
+	if err != nil {
+		return err
+	}
+
 	fgutil.RenderTemplate(f, tplNewImportsGoFile, deps)
 	f.Close()
+
+	return nil
 }
 
 var tplNewImportsGoFile = `package main
