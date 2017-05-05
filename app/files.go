@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"fmt"
 )
 
 const (
@@ -129,7 +130,14 @@ func setupSignalHandling() chan int {
 `
 
 func createImportsGoFile(codeSourcePath string, deps []*Dependency) {
-	f, _ := os.Create(fgutil.Path(codeSourcePath, fileImportsGo))
+	f, err := os.Create(fgutil.Path(codeSourcePath, fileImportsGo))
+
+	fmt.Printf("err: %v\n", err)
+
+	for _, dep := range deps {
+		fmt.Printf("deps: %v\n", dep)
+	}
+
 	fgutil.RenderTemplate(f, tplNewImportsGoFile, deps)
 	f.Close()
 }

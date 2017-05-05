@@ -45,7 +45,7 @@ var tplTriggerDescriptor = `{
   "author": "Your Name <you.name@example.org>",
   "settings":[
     {
-      "name": "input",
+      "name": "setting",
       "type": "string",
       "value": "default"
     }
@@ -55,7 +55,15 @@ var tplTriggerDescriptor = `{
       "name": "output",
       "type": "string"
     }
-  ]
+  ],
+  "handler": {
+    "settings": [
+      {
+        "name": "handler_setting",
+        "type": "string"
+      }
+    ]
+  }
 }`
 
 var tplTriggerGo = `package {{.Name}}
@@ -65,6 +73,21 @@ import (
 	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
+// MyTriggerFactory My Trigger factory
+type MyTriggerFactory struct{
+	metadata *trigger.Metadata
+}
+
+//NewFactory create a new Trigger factory
+func NewFactory(md *trigger.Metadata) trigger.Factory {
+	return &MyTriggerFactory{metadata:md}
+}
+
+//New Creates a new trigger instance for a given id
+func (t *MyTriggerFactory) New(config *trigger.Config) trigger.Trigger {
+	return &MyTrigger{metadata: t.metadata, config:config}
+}
+
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
 	metadata *trigger.Metadata
@@ -72,14 +95,8 @@ type MyTrigger struct {
 	config   *trigger.Config
 }
 
-func init() {
-	md := trigger.NewMetadata(jsonMetadata)
-	trigger.Register(&MyTrigger{metadata: md})
-}
-
 // Init implements trigger.Trigger.Init
-func (t *MyTrigger) Init(config *trigger.Config, runner action.Runner) {
-	t.config = config
+func (t *MyTrigger) Init(runner action.Runner) {
 	t.runner = runner
 }
 
@@ -105,11 +122,21 @@ var tplTriggerGoTestGo = `package {{.Name}}
 
 import (
 	"context"
+	"io/ioutil"
+	"encoding/json"
 	"testing"
 
 	"github.com/TIBCOSoftware/flogo-lib/core/action"
 	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
+
+func getJsonMetadata() string{
+	jsonMetadataBytes, err := ioutil.ReadFile("trigger.json")
+	if err != nil{
+		panic("No Json Metadata found for trigger.json path")
+	}
+	return string(jsonMetadataBytes)
+}
 
 type TestRunner struct {
 }
@@ -119,13 +146,34 @@ func (tr *TestRunner) Run(context context.Context, action action.Action, uri str
 	return 0, nil, nil
 }
 
-func TestRegistered(t *testing.T) {
-	act := trigger.Get("{{.Name}}")
+const testConfig string = ` + "`" + `{
+  "id": "mytrigger",
+  "settings": {
+    "setting": "somevalue"
+  },
+  "handlers": [
+    {
+      "actionId": "test_action",
+      "settings": {
+        "handler_setting": "somevalue"
+      }
+    }
+  ]
+}` + "`" +`
 
-	if act == nil {
-		t.Error("Trigger Not Registered")
-		t.Fail()
-		return
-	}
+func TestInit(t *testing.T) {
+
+	// New factory
+	md := trigger.NewMetadata(getJsonMetadata())
+	f := NewFactory(md)
+
+	// New Trigger
+	config := trigger.Config{}
+	json.Unmarshal([]byte(testConfig), config)
+	tgr := f.New(&config)
+
+	runner := &TestRunner{}
+
+	tgr.Init(runner)
 }
 `
