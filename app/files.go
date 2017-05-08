@@ -42,17 +42,17 @@ import (
 )
 
 var (
-	appSer app.AppSerializer
+	cp app.ConfigProvider
 )
 
 func main() {
 
-	if appSer == nil {
-		// Use default serializer
-		appSer = app.DefaultSerializer()
+	if cp == nil {
+		// Use default config provider
+		cp = app.DefaultConfigProvider()
 	}
 
-	app, err := appSer.GetApp()
+	app, err := cp.GetApp()
 	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
