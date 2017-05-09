@@ -8,6 +8,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/gen"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"path"
 )
 
 var (
@@ -46,7 +47,7 @@ func main() {
 		}
 
 		currentDir, _ := os.Getwd()
-		basePath := fgutil.Path(currentDir, name)
+		basePath := path.Join(currentDir, name)
 
 		if _, err := os.Stat(basePath); err == nil {
 			fmt.Fprintf(os.Stderr, "Error: Cannot create project, directory '%s' already exists\n\n", name)

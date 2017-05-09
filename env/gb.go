@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"path"
 )
 
 type GbProject struct {
@@ -24,12 +25,12 @@ func NewGbProjectEnv() Project {
 	env := &GbProject{}
 	env.SourceDir = "src"
 	env.VendorSrcDir = "vendor"
-	env.VendorSrcDir = fgutil.Path("vendor", "src")
+	env.VendorSrcDir = path.Join("vendor", "src")
 
 	return env
 }
 
-func (e *GbProject) Init(path string) error {
+func (e *GbProject) Init(basePath string) error {
 
 	exists := fgutil.ExecutableExists("gb")
 
@@ -37,10 +38,10 @@ func (e *GbProject) Init(path string) error {
 		return errors.New("gb not installed")
 	}
 
-	e.RootDir = path
-	e.SourceDir = fgutil.Path(path, "src")
-	e.VendorDir = fgutil.Path(path, "vendor")
-	e.VendorSrcDir = fgutil.Path(path, "vendor", "src")
+	e.RootDir = basePath
+	e.SourceDir = path.Join(basePath, "src")
+	e.VendorDir = path.Join(basePath, "vendor")
+	e.VendorSrcDir = path.Join(basePath, "vendor", "src")
 
 	return nil
 }
@@ -69,8 +70,8 @@ func (e *GbProject) Create(createBin bool, vendorDir string) error {
 
 			isGBVendor := false
 
-			if _, err := os.Stat(fgutil.Path(vendorDir, "src")); err == nil {
-				if _, err := os.Stat(fgutil.Path(vendorDir, "manifest")); err == nil {
+			if _, err := os.Stat(path.Join(vendorDir, "src")); err == nil {
+				if _, err := os.Stat(path.Join(vendorDir, "manifest")); err == nil {
 					isGBVendor = true
 				}
 			}
@@ -92,7 +93,7 @@ func (e *GbProject) Create(createBin bool, vendorDir string) error {
 	}
 
 	if createBin {
-		e.BinDir = fgutil.Path(e.RootDir, "bin")
+		e.BinDir = path.Join(e.RootDir, "bin")
 		os.MkdirAll(e.BinDir, os.ModePerm)
 	}
 
@@ -120,7 +121,7 @@ func (e *GbProject) Open() error {
 		return errors.New("Invalid project, vendor directory doesn't exists")
 	}
 
-	binDir := fgutil.Path(e.RootDir, "bin")
+	binDir := path.Join(e.RootDir, "bin")
 	info, err = os.Stat(binDir)
 
 	if err != nil || info.IsDir() {
@@ -150,21 +151,21 @@ func (e *GbProject) GetVendorSrcDir() string {
 	return e.VendorSrcDir
 }
 
-func (e *GbProject) InstallDependency(path string, version string) error {
+func (e *GbProject) InstallDependency(depPath string, version string) error {
 	var cmd *exec.Cmd
 
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(fgutil.Path(e.VendorSrcDir, path)); err == nil {
+	if _, err := os.Stat(path.Join(e.VendorSrcDir, depPath)); err == nil {
 		//todo ignore installed dependencies for now
 		//exists, return
 		return nil
 	}
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", path)
+		cmd = exec.Command("gb", "vendor", "fetch", depPath)
 	} else {
 		var tag string
 
@@ -174,7 +175,7 @@ func (e *GbProject) InstallDependency(path string, version string) error {
 			tag = version
 		}
 
-		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, path)
+		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, depPath)
 	}
 
 	os.Chdir(e.RootDir)
@@ -185,13 +186,13 @@ func (e *GbProject) InstallDependency(path string, version string) error {
 	return cmd.Run()
 }
 
-func (e *GbProject) UninstallDependency(path string) error {
+func (e *GbProject) UninstallDependency(depPath string) error {
 
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(fgutil.Path(e.VendorSrcDir, path)); err != nil {
+	if _, err := os.Stat(path.Join(e.VendorSrcDir, depPath)); err != nil {
 		//todo ignore dependencies that are not installed for now
 		//exists, return
 		return nil
@@ -199,7 +200,7 @@ func (e *GbProject) UninstallDependency(path string) error {
 
 	os.Chdir(e.RootDir)
 
-	cmd := exec.Command("gb", "vendor", "delete", path)
+	cmd := exec.Command("gb", "vendor", "delete", depPath)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -221,10 +222,10 @@ func (e *GbProject) Build() error {
 	return cmd.Run()
 }
 
-func IsGbProject(path string) bool {
+func IsGbProject(projectPath string) bool {
 
-	sourceDir := fgutil.Path(path, "src")
-	vendorDir := fgutil.Path(path, "vendor", "src")
+	sourceDir := path.Join(projectPath, "src")
+	vendorDir := path.Join(projectPath, "vendor", "src")
 
 	info, err := os.Stat(sourceDir)
 
@@ -242,7 +243,7 @@ func IsGbProject(path string) bool {
 }
 
 //Env checker?
-//IsProject(fgutil.Path string) bool
+//IsProject(path.Join string) bool
 
 // Gb structure that contains gb project paths
 type Gb struct {
@@ -258,8 +259,8 @@ func NewGb(codePath string) *Gb {
 	env := &Gb{}
 	env.BinPath = "bin"
 	env.SourcePath = "src"
-	env.VendorPath = fgutil.Path("vendor", "src")
-	env.CodeSourcePath = fgutil.Path("src", codePath)
+	env.VendorPath = path.Join("vendor", "src")
+	env.CodeSourcePath = path.Join("src", codePath)
 
 	return env
 }
@@ -280,18 +281,18 @@ func (e *Gb) Installed() bool {
 	return fgutil.ExecutableExists("gb")
 }
 
-// NewBinFilefgutil.Path creates a new file fgutil.Path in the bin directory
+// NewBinFilepath.Join creates a new file path.Join in the bin directory
 func (e *Gb) NewBinFilePath(fileName string) string {
-	return fgutil.Path(e.BinPath, fileName)
+	return path.Join(e.BinPath, fileName)
 }
 
 // VendorFetch performs a 'gb vendor fetch'
-func (e *Gb) VendorFetch(path string, version string) error {
+func (e *Gb) VendorFetch(depPath string, version string) error {
 
 	var cmd *exec.Cmd
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", path)
+		cmd = exec.Command("gb", "vendor", "fetch", depPath)
 	} else {
 
 		var tag string
@@ -302,7 +303,7 @@ func (e *Gb) VendorFetch(path string, version string) error {
 			tag = version
 		}
 
-		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, path)
+		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, depPath)
 	}
 
 	cmd.Stdout = os.Stdout
@@ -312,15 +313,15 @@ func (e *Gb) VendorFetch(path string, version string) error {
 }
 
 // VendorDeleteSilent performs a 'gb vendor delete' silently
-func (e *Gb) VendorDeleteSilent(path string) error {
-	cmd := exec.Command("gb", "vendor", "delete", path)
+func (e *Gb) VendorDeleteSilent(depPath string) error {
+	cmd := exec.Command("gb", "vendor", "delete", depPath)
 
 	return cmd.Run()
 }
 
 // VendorDelete performs a 'gb vendor delete'
-func (e *Gb) VendorDelete(path string) error {
-	cmd := exec.Command("gb", "vendor", "delete", path)
+func (e *Gb) VendorDelete(depPath string) error {
+	cmd := exec.Command("gb", "vendor", "delete", depPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

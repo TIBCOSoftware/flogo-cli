@@ -61,7 +61,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 		return err
 	}
 
-	err = fgutil.CreateFileFromString(fgutil.Path(appDir, "flogo.json"), appJson)
+	err = fgutil.CreateFileFromString(path.Join(appDir, "flogo.json"), appJson)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	}
 
 	// create source files
-	cmdPath := fgutil.Path(env.GetSourceDir(), strings.ToLower(descriptor.Name))
+	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, 0777)
 
 	createMainGoFile(cmdPath,"")
@@ -141,9 +141,9 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	createImportsGoFile(cmdPath, deps)
 
 	if options.EmbedConfig {
-		createMainGoFile(cmdPath, appJson)
+		createEmbeddedAppGoFile(cmdPath, appJson)
 	} else {
-		createMainGoFile(cmdPath, "")
+		removeEmbeddedAppGoFile(cmdPath)
 	}
 
 	return
@@ -175,9 +175,13 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		return err
 	}
 
-	fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
-	if err != nil {
-		return err
+	if !options.EmbedConfig {
+		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		if err != nil {
+			return err
+		}
+	} else {
+		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
 	}
 
 	return
@@ -341,15 +345,15 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 
 	switch dependency.ContribType {
 	case ACTION:
-		mdFilePath = fgutil.Path(mdFilePath, "action.json")
-		mdGoFilePath = fgutil.Path(mdGoFilePath, "action_metadata.go")
+		mdFilePath = path.Join(mdFilePath, "action.json")
+		mdGoFilePath = path.Join(mdGoFilePath, "action_metadata.go")
 	case TRIGGER:
-		mdFilePath = fgutil.Path(mdFilePath, "trigger.json")
-		mdGoFilePath = fgutil.Path(mdGoFilePath, "trigger_metadata.go")
+		mdFilePath = path.Join(mdFilePath, "trigger.json")
+		mdGoFilePath = path.Join(mdGoFilePath, "trigger_metadata.go")
 		tplMetadata = tplTriggerMetadataGoFile
 	case ACTIVITY:
-		mdFilePath = fgutil.Path(mdFilePath, "activity.json")
-		mdGoFilePath = fgutil.Path(mdGoFilePath, "activity_metadata.go")
+		mdFilePath = path.Join(mdFilePath, "activity.json")
+		mdGoFilePath = path.Join(mdGoFilePath, "activity_metadata.go")
 		tplMetadata = tplActivityMetadataGoFile
 	default:
 		return nil
