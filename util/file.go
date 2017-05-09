@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"os/exec"
+	"path"
 )
 
 const FileURIPrefix = "file://"
@@ -272,8 +273,8 @@ func MoveFiles(source string, dest string) (err error) {
 
 	for _, obj := range objects {
 
-		srcFile := Path(source,obj.Name())
-		destFile := Path(dest,obj.Name())
+		srcFile := path.Join(source,obj.Name())
+		destFile := path.Join(dest,obj.Name())
 
 		if !obj.IsDir() {
 			err = os.Rename(srcFile, destFile)
@@ -316,8 +317,4 @@ func FileExists(filePath string) bool {
 		return false
 	}
 	return true
-}
-
-func Path(parts ...string) string {
-	return strings.Join(parts[:], string(os.PathSeparator))
 }

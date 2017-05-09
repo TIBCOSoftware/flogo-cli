@@ -3,6 +3,7 @@ package fgutil
 import (
 	"os"
 	"os/exec"
+	"path"
 )
 
 //type GbProjectEnv struct {
@@ -135,10 +136,10 @@ import (
 //	return cmd.Run()
 //}
 
-func IsGbProject(path string) bool {
+func IsGbProject(basePath string) bool {
 
-	sourceDir := Path(path,"src")
-	vendorDir := Path(path,"vendor", "src")
+	sourceDir := path.Join(basePath,"src")
+	vendorDir := path.Join(basePath,"vendor", "src")
 
 	info, err := os.Stat(sourceDir)
 
@@ -172,8 +173,8 @@ func NewGb(codePath string) *Gb {
 	env := &Gb{}
 	env.BinPath = "bin"
 	env.SourcePath = "src"
-	env.VendorPath = Path("vendor", "src")
-	env.CodeSourcePath = Path("src", codePath)
+	env.VendorPath = path.Join("vendor", "src")
+	env.CodeSourcePath = path.Join("src", codePath)
 
 	return env
 }
@@ -196,7 +197,7 @@ func (e *Gb) Installed() bool {
 
 // NewBinFilePath creates a new file Path in the bin directory
 func (e *Gb) NewBinFilePath(fileName string) string {
-	return Path(e.BinPath, fileName)
+	return path.Join(e.BinPath, fileName)
 }
 
 // VendorFetch performs a 'gb vendor fetch'

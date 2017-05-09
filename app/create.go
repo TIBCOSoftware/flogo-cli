@@ -7,6 +7,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"path"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -94,7 +95,7 @@ func (c *cmdCreate) Exec(args []string) error {
 		return err
 	}
 
-	appDir := fgutil.Path(currentDir, appName)
+	appDir := path.Join(currentDir, appName)
 
 	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
 }
