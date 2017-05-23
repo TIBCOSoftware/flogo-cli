@@ -187,6 +187,24 @@ func generateSourceFiles(srcDir string, details *DeviceDetails, settings *Settin
 	return nil
 }
 
+func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) error {
+
+	details := GetDevice(descriptor.DeviceType)
+	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings:descriptor.Settings}
+
+	for name, tpl := range details.Files {
+
+		f, _ := os.Create(path.Join(srcDir, name))
+		err := RenderTemplate(f, tpl, settings)
+		f.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 //RenderFileTemplate renders the specified template
 func RenderTemplate(w io.Writer, tpl string, data interface{}) error {
 
