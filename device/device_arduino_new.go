@@ -3,12 +3,13 @@ package device
 var triggerTpls = make(map[string]string)
 var actionTpls = make(map[string]string)
 var activityTpls = make(map[string]string)
-var activityInitTpls = make(map[string]string)
 
 func init() {
 	feather_m0 := &DeviceDetails{Type:"feather_m0_wifi2", Board:"adafruit_feather_m0_usb"}
+
+	feather_m0.MainFile = tplArduinoMainNew
+
 	files := map[string]string{
-		"main.ino": tplArduinoMainNew,
 		"mqtt.ino": tplArduinoMqttNew,
 		"wifi.ino": tplArduinoWifiNew,
 	}
@@ -16,7 +17,7 @@ func init() {
 		"PubSubClient": 89,
 		"WiFi101": 299,
 	}
-	feather_m0.Files = files
+	feather_m0.MqttFiles = files
 	feather_m0.Libs = libs
 
 	Register(feather_m0)
@@ -29,12 +30,18 @@ func init() {
 
 	activityTpls["github.com/TIBCOSoftware/flogo-contrib/activity/device-pin"] = tplActivityPin
 	activityTpls["github.com/TIBCOSoftware/flogo-contrib/activity/device-mqtt"] = tplActivityMqtt
-
-	activityInitTpls["github.com/TIBCOSoftware/flogo-contrib/activity/device-pin"] = tplActivityInitPin
 }
 
 
 var tplArduinoMainNew = `#include <SPI.h>
+{{if .MqttEnabled}}#include <WiFi101.h>
+#include <PubSubClient.h>
+
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+
+{{end}}
+
 
 void setup() {
     Serial.begin(115200);
@@ -43,29 +50,41 @@ void setup() {
         delay(10);
     }
 
+    {{if .MqttEnabled}}
     setup_wifi();
     setup_mqtt();
 
-	//init all triggers
-	{{range .Triggers}} t_{{.}}_init(); {{end}}
+	//init mqtt triggers
+	{{range .MqttTriggers}}t_{{.}}_init();
+	{{end}}
+    {{end}}
+
+	//init simple triggers
+	{{range .Triggers}}t_{{.}}_init();
+	{{end}}
 
 	//init actions
-	{{range .Actions}} a_{{.}}_init(); {{end}}
+	{{range .Actions}}a_{{.}}_init();
+	{{end}}
 }
 
 void loop() {
 
+    {{if .MqttEnabled}}
     if (!client.connected()) {
         mqtt_reconnect();
     }
 
     // MQTT client loop processing
     client.loop();
+    {{end}}
 
 	//triggers
-	{{range .Triggers}} t_{{.}}(); {{end}}
+	{{range .Triggers}}t_{{.}}();
+	{{end}}
 }
 
+{{if .MqttEnabled}}
 void callback(char *topic, byte *payload, unsigned int length) {
 
     Serial.print("Message arrived [");
@@ -77,14 +96,13 @@ void callback(char *topic, byte *payload, unsigned int length) {
     Serial.println();
 
 	//mqtt triggers
-	{{range .Triggers}} t_{{.}}(topic, payload, length); {{end}}
+	{{range .MqttTriggers}}t_{{.}}(topic, payload, length); {{end}}
 }
+{{end}}
 `
 
 var tplArduinoWifiNew = `#include <SPI.h>
 #include <WiFi101.h>
-
-WiFiClient wifiClient;
 
 char ssid[] = "{{setting . "wifi:ssid"}}";
 const char *password = "{{setting . "wifi:password"}}";
@@ -128,8 +146,6 @@ void setup_wifi() {
 var tplArduinoMqttNew = `#include <SPI.h>
 #include <WiFi101.h>
 #include <PubSubClient.h>
-
-PubSubClient client(wifiClient);
 
 const char *mqtt_server = "{{setting . "mqtt:server"}}";
 const char *mqtt_user = "{{setting . "mqtt:user"}}";
@@ -176,28 +192,27 @@ void publishMQTT(String value, String payload) {
 }
 `
 
-
 var tplTriggerPin = `
-uint8_t t_{{.TriggerId}}_pin = {{.Pin}};  //set input pin
-bool t_{{.TriggerId}}_lc = false;         // last condition value
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};    // set input pin
+bool t_{{.Id}}_lc = false;    // last condition value
 
-void t_{{.TriggerId}}_init() {
-	pinMode(t_{{.TriggerId}}_pin, INPUT);
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
 }
 
-void t_{{.TriggerId}}() {
+void t_{{.Id}}() {
 
-    int value = {{if .Digital}}digitalRead(t_{{.TriggerId}}_pin){{else}}analogRead(t_{{.TriggerId}}_pin){{end}};
+    int value = {{if settingb . "digital"}}digitalRead(t_{{.Id}}_pin){{else}}analogRead(t_{{.Id}}_pin){{end}};
 
     // create custom condition
-    bool condition = value {{.Condition}};
+    bool condition = value {{setting . "condition"}};
 
-    if (condition && !t_{{.TriggerId}}_lc) {
+    if (condition && !t_{{.Id}}_lc) {
 
-        a_{{.ActionId}}(value)
+        a_{{.ActionId}}(value);
     }
 
-    t_{{.TriggerId}}_lc = condition;
+    t_{{.Id}}_lc = condition;
 }
 `
 
@@ -205,84 +220,93 @@ void t_{{.TriggerId}}() {
 //triggers will say if they are part of loop or mqtt callback
 var tplTriggerMqtt = `
 
-void t_{{.TriggerId}}_init() {
+void t_{{.Id}}_init() {
 }
 
-void t_{{.TriggerId}}(char *topic, byte *payload, unsigned int length) {
+void t_{{.Id}}(char *topic, byte *payload, unsigned int length) {
 
-    if (topic == {{.Topic}}) {
+    if (topic == "{{setting . "topic"}}") {
 
-        char[8] buf;
+        char buf[8];
         int i=0;
 
         for(i=0; i<length; i++) {
-            buf = payload[i];
+            buf[i] = payload[i];
         }
-        buf = '\0';
+        buf[i] = '\0';
 
         int value = atoi(buf);
 
-        a_{{.ActionId}}(value)
+        a_{{.ActionId}}(value);
     }
 }
 `
 
 var tplTriggerButton = `
-unsigned long t_{{.TriggerId}}_ldt = 0; // lastDebounceTime
+unsigned long t_{{.Id}}_ldt = 0; // lastDebounceTime
 
-int t_{{.TriggerId}}_bs;          // the current reading from the input pin
-int t_{{.TriggerId}}_lbs = LOW; // the previous reading from the input pin
+int t_{{.Id}}_bs;          // the current reading from the input pin
+int t_{{.Id}}_lbs = LOW; // the previous reading from the input pin
 
-uint8_t t_{{.TriggerId}}_pin = {{.Pin}};  //set input pin
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};  //set input pin
 
-void t_{{.TriggerId}}_init() {
-	pinMode(t_{{.TriggerId}}_pin, INPUT);
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
 }
 
-void t_{{.TriggerId}}() {
+void t_{{.Id}}() {
 
-  int reading = digitalRead(t_{{.TriggerId}}_pin);
+  int reading = digitalRead(t_{{.Id}}_pin);
 
-  if (reading != t_{{.TriggerId}}_lbs) {
+  if (reading != t_{{.Id}}_lbs) {
     // reset the debouncing timer
-    t_{{.TriggerId}}_ldt = millis();
+    t_{{.Id}}_ldt = millis();
   }
 
-  if ((millis() - t_{{.TriggerId}}_ldt) > 50) {
+  if ((millis() - t_{{.Id}}_ldt) > 50) {
 
-    if (reading != t_{{.TriggerId}}_bs) {
-      t_{{.TriggerId}}_bs = reading;
+    if (reading != t_{{.Id}}_bs) {
+      t_{{.Id}}_bs = reading;
 
-      if (t_{{.TriggerId}}_bs == HIGH) {
-        a_{{.ActionId}}(HIGH)
+      if (t_{{.Id}}_bs == HIGH) {
+        a_{{.ActionId}}(HIGH);
       }
     }
   }
 
-  t_{{.TriggerId}}_lbs = reading;
+  t_{{.Id}}_lbs = reading;
 }
 `
 
 var tplActionActivity = `
 
-void a_{{.ActionId}}_init() {
-	{{.ActivityInitCode}}
+void a_{{.Id}}_init() {
+ 	{{ template "activity_init" .Data }}
 }
 
-void a_{{.ActionId}}(int value) {
-	{{.ActivityCode}}
+void a_{{.Id}}(int value) {
+ 	{{ template "activity_code" .Data }}
 }
-`
-var tplActivityInitPin = `
-	pinMode({{.Pin}}, OUTPUT);
 `
 
 var tplActivityPin = `
-	{{if .Digital}}digitalWrite({{.Pin}}, {{.Value}});{{else}}analogWrite({{.Pin}}, {{.Value}}){{end}}
+{{ define "activity_init"}}
+  pinMode({{setting .Activity "pin"}}, OUTPUT);
+{{ end }}
+
+{{ define "activity_code"}}
+  int val = {{if .UseTriggerVal}}value{{else}}{{setting .Activity "value"}}{{end}};
+
+  {{if settingb .Activity "digital"}}digitalWrite({{setting .Activity "pin"}}, val){{else}}analogWrite({{setting .Activity "pin"}}, val){{end}};
+{{ end }}
 `
 
 var tplActivityMqtt = `
-	String payload = {{if .UseValue}}String(value){{else}}"{{.Payload}}"{{end}};
-	publishMQTT("{{.Topic}}", payload)
+{{ define "activity_init"}}{{end}}
+
+{{ define "activity_code"}}
+	String payload = {{if .UseTriggerVal}}String(value){{else}}"{{setting .Activity "payload"}}"{{end}};
+	publishMQTT("{{setting .Activity "topic"}}", payload);
+{{end}}
 `
 

@@ -16,6 +16,7 @@ type FlogoDeviceDescriptor struct {
 	*Descriptor
 
 	DeviceType  string `json:"device_type"`
+	MqttEnabled bool   `json:"mqtt_enabled"`
 	Settings map[string]string `json:"settings"`
 
 	Actions  []*ActionConfig  `json:"actions"`
@@ -39,29 +40,35 @@ func ParseDeviceDescriptor(deviceJson string) (*FlogoDeviceDescriptor, error) {
 
 // TriggerConfig is the configuration for a Trigger
 type TriggerConfig struct {
-	Id       string                 `json:"id"`
-	Ref      string                 `json:"ref"`
-	Settings map[string]interface{} `json:"settings"`
-	Handlers []*HandlerConfig       `json:"handlers"`
+	Id       string            `json:"id"`
+	Ref      string            `json:"ref"`
+	ActionId string            `json:"actionId"`
+	Settings map[string]string `json:"settings"`
 }
 
-// HandlerConfig is the configuration for the Trigger Handler
-type HandlerConfig struct {
-	ActionId string                 `json:"actionId"`
-	Settings map[string]interface{} `json:"settings"`
+func (tc *TriggerConfig) GetSetting(key string) string {
+	return tc.Settings[key]
 }
 
 // Config is the configuration for the Action
 type ActionConfig struct {
 	Id   string          `json:"id"`
 	Ref  string          `json:"ref"`
-	Data DeviceActivity `json:"data"`
+	Data DeviceActivity  `json:"data"`
 }
 
 //todo hardcoded for now, should be generated from action-ref
 type DeviceActivity struct {
-	Id   string          `json:"id"`
-	Ref  string          `json:"ref"`
-	Settings map[string]interface{} `json:"settings"`
+	UseTriggerVal bool          `json:"useTriggerVal"`
+	Activity   *ActivityConfig  `json:"activity"`
 }
 
+type ActivityConfig struct {
+	Id   string                `json:"id"`
+	Ref  string                `json:"ref"`
+	Settings map[string]string `json:"settings"`
+}
+
+func (ac *ActivityConfig) GetSetting(key string) string {
+	return ac.Settings[key]
+}

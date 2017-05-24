@@ -11,10 +11,13 @@ var (
 
 
 type DeviceDetails struct {
-	Type string
-	Board string
-	Files map[string]string
+	Type     string
+	Board    string
+	MainFile string
+	MqttFiles map[string]string
 	Libs map[string]int
+
+	Files map[string]string
 }
 
 func Register(dd *DeviceDetails) {

@@ -66,8 +66,13 @@ func CreateDevice(env Project, deviceJson string, deviceDir string, deviceName s
 		return err
 	}
 
-	cfg := &SettingsConfig{DeviceName: deviceName, Settings:descriptor.Settings}
-	err = generateSourceFiles(env.GetSourceDir(), details, cfg, false)
+	//cfg := &SettingsConfig{DeviceName: deviceName, Settings:descriptor.Settings}
+	//err = generateSourceFiles(env.GetSourceDir(), details, cfg, false)
+
+	err = generateSourceFilesNew(env.GetSourceDir(), descriptor)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -157,17 +162,6 @@ func UploadDevice(env Project) error {
 	return err
 }
 
-//func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
-//
-//	raw, err := ioutil.ReadFile(path)
-//	if err != nil {
-//		fmt.Println("error: " + err.Error())
-//		return nil, err
-//	}
-//
-//	return ParseDescriptor(string(raw))
-//}
-
 func generateSourceFiles(srcDir string, details *DeviceDetails, settings *SettingsConfig, skipMain bool) error {
 
 	for name, tpl := range details.Files {
@@ -190,9 +184,111 @@ func generateSourceFiles(srcDir string, details *DeviceDetails, settings *Settin
 func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) error {
 
 	details := GetDevice(descriptor.DeviceType)
+
+
+	generateMainCode(srcDir, descriptor, details)
+
+	if descriptor.MqttEnabled {
+
+		generateMqttCode(srcDir, descriptor, details)
+	}
+
+	//generate triggers
+	for _, trgCfg := range descriptor.Triggers {
+
+		//settings := &SettingsConfig{ID: trgCfg.Id, ActionId: Settings:trgCfg.Settings}
+
+		f, _ := os.Create(path.Join(srcDir, trgCfg.Id + ".ino"))
+		tpl := triggerTpls[trgCfg.Ref]
+		err := RenderTemplate(f, tpl, trgCfg)
+		f.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	// generate actions
+	for _, actCfg := range descriptor.Actions {
+
+		// Action should define how to do this
+
+		template.ParseFiles()
+
+		t := template.New("action")
+		t.Funcs(DeviceFuncMap)
+		_, err := t.Parse(actionTpls[actCfg.Ref])
+		if err != nil {
+			return err
+		}
+
+		tmpl := t.New("activity")
+		_, err = tmpl.Parse(activityTpls[actCfg.Data.Activity.Ref])
+		if err != nil {
+			return err
+		}
+
+		f, _ := os.Create(path.Join(srcDir, actCfg.Id + ".ino"))
+
+		err = t.Execute(f, actCfg)
+		f.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	//template.ParseFiles()
+
+	return nil
+}
+
+func generateMainCode(srcDir string, descriptor *FlogoDeviceDescriptor, details *DeviceDetails) error {
+	var actionIds []string
+
+	for _, value := range descriptor.Actions {
+		actionIds = append(actionIds, value.Id)
+	}
+
+	var triggerIds []string
+	var mqttTriggerIds []string
+
+	for _, value := range descriptor.Triggers {
+
+		if !strings.Contains(value.Ref, "mqtt") {
+			triggerIds = append(triggerIds, value.Id)
+		} else {
+			mqttTriggerIds = append(mqttTriggerIds, value.Id)
+		}
+	}
+
+	data := struct {
+		MqttEnabled bool
+		Actions []string
+		Triggers []string
+		MqttTriggers []string
+	}{
+		descriptor.MqttEnabled,
+		actionIds,
+		triggerIds,
+		mqttTriggerIds,
+	}
+
+	tpl := details.MainFile
+	//todo fix name resolution
+	f, _ := os.Create(path.Join(srcDir, "main.ino"))
+	err := RenderTemplate(f, tpl, data)
+	f.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateMqttCode(srcDir string, descriptor *FlogoDeviceDescriptor, details *DeviceDetails) error {
+
 	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings:descriptor.Settings}
 
-	for name, tpl := range details.Files {
+	for name, tpl := range details.MqttFiles {
 
 		f, _ := os.Create(path.Join(srcDir, name))
 		err := RenderTemplate(f, tpl, settings)
@@ -204,6 +300,7 @@ func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) er
 
 	return nil
 }
+
 
 //RenderFileTemplate renders the specified template
 func RenderTemplate(w io.Writer, tpl string, data interface{}) error {

@@ -79,7 +79,7 @@ func (c *cmdCreate) Exec(args []string) error {
 		}
 
 		deviceName = args[0]
-		deviceJson = tplSimpleDevice
+		deviceJson = tplSimpleDevice2
 	}
 
 	currentDir, err := os.Getwd()
@@ -115,43 +115,42 @@ var tplSimpleDevice2 =`{
   "version": "0.0.1",
   "description": "My flogo device application description",
   "device_type":"feather_m0_wifi2",
-  "wifi-enabled":true,
-  "mqtt-enabled":true,
+  "mqtt_enabled":true,
   "settings": {
-	"mqtt:server":"192.168.1.50",
+    "mqtt:server":"192.168.1.50",
     "mqtt:port":"1883",
     "mqtt:user":"",
-	"mqtt:pass":"",
-	"wifi:ssid":"mynetwork",
-	"wifi:password": "mypass"
-  }
+    "mqtt:pass":"",
+    "wifi:ssid":"mynetwork",
+    "wifi:password": "mypass"
+  },
   "triggers": [
     {
       "id": "mqtt_trigger",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/device-mqtt",
-	  "actionId": "pin_on",
-	  "settings": {
-		"topic": "recievetopic"
-	  }
+      "actionId": "pin_on",
+      "settings": {
+        "topic": "recievetopic"
+      }
     },
     {
       "id": "pin_trigger",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/device-pin",
-	  "actionId": "send_msg",
-	  "settings": {
-			"pin" : "A1",
-			"digital" : false,
-			"condition" : "> 200"
-	  }
+      "actionId": "send_msg",
+      "settings": {
+        "pin" : "A1",
+        "digital" : "false",
+        "condition" : "> 200"
+      }
     },
-	{
-      "id": "pin_trigger",
+    {
+      "id": "btn_trigger",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/device-button",
-	  "actionId": "send_msg",
-	  "settings": {
-			"pin" : "A3",
-	  }
-    },
+      "actionId": "send_msg",
+      "settings": {
+        "pin" : "A3"
+      }
+    }
   ],
   "actions": [
     {
@@ -159,24 +158,25 @@ var tplSimpleDevice2 =`{
       "ref": "github.com/TIBCOSoftware/flogo-contrib/action/device-activity",
       "data": {
         "activity": {
-        	"ref": "github.com/TIBCOSoftware/flogo-contrib/activity/device-pin",
-        	"settings" : {
-        		"pin" : "A1",
-        		"digital" : true,
-        		"value" : "ON"
-        	}
+          "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/device-pin",
+          "settings": {
+            "pin": "A1",
+            "digital": "true",
+            "value": "HIGH"
+          }
         }
-      },
+      }
+    },
     {
       "id": "send_msg",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/action/device-activity",
       "data": {
         "activity": {
-        	"ref": "github.com/TIBCOSoftware/flogo-contrib/activity/device-mqtt",
-        	"settings" : {
-        		"topic" : "sendtopic",
-        		"msg" : "${T.value}"
-        	}
+          "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/device-mqtt",
+          "settings" : {
+            "topic" : "sendtopic",
+            "msg" : "${T.value}"
+          }
         }
       }
     }
