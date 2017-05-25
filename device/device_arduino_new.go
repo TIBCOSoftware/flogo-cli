@@ -68,8 +68,14 @@ void setup() {
 	{{end}}
 }
 
-void loop() {
+{{if .MqttEnabled}}
+void init_mqtt_triggers() {
+  //init mqtt triggers
+  {{range .MqttTriggers}}t_{{.}}_init();
+  {{end}}
+}{{end}}
 
+void loop() {
     {{if .MqttEnabled}}
     if (!client.connected()) {
         mqtt_reconnect();
@@ -175,7 +181,10 @@ void mqtt_reconnect() {
         if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
             Serial.println("connected");
             client.publish(mqtt_pubTopic, mqtt_readyMsg);
-            client.subscribe(mqtt_subTopic);
+            //client.subscribe(mqtt_subTopic);
+
+            init_mqtt_triggers();
+
         } else {
             Serial.print("failed, rc=");
             Serial.print(client.state());
@@ -221,11 +230,12 @@ void t_{{.Id}}() {
 var tplTriggerMqtt = `
 
 void t_{{.Id}}_init() {
+  client.subscribe("{{setting . "topic"}}");
 }
 
 void t_{{.Id}}(char *topic, byte *payload, unsigned int length) {
 
-    if (topic == "{{setting . "topic"}}") {
+    if (strcmp(topic,"{{setting . "topic"}}") == 0) {
 
         char buf[8];
         int i=0;
@@ -310,3 +320,29 @@ var tplActivityMqtt = `
 {{end}}
 `
 
+var tplActionDeviceFlow = `
+
+void a_{{.Id}}_init() {
+ 	{{ template "activity_init" .Data }}
+}
+
+void a_{{.Id}}(int value) {
+ 	{{ template "activity_code" .Data }}
+}
+`
+
+var tplActionDeviceFlowEval = `
+{{ define "T"}}
+	{{ template "activity_code" .Data }}
+
+	{{if .Condition }}
+	if (value {{.Condition}}) {
+		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+	} else {
+		{{if .NextElse}}{{with .NextElse}}{{template "T" .}}{{end}}{{end}}
+	}
+	{{else}}
+		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+	{{end}}
+{{ end }}
+`
