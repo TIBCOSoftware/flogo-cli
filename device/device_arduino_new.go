@@ -53,13 +53,9 @@ void setup() {
     {{if .MqttEnabled}}
     setup_wifi();
     setup_mqtt();
-
-	//init mqtt triggers
-	{{range .MqttTriggers}}t_{{.}}_init();
-	{{end}}
     {{end}}
 
-	//init simple triggers
+	//init triggers
 	{{range .Triggers}}t_{{.}}_init();
 	{{end}}
 
@@ -71,7 +67,7 @@ void setup() {
 {{if .MqttEnabled}}
 void init_mqtt_triggers() {
   //init mqtt triggers
-  {{range .MqttTriggers}}t_{{.}}_init();
+  {{ range $name, $topic := .MqttTriggers }}t_{{$name}}_init();
   {{end}}
 }{{end}}
 
@@ -102,7 +98,10 @@ void callback(char *topic, byte *payload, unsigned int length) {
     Serial.println();
 
 	//mqtt triggers
-	{{range .MqttTriggers}}t_{{.}}(topic, payload, length); {{end}}
+	{{ range $name, $topic := .MqttTriggers }}
+    if (strcmp(topic,"{{$topic}}") == 0) {
+	  t_{{$name}}(topic, payload, length);
+	}{{end}}
 }
 {{end}}
 `
@@ -235,20 +234,17 @@ void t_{{.Id}}_init() {
 
 void t_{{.Id}}(char *topic, byte *payload, unsigned int length) {
 
-    if (strcmp(topic,"{{setting . "topic"}}") == 0) {
+	char buf[8];
+	int i=0;
 
-        char buf[8];
-        int i=0;
+	for(i=0; i<length; i++) {
+		buf[i] = payload[i];
+	}
+	buf[i] = '\0';
 
-        for(i=0; i<length; i++) {
-            buf[i] = payload[i];
-        }
-        buf[i] = '\0';
+	int value = atoi(buf);
 
-        int value = atoi(buf);
-
-        a_{{.ActionId}}(value);
-    }
+	a_{{.ActionId}}(value);
 }
 `
 

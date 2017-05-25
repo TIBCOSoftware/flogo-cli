@@ -249,14 +249,15 @@ func generateMainCode(srcDir string, descriptor *FlogoDeviceDescriptor, details 
 	}
 
 	var triggerIds []string
-	var mqttTriggerIds []string
+	mqttTriggers := make(map[string]string)
 
 	for _, value := range descriptor.Triggers {
 
 		if !strings.Contains(value.Ref, "mqtt") {
 			triggerIds = append(triggerIds, value.Id)
 		} else {
-			mqttTriggerIds = append(mqttTriggerIds, value.Id)
+			mqttTriggers[value.Id] = value.Settings["topic"]
+			//mqttTriggerIds = append(mqttTriggerIds, value.Id)
 		}
 	}
 
@@ -264,12 +265,12 @@ func generateMainCode(srcDir string, descriptor *FlogoDeviceDescriptor, details 
 		MqttEnabled bool
 		Actions []string
 		Triggers []string
-		MqttTriggers []string
+		MqttTriggers map[string]string
 	}{
 		descriptor.MqttEnabled,
 		actionIds,
 		triggerIds,
-		mqttTriggerIds,
+		mqttTriggers,
 	}
 
 	tpl := details.MainFile
