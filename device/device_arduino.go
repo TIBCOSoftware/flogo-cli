@@ -1,19 +1,76 @@
 package device
 
-/*
-    "devices": [
-      {"type": "feather_m0_wifi", "board":"adafruit_feather_m0_usb", "template":"device-tpl/arduino.tmpl", "source":"arduino.ino" }
-    ],
- */
-/*    "libs" : [
-{"name": "PubSubClient", "id":89},
-{"name": "WiFi101", "id":299}
-]*/
+var triggerContribs = make(map[string]*TriggerContrib)
+var actionContribs = make(map[string]*ActionContrib)
+var activityContribs = make(map[string]*ActivityContrib)
+
+type Lib struct {
+	Name    string
+	LibType string
+	Ref     string
+}
+type TriggerContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+type ActionContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+
+func (ac *ActionContrib) GetActivities(tree *FlowTree) []*ActivityContrib {
+
+	var activities []*ActivityContrib
+
+	for _, task := range tree.AllTasks {
+		contrib := activityContribs[task.ActivityRef]
+		activities = append(activities, contrib)
+	}
+
+	return activities
+}
+
+type ActivityContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+
+//todo move to contrib contributions
+func RegisterTriggerContrib(ref string, tpl string) *TriggerContrib {
+
+	trg := &TriggerContrib{Ref:ref, Template:tpl}
+	triggerContribs[trg.Ref] = trg
+
+	return trg
+}
+
+//todo move to contrib contributions
+func RegisterActionContrib(ref string, tpl string) *ActionContrib {
+
+	action := &ActionContrib{Ref: ref, Template: tpl}
+	actionContribs[action.Ref] = action
+
+	return action
+}
+
+//todo move to contrib contributions
+func RegisterActivityContrib(ref string, tpl string) *ActivityContrib {
+
+	activity := &ActivityContrib{Ref: ref, Template: tpl}
+	activityContribs[activity.Ref] = activity
+
+	return activity
+}
 
 func init() {
 	feather_m0 := &DeviceDetails{Type:"feather_m0_wifi", Board:"adafruit_feather_m0_usb"}
+
+	feather_m0.MainFile = tplArduinoMain
+
 	files := map[string]string{
-		"arduino.ino": tplArduinoMain,
 		"mqtt.ino": tplArduinoMqtt,
 		"wifi.ino": tplArduinoWifi,
 	}
@@ -21,68 +78,40 @@ func init() {
 		"PubSubClient": 89,
 		"WiFi101": 299,
 	}
-	feather_m0.Files = files
+	feather_m0.MqttFiles = files
 	feather_m0.Libs = libs
 
 	Register(feather_m0)
+
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/pin", tplTriggerPin)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/pinstream", tplTriggerPinStream)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/mqtt", tplTriggerMqtt)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/button", tplTriggerButton)
+	bme := RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/bme280stream", tplTriggerBME280Stream)
+	bme.libs = append(bme.libs, &Lib{LibType:"platformio", Name:"Adafruit BME280 Library", Ref:"166"})
+	bme.libs = append(bme.libs, &Lib{LibType:"platformio", Name:"Adafruit Unified Sensor", Ref:"31"})
+
+	l0x := RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/vl53l0x_stream", tplTriggerVL53L0XStream)
+	l0x.libs = append(l0x.libs, &Lib{LibType:"platformio", Name:"Adafruit_VL53L0X", Ref:"1494"})
+
+	RegisterActionContrib("github.com/TIBCOSoftware/flogo-contrib/device/action/activity", tplActionActivity)
+	RegisterActionContrib("github.com/TIBCOSoftware/flogo-contrib/device/action/flow", tplActionDeviceFlow)
+
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/setpin", tplActivityPin)
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/mqtt", tplActivityMqtt)
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/serial", tplActivitySerial)
 }
 
 
 var tplArduinoMain = `#include <SPI.h>
-#include <WiFi101.h>
+{{if .MqttEnabled}}#include <WiFi101.h>
 #include <PubSubClient.h>
-
-String endpointId = "0"; //optional endpoint indentifier
-
-uint8_t InPin = A3;  //set input pin
-uint8_t OutPin = A4; //set ouput pin
-
-bool digitalIn = true;
-bool digitalOut = true;
-
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
-
-//////////////////////
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
-char in_msg_buff[100];
+{{end}}
 
-bool lastCondition = false;
-
-String fireTrigger() {
-    int value;
-
-    if (digitalIn) {
-        value = digitalRead(InPin);
-    } else {
-        value = analogRead(InPin);
-    }
-
-    // create custom condition
-    bool condition = value == 1;
-
-    String ret = "";
-
-    if (condition && !lastCondition) {
-
-        if ((millis() - lastDebounceTime) > debounceDelay) {
-
-            Serial.print("fire endpoint message");
-
-            //value changed so publish trigger event
-            ret = String(value);
-        }
-
-        lastDebounceTime = millis();
-    }
-
-    lastCondition = condition;
-
-    return ret;
-}
 
 void setup() {
     Serial.begin(115200);
@@ -91,32 +120,45 @@ void setup() {
         delay(10);
     }
 
+    {{if .MqttEnabled}}
     setup_wifi();
-
-    pinMode(InPin, INPUT);
-    pinMode(OutPin, OUTPUT);
-
     setup_mqtt();
+    {{end}}
+
+	//init triggers
+	{{range .Triggers}}t_{{.}}_init();
+	{{end}}
+
+	//init actions
+	{{range .Actions}}a_{{.}}_init();
+	{{end}}
 }
 
-void loop() {
+{{if .MqttEnabled}}
+void init_mqtt_triggers() {
+  //init mqtt triggers
+  {{ range $name, $topic := .MqttTriggers }}t_{{$name}}_init();
+  {{end}}
+}{{end}}
 
+void loop() {
+    {{if .MqttEnabled}}
     if (!client.connected()) {
         mqtt_reconnect();
     }
 
     // MQTT client loop processing
     client.loop();
+    {{end}}
 
-    String value = fireTrigger();
-
-    if (value.length() > 0) {
-
-        publishMQTT(value);
-    }
+	//triggers
+	{{range .Triggers}}t_{{.}}();
+	{{end}}
 }
 
+{{if .MqttEnabled}}
 void callback(char *topic, byte *payload, unsigned int length) {
+
     Serial.print("Message arrived [");
     Serial.print(topic);
     Serial.print("] ");
@@ -125,30 +167,17 @@ void callback(char *topic, byte *payload, unsigned int length) {
     }
     Serial.println();
 
-    if (digitalOut) {
-        if ((char) payload[0] == '1') {
-            digitalWrite(OutPin, HIGH);
-        } else {
-            digitalWrite(OutPin, LOW);
-        }
-    } else {
-        int i=0;
-
-        for(i=0; i<length; i++) {
-            in_msg_buff[i] = payload[i];
-        }
-        in_msg_buff[i] = '\0';
-
-        int value = atoi(in_msg_buff);
-
-        analogWrite(OutPin, value);
-    }
+	//mqtt triggers
+	{{ range $name, $topic := .MqttTriggers }}
+    if (strcmp(topic,"{{$topic}}") == 0) {
+	  t_{{$name}}(topic, payload, length);
+	}{{end}}
 }
+{{end}}
 `
 
 var tplArduinoWifi = `#include <SPI.h>
 #include <WiFi101.h>
-#include <PubSubClient.h>
 
 char ssid[] = "{{setting . "wifi:ssid"}}";
 const char *password = "{{setting . "wifi:password"}}";
@@ -190,6 +219,7 @@ void setup_wifi() {
 `
 
 var tplArduinoMqtt = `#include <SPI.h>
+#include <WiFi101.h>
 #include <PubSubClient.h>
 
 const char *mqtt_server = "{{setting . "mqtt:server"}}";
@@ -220,7 +250,10 @@ void mqtt_reconnect() {
         if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
             Serial.println("connected");
             client.publish(mqtt_pubTopic, mqtt_readyMsg);
-            client.subscribe(mqtt_subTopic);
+            //client.subscribe(mqtt_subTopic);
+
+            init_mqtt_triggers();
+
         } else {
             Serial.print("failed, rc=");
             Serial.print(client.state());
@@ -231,9 +264,259 @@ void mqtt_reconnect() {
     }
 }
 
-void publishMQTT(String value) {
-	String payload = "{\"ep\":\"" + endpointId +  "\", \"value\": \"" + value + "\"}";
+void publishMQTT(String value, String payload) {
 	payload.toCharArray(out_msg_buff, payload.length() + 1);
 	client.publish(mqtt_pubTopic, out_msg_buff);
 }
+`
+
+var tplTriggerPin = `
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};    // set input pin
+bool t_{{.Id}}_lc = false;    // last condition value
+
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
+}
+
+void t_{{.Id}}() {
+
+    int value = {{if settingb . "digital"}}digitalRead(t_{{.Id}}_pin){{else}}analogRead(t_{{.Id}}_pin){{end}};
+
+    // create custom condition
+    bool condition = value {{setting . "condition"}};
+
+    if (condition && !t_{{.Id}}_lc) {
+
+        a_{{.ActionId}}(value);
+    }
+
+    t_{{.Id}}_lc = condition;
+}
+`
+
+var tplTriggerPinStream = `
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};    // set input pin
+
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
+}
+
+void t_{{.Id}}() {
+
+  int value = {{if settingb . "digital"}}digitalRead(t_{{.Id}}_pin){{else}}analogRead(t_{{.Id}}_pin){{end}};
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+    a_{{.ActionId}}(value);
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
+
+//triggers will say if they are part of loop or mqtt callback
+var tplTriggerMqtt = `
+
+void t_{{.Id}}_init() {
+  client.subscribe("{{setting . "topic"}}");
+}
+
+void t_{{.Id}}(char *topic, byte *payload, unsigned int length) {
+
+	char buf[8];
+	int i=0;
+
+	for(i=0; i<length; i++) {
+		buf[i] = payload[i];
+	}
+	buf[i] = '\0';
+
+	int value = atoi(buf);
+
+	a_{{.ActionId}}(value);
+}
+`
+
+var tplTriggerButton = `
+unsigned long t_{{.Id}}_ldt = 0; // lastDebounceTime
+
+int t_{{.Id}}_bs;          // the current reading from the input pin
+int t_{{.Id}}_lbs = LOW; // the previous reading from the input pin
+
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};  //set input pin
+
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
+}
+
+void t_{{.Id}}() {
+
+  int reading = digitalRead(t_{{.Id}}_pin);
+
+  if (reading != t_{{.Id}}_lbs) {
+    // reset the debouncing timer
+    t_{{.Id}}_ldt = millis();
+  }
+
+  if ((millis() - t_{{.Id}}_ldt) > 50) {
+
+    if (reading != t_{{.Id}}_bs) {
+      t_{{.Id}}_bs = reading;
+
+      if (t_{{.Id}}_bs == HIGH) {
+        a_{{.ActionId}}(HIGH);
+      }
+    }
+  }
+
+  t_{{.Id}}_lbs = reading;
+}
+`
+var tplTriggerBME280Stream = `
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+
+const int Bme280_cs_pin__i = 5;
+Adafruit_BME280 bme(Bme280_cs_pin__i);
+
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+
+void t_{{.Id}}_init() {
+
+    bool status;
+
+    status = bme.begin();
+    if (!status) {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        while (1);
+    }
+}
+
+void t_{{.Id}}() {
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+    Serial.println(bme.readTemperature());
+    a_{{.ActionId}}(bme.readTemperature());
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
+
+var tplTriggerVL53L0XStream = `
+#include <Wire.h>
+#include "Adafruit_VL53L0X.h"
+
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
+
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+
+void t_{{.Id}}_init() {
+
+    bool status;
+
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
+}
+
+void t_{{.Id}}() {
+
+  VL53L0X_RangingMeasurementData_t measure;
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+
+    lox.rangingTest(&measure, false); // pass in 'true' to get debug data
+    Serial.print("Distance (mm): "); Serial.println(measure.RangeMilliMeter);
+    a_{{.ActionId}}(measure.RangeMilliMeter);
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
+
+var tplActionActivity = `
+
+void a_{{.Id}}_init() {
+ 	{{ template "activity_init" .Data }}
+}
+
+void a_{{.Id}}(int value) {
+ 	{{ template "activity_code" .Data }}
+}
+`
+
+var tplActivityPin = `
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
+  pinMode({{setting .Activity "pin"}}, OUTPUT);
+}
+
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
+  int val = {{if .UseTriggerVal}}value{{else}}{{setting .Activity "value"}}{{end}};
+  {{if settingb .Activity "digital"}}digitalWrite({{setting .Activity "pin"}}, val){{else}}analogWrite({{setting .Activity "pin"}}, val){{end}};
+}
+`
+
+var tplActivityMqtt = `
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
+}
+
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
+	{{$payload := setting .Activity "payload"}}
+	String payload = {{if eq $payload "${value}"}}String(value){{else}}"{{$payload}}"{{end}};
+	publishMQTT("{{setting .Activity "topic"}}", payload);
+}
+`
+var tplActivitySerial = `
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
+}
+
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
+	{{$message := setting .Activity "message"}}
+	Serial.println({{if eq $message "${value}"}}String(value){{else}}"{{$message}}"{{end}});
+}
+`
+
+var tplActionDeviceFlow = `
+
+void a_{{.Id}}_init() {
+	{{range $task := .AllTasks -}}
+	ac_{{$task.FlowId}}_{{$task.Id}}_init();
+	{{ end }}
+}
+
+void a_{{.Id}}(int value) {
+ 	{{ template "T" .FirstTask }}
+}
+`
+
+//var tplActionDeviceFlowEval = `
+//{{ define "T"}}
+//	{{ template "activity_code" .Data }}
+//
+//	{{if .Condition }}
+//	if (value {{.Condition}}) {
+//		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+//	} else {
+//		{{if .NextElse}}{{with .NextElse}}{{template "T" .}}{{end}}{{end}}
+//	}
+//	{{else}}
+//		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+//	{{end}}
+//{{ end }}
+//`
+
+var tplActionDeviceFlowEval = `{{ define "T" -}}
+	{{if .Precondition }}
+	if ({{.Precondition}}) {
+	    ac_{{.FlowId}}_{{.Id}}(value);
+	    {{range $task := .NextTasks}}{{with $task}}{{template "T" .}}{{end}}
+	    {{end}}
+	}
+	{{- else -}}
+	ac_{{.FlowId}}_{{.Id}}(value);
+	{{range $task := .NextTasks}}{{with $task}}{{template "T" .}}{{end}}
+	{{end}}{{end}}{{ end }}
 `
