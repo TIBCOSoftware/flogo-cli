@@ -1,8 +1,69 @@
 package device
 
-var triggerTpls = make(map[string]string)
-var actionTpls = make(map[string]string)
-var activityTpls = make(map[string]string)
+var triggerContribs = make(map[string]*TriggerContrib)
+var actionContribs = make(map[string]*ActionContrib)
+var activityContribs = make(map[string]*ActivityContrib)
+
+type Lib struct {
+	Name    string
+	LibType string
+	Ref     string
+}
+type TriggerContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+type ActionContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+
+func (ac *ActionContrib) GetActivities(tree *FlowTree) []*ActivityContrib {
+
+	var activities []*ActivityContrib
+
+	for _, task := range tree.AllTasks {
+		contrib := activityContribs[task.ActivityRef]
+		activities = append(activities, contrib)
+	}
+
+	return activities
+}
+
+type ActivityContrib struct {
+	Ref      string
+	Template string
+	libs     []*Lib
+}
+
+//todo move to contrib contributions
+func RegisterTriggerContrib(ref string, tpl string) *TriggerContrib {
+
+	trg := &TriggerContrib{Ref:ref, Template:tpl}
+	triggerContribs[trg.Ref] = trg
+
+	return trg
+}
+
+//todo move to contrib contributions
+func RegisterActionContrib(ref string, tpl string) *ActionContrib {
+
+	action := &ActionContrib{Ref: ref, Template: tpl}
+	actionContribs[action.Ref] = action
+
+	return action
+}
+
+//todo move to contrib contributions
+func RegisterActivityContrib(ref string, tpl string) *ActivityContrib {
+
+	activity := &ActivityContrib{Ref: ref, Template: tpl}
+	activityContribs[activity.Ref] = activity
+
+	return activity
+}
 
 func init() {
 	feather_m0 := &DeviceDetails{Type:"feather_m0_wifi2", Board:"adafruit_feather_m0_usb"}
@@ -22,14 +83,23 @@ func init() {
 
 	Register(feather_m0)
 
-	triggerTpls["github.com/TIBCOSoftware/flogo-contrib/trigger/device-pin"] = tplTriggerPin
-	triggerTpls["github.com/TIBCOSoftware/flogo-contrib/trigger/device-mqtt"] = tplTriggerMqtt
-	triggerTpls["github.com/TIBCOSoftware/flogo-contrib/trigger/device-button"] = tplTriggerButton
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/pin", tplTriggerPin)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/pinstream", tplTriggerPinStream)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/mqtt", tplTriggerMqtt)
+	RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/button", tplTriggerButton)
+	bme := RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/bme280stream", tplTriggerBME280Stream)
+	bme.libs = append(bme.libs, &Lib{LibType:"platformio", Ref:"166"})
+	bme.libs = append(bme.libs, &Lib{LibType:"platformio", Name:"Adafruit Unified Sensor", Ref:"31"})
 
-	actionTpls["github.com/TIBCOSoftware/flogo-contrib/action/device-activity"] = tplActionActivity
+	l0x := RegisterTriggerContrib("github.com/TIBCOSoftware/flogo-contrib/device/trigger/vl53l0x_stream", tplTriggerVL53L0XStream)
+	l0x.libs = append(bme.libs, &Lib{LibType:"platformio", Ref:"1494"})
 
-	activityTpls["github.com/TIBCOSoftware/flogo-contrib/activity/device-pin"] = tplActivityPin
-	activityTpls["github.com/TIBCOSoftware/flogo-contrib/activity/device-mqtt"] = tplActivityMqtt
+	RegisterActionContrib("github.com/TIBCOSoftware/flogo-contrib/device/action/activity", tplActionActivity)
+	RegisterActionContrib("github.com/TIBCOSoftware/flogo-contrib/device/action/flow", tplActionDeviceFlow)
+
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/setpin", tplActivityPin)
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/mqtt", tplActivityMqtt)
+	RegisterActivityContrib("github.com/TIBCOSoftware/flogo-contrib/device/activity/serial", tplActivitySerial)
 }
 
 
@@ -224,6 +294,25 @@ void t_{{.Id}}() {
 }
 `
 
+var tplTriggerPinStream = `
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+uint8_t t_{{.Id}}_pin = {{setting . "pin"}};    // set input pin
+
+void t_{{.Id}}_init() {
+	pinMode(t_{{.Id}}_pin, INPUT);
+}
+
+void t_{{.Id}}() {
+
+  int value = {{if settingb . "digital"}}digitalRead(t_{{.Id}}_pin){{else}}analogRead(t_{{.Id}}_pin){{end}};
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+    a_{{.ActionId}}(value);
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
 
 //triggers will say if they are part of loop or mqtt callback
 var tplTriggerMqtt = `
@@ -283,6 +372,70 @@ void t_{{.Id}}() {
   t_{{.Id}}_lbs = reading;
 }
 `
+var tplTriggerBME280Stream = `
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+
+const int Bme280_cs_pin__i = 5;
+Adafruit_BME280 bme(Bme280_cs_pin__i);
+
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+
+void t_{{.Id}}_init() {
+
+    bool status;
+
+    status = bme.begin();
+    if (!status) {
+        Serial.println("Could not find a valid BME280 sensor, check wiring!");
+        while (1);
+    }
+}
+
+void t_{{.Id}}() {
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+    Serial.println(bme.readTemperature());
+    a_{{.ActionId}}(bme.readTemperature());
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
+
+var tplTriggerVL53L0XStream = `
+#include <Wire.h>
+#include "Adafruit_VL53L0X.h"
+
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
+
+unsigned long t_{{.Id}}_lt = 0; // lastTrigger
+
+void t_{{.Id}}_init() {
+
+    bool status;
+
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
+}
+
+void t_{{.Id}}() {
+
+  VL53L0X_RangingMeasurementData_t measure;
+
+  if ((millis() - t_{{.Id}}_lt) > {{setting . "interval"}}) {
+
+    lox.rangingTest(&measure, false); // pass in 'true' to get debug data
+    Serial.print("Distance (mm): "); Serial.println(measure.RangeMilliMeter);
+    a_{{.ActionId}}(measure.RangeMilliMeter);
+
+	t_{{.Id}}_lt = millis();
+  }
+}
+`
 
 var tplActionActivity = `
 
@@ -296,49 +449,74 @@ void a_{{.Id}}(int value) {
 `
 
 var tplActivityPin = `
-{{ define "activity_init"}}
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
   pinMode({{setting .Activity "pin"}}, OUTPUT);
-{{ end }}
+}
 
-{{ define "activity_code"}}
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
   int val = {{if .UseTriggerVal}}value{{else}}{{setting .Activity "value"}}{{end}};
-
   {{if settingb .Activity "digital"}}digitalWrite({{setting .Activity "pin"}}, val){{else}}analogWrite({{setting .Activity "pin"}}, val){{end}};
-{{ end }}
+}
 `
 
 var tplActivityMqtt = `
-{{ define "activity_init"}}{{end}}
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
+}
 
-{{ define "activity_code"}}
-	String payload = {{if .UseTriggerVal}}String(value){{else}}"{{setting .Activity "payload"}}"{{end}};
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
+	{{$payload := setting .Activity "payload"}}
+	String payload = {{if eq $payload "${value}"}}String(value){{else}}"{{$payload}}"{{end}};
 	publishMQTT("{{setting .Activity "topic"}}", payload);
-{{end}}
+}
+`
+var tplActivitySerial = `
+void ac_{{.Id}}_{{.Activity.Id}}_init() {
+}
+
+void ac_{{.Id}}_{{.Activity.Id}}(int value) {
+	{{$message := setting .Activity "message"}}
+	Serial.println({{if eq $message "${value}"}}String(value){{else}}"{{$message}}"{{end}});
+}
 `
 
 var tplActionDeviceFlow = `
 
 void a_{{.Id}}_init() {
- 	{{ template "activity_init" .Data }}
+	{{range $task := .AllTasks -}}
+	ac_{{$task.FlowId}}_{{$task.Id}}_init();
+	{{ end }}
 }
 
 void a_{{.Id}}(int value) {
- 	{{ template "activity_code" .Data }}
+ 	{{ template "T" .FirstTask }}
 }
 `
 
-var tplActionDeviceFlowEval = `
-{{ define "T"}}
-	{{ template "activity_code" .Data }}
+//var tplActionDeviceFlowEval = `
+//{{ define "T"}}
+//	{{ template "activity_code" .Data }}
+//
+//	{{if .Condition }}
+//	if (value {{.Condition}}) {
+//		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+//	} else {
+//		{{if .NextElse}}{{with .NextElse}}{{template "T" .}}{{end}}{{end}}
+//	}
+//	{{else}}
+//		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
+//	{{end}}
+//{{ end }}
+//`
 
-	{{if .Condition }}
-	if (value {{.Condition}}) {
-		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
-	} else {
-		{{if .NextElse}}{{with .NextElse}}{{template "T" .}}{{end}}{{end}}
+var tplActionDeviceFlowEval = `{{ define "T" -}}
+	{{if .Precondition }}
+	if ({{.Precondition}}) {
+	    ac_{{.FlowId}}_{{.Id}}(value);
+	    {{range $task := .NextTasks}}{{with $task}}{{template "T" .}}{{end}}
+	    {{end}}
 	}
-	{{else}}
-		{{if .Next}}{{with .Next}}{{template "T" .}}{{end}}{{end}}
-	{{end}}
-{{ end }}
+	{{- else -}}
+	ac_{{.FlowId}}_{{.Id}}(value);
+	{{range $task := .NextTasks}}{{with $task}}{{template "T" .}}{{end}}
+	{{end}}{{end}}{{ end }}
 `

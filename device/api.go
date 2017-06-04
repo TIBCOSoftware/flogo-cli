@@ -9,6 +9,9 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"io"
 	"text/template"
+	"fmt"
+	"strconv"
+	"errors"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -66,10 +69,7 @@ func CreateDevice(env Project, deviceJson string, deviceDir string, deviceName s
 		return err
 	}
 
-	//cfg := &SettingsConfig{DeviceName: deviceName, Settings:descriptor.Settings}
-	//err = generateSourceFiles(env.GetSourceDir(), details, cfg, false)
-
-	err = generateSourceFilesNew(env.GetSourceDir(), descriptor)
+	_, err = generateSourceFiles(env, descriptor, false)
 	if err != nil {
 		return err
 	}
@@ -106,17 +106,29 @@ func PrepareDevice(project Project, options *PrepareOptions) (err error) {
 		return err
 	}
 
-	details := GetDevice(descriptor.DeviceType)
-
-	cfg := &SettingsConfig{DeviceName: descriptor.Name, Settings:descriptor.Settings}
-	err = generateSourceFiles(project.GetSourceDir(), details, cfg, true)
+	libs, err := generateSourceFiles(project, descriptor, true)
 	if err != nil {
 		return err
 	}
 
+	details := GetDevice(descriptor.DeviceType)
+
 	for name, id := range details.Libs {
 
 		err := project.InstallLib(name, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, lib := range libs {
+
+		//assume platformio for now
+		libId,err :=strconv.Atoi(lib.Ref)
+		if err != nil {
+			return errors.New("Unsupported lib type: " + lib.LibType)
+		}
+		err = project.InstallLib("",libId)
 		if err != nil {
 			return err
 		}
@@ -162,31 +174,16 @@ func UploadDevice(env Project) error {
 	return err
 }
 
-func generateSourceFiles(srcDir string, details *DeviceDetails, settings *SettingsConfig, skipMain bool) error {
+func generateSourceFiles(env Project, descriptor *FlogoDeviceDescriptor, skipMain bool) (map[string]*Lib,error) {
 
-	for name, tpl := range details.Files {
-
-		if skipMain && strings.HasPrefix(name, "main") {
-			continue
-		}
-
-		f, _ := os.Create(path.Join(srcDir, name))
-		err := RenderTemplate(f, tpl, settings)
-		f.Close()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) error {
+	libs := make(map[string]*Lib)
 
 	details := GetDevice(descriptor.DeviceType)
 
-
-	generateMainCode(srcDir, descriptor, details)
+	srcDir := env.GetSourceDir()
+	//if !skipMain {
+		generateMainCode(srcDir, descriptor, details)
+	//}
 
 	if descriptor.MqttEnabled {
 
@@ -196,14 +193,22 @@ func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) er
 	//generate triggers
 	for _, trgCfg := range descriptor.Triggers {
 
-		//settings := &SettingsConfig{ID: trgCfg.Id, ActionId: Settings:trgCfg.Settings}
+		if _,ok:= triggerContribs[trgCfg.Ref]; !ok {
+			panic("Trigger '" + trgCfg.Ref + "' not found")
+		}
+
+		if len(triggerContribs[trgCfg.Ref].libs) > 0 {
+			for _, lib := range triggerContribs[trgCfg.Ref].libs {
+				libs[lib.LibType + lib.Ref] = lib
+			}
+		}
 
 		f, _ := os.Create(path.Join(srcDir, trgCfg.Id + ".ino"))
-		tpl := triggerTpls[trgCfg.Ref]
+		tpl := triggerContribs[trgCfg.Ref].Template
 		err := RenderTemplate(f, tpl, trgCfg)
 		f.Close()
 		if err != nil {
-			return err
+			return nil,err
 		}
 	}
 
@@ -212,33 +217,111 @@ func generateSourceFilesNew(srcDir string, descriptor *FlogoDeviceDescriptor) er
 
 		// Action should define how to do this
 
-		template.ParseFiles()
+		if strings.HasSuffix(actCfg.Ref, "flow") {
+			var flowCfg *FlowActionConfig
+			err := json.Unmarshal(actCfg.Data, &flowCfg)
+			if err != nil {
+				errorMsg := fmt.Sprintf("Error while loading flow '%s' error '%s'", actCfg.Id, err.Error())
+				panic(errorMsg)
+			}
 
-		t := template.New("action")
-		t.Funcs(DeviceFuncMap)
-		_, err := t.Parse(actionTpls[actCfg.Ref])
-		if err != nil {
-			return err
-		}
+			flowTree := toFlowTree(actCfg.Id, flowCfg.Flow)
 
-		tmpl := t.New("activity")
-		_, err = tmpl.Parse(activityTpls[actCfg.Data.Activity.Ref])
-		if err != nil {
-			return err
-		}
+			//generate activities
+			for _, task := range flowTree.AllTasks {
 
-		f, _ := os.Create(path.Join(srcDir, actCfg.Id + ".ino"))
+				f, _ := os.Create(path.Join(srcDir, actCfg.Id + "_" + strconv.Itoa(task.Id) + ".ino"))
 
-		err = t.Execute(f, actCfg)
-		f.Close()
-		if err != nil {
-			return err
+				if _,ok:= activityContribs[task.ActivityRef]; !ok {
+					panic("Activity '" + task.ActivityRef + "' not found")
+				}
+
+				if len(activityContribs[task.ActivityRef].libs) > 0 {
+					for _, lib := range activityContribs[task.ActivityRef].libs {
+						libs[lib.LibType + lib.Ref] = lib
+					}
+				}
+
+				tpl := activityContribs[task.ActivityRef].Template
+
+				data := struct {
+					Id       string
+					Activity *Task
+				}{
+					actCfg.Id,
+					task,
+				}
+
+				err := RenderTemplate(f, tpl, data)
+				f.Close()
+				if err != nil {
+					return nil,err
+				}
+			}
+
+			f, _ := os.Create(path.Join(srcDir, actCfg.Id + ".ino"))
+
+			t := template.New("action")
+			t.Funcs(DeviceFuncMap)
+			_, err = t.Parse(actionContribs[actCfg.Ref].Template)
+			if err != nil {
+				return nil,err
+			}
+
+			tmpl := t.New("actioneval")
+			_, err = tmpl.Parse(tplActionDeviceFlowEval)
+			if err != nil {
+				return nil,err
+			}
+			err = t.Execute(f, flowTree)
+			f.Close()
+			if err != nil {
+				return nil,err
+			}
+
+		} else {
+			var aaCfg *ActivityActionConfig
+			err := json.Unmarshal(actCfg.Data, aaCfg)
+			if err != nil {
+				errorMsg := fmt.Sprintf("Error while loading activity action '%s' error '%s'", actCfg.Id, err.Error())
+				panic(errorMsg)
+			}
+
+			if _,ok:= activityContribs[aaCfg.Activity.Ref]; !ok {
+				panic("Activity '" + aaCfg.Activity.Ref + "' not found")
+			}
+
+			if len(activityContribs[aaCfg.Activity.Ref].libs) > 0 {
+				for _, lib := range activityContribs[aaCfg.Activity.Ref].libs {
+					libs[lib.LibType + lib.Ref] = lib
+				}
+			}
+
+			f, _ := os.Create(path.Join(srcDir, "ac_ " + actCfg.Id + ".ino"))
+			tpl := activityContribs[aaCfg.Activity.Ref].Template
+			err = RenderTemplate(f, tpl, aaCfg.Activity)
+			f.Close()
+			if err != nil {
+				return nil, err
+			}
+
+			f, _ = os.Create(path.Join(srcDir, actCfg.Id + ".ino"))
+
+			t := template.New("action")
+			t.Funcs(DeviceFuncMap)
+			_, err = t.Parse(actionContribs[actCfg.Ref].Template)
+			if err != nil {
+				return nil,err
+			}
+			err = t.Execute(f, actCfg)
+			f.Close()
+			if err != nil {
+				return nil,err
+			}
 		}
 	}
 
-	//template.ParseFiles()
-
-	return nil
+	return libs,nil
 }
 
 func generateMainCode(srcDir string, descriptor *FlogoDeviceDescriptor, details *DeviceDetails) error {

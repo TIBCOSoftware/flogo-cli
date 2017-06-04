@@ -54,21 +54,26 @@ func (tc *TriggerConfig) GetSetting(key string) string {
 type ActionConfig struct {
 	Id   string          `json:"id"`
 	Ref  string          `json:"ref"`
-	Data DeviceActivity  `json:"data"`
+	Data json.RawMessage `json:"data"`
 }
 
 //todo hardcoded for now, should be generated from action-ref
-type DeviceActivity struct {
+type ActivityActionConfig struct {
 	UseTriggerVal bool          `json:"useTriggerVal"`
 	Activity   *ActivityConfig  `json:"activity"`
+}
+
+//todo hardcoded for now, should be generated from action-ref
+type FlowActionConfig struct {
+	Flow   map[string]interface{}  `json:"flow"`
 }
 
 type ActivityConfig struct {
 	Id   string                `json:"id"`
 	Ref  string                `json:"ref"`
-	Settings map[string]string `json:"settings"`
+	Attributes map[string]string `json:"attributes"`
 }
 
 func (ac *ActivityConfig) GetSetting(key string) string {
-	return ac.Settings[key]
+	return ac.Attributes[key]
 }
