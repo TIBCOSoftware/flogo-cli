@@ -82,6 +82,27 @@ type PlatformFeature struct {
 	Libs     []*Lib `json:"libs"`
 }
 
+
+// TriggerConfig is the configuration for a Trigger
+type TriggerConfig struct {
+	Id       string            `json:"id"`
+	Ref      string            `json:"ref"`
+	ActionId string            `json:"actionId"`
+	Settings map[string]string `json:"settings"`
+}
+
+func (tc *TriggerConfig) GetSetting(key string) string {
+	return tc.Settings[key]
+}
+
+// Config is the configuration for the Action
+type ActionConfig struct {
+	Id   string          `json:"id"`
+	Ref  string          `json:"ref"`
+	Data json.RawMessage `json:"data"`
+}
+
+
 //todo consolidate parsing functions
 
 // ParseActivityDescriptor parse the device activity descriptor
@@ -147,44 +168,4 @@ func ParseDevicePlatform(platformJson string) (*DevicePlatform, error) {
 	}
 
 	return profile, nil
-}
-
-// TriggerConfig is the configuration for a Trigger
-type TriggerConfig struct {
-	Id       string            `json:"id"`
-	Ref      string            `json:"ref"`
-	ActionId string            `json:"actionId"`
-	Settings map[string]string `json:"settings"`
-}
-
-func (tc *TriggerConfig) GetSetting(key string) string {
-	return tc.Settings[key]
-}
-
-// Config is the configuration for the Action
-type ActionConfig struct {
-	Id   string          `json:"id"`
-	Ref  string          `json:"ref"`
-	Data json.RawMessage `json:"data"`
-}
-
-//todo hardcoded for now, should be generated from action-ref
-type ActivityActionConfig struct {
-	UseTriggerVal bool          `json:"useTriggerVal"`
-	Activity      *ActivityConfig  `json:"activity"`
-}
-
-//todo hardcoded for now, should be generated from action-ref
-type FlowActionConfig struct {
-	Flow map[string]interface{}  `json:"flow"`
-}
-
-type ActivityConfig struct {
-	Id         string                `json:"id"`
-	Ref        string                `json:"ref"`
-	Attributes map[string]string `json:"attributes"`
-}
-
-func (ac *ActivityConfig) GetSetting(key string) string {
-	return ac.Attributes[key]
 }
