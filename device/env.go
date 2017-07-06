@@ -12,16 +12,27 @@ type Project interface {
 	// GetLibDir get the lib directory of the project
 	GetLibDir() string
 
+	GetContributionDir() string
+
 	// Init initializes the project settings an validates it requirements
 	Init(path string) error
 
 	// Create the project directory and its structure, optional existing vendor dir to copy
-	Create(board string) error
+	Create() error
+
+	// Setup the project directory
+	Setup(board string) error
 
 	// Open the project directory and validate its structure
 	Open() error
 
 	InstallLib(name string, id int) error
+
+	// InstallContribution install a contribution
+	InstallContribution(path string, version string) error
+
+	// UninstallContribution uninstall a contribution
+	UninstallContribution(path string) error
 
 	Build() error
 

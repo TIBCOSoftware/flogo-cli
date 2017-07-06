@@ -7,6 +7,8 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"bufio"
 	"io"
+	"strings"
+	"strconv"
 )
 
 var (
@@ -32,6 +34,49 @@ func SetupExistingProjectEnv(appDir string) Project {
 	}
 
 	return project
+}
+
+func splitVersion(t string) (path string, version string) {
+
+	idx := strings.LastIndex(t, "@")
+
+	version = ""
+	path = t
+
+	if idx > -1 {
+		v := t[idx+1:]
+
+		if isValidVersion(v) {
+			version = v
+			path = t[0:idx]
+		}
+	}
+
+	return path, version
+}
+
+//todo validate that "s" a valid semver
+func isValidVersion(s string) bool {
+
+	if s == "" {
+		//assume latest version
+		return true
+	}
+
+	if s[0] == 'v' && len(s) > 1 && isNumeric(string(s[1])) {
+		return true
+	}
+
+	if isNumeric(string(s[0])) {
+		return true
+	}
+
+	return false
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
 }
 
 func Usage() {

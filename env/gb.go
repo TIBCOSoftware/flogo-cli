@@ -24,7 +24,7 @@ func NewGbProjectEnv() Project {
 
 	env := &GbProject{}
 	env.SourceDir = "src"
-	env.VendorSrcDir = "vendor"
+	env.VendorDir = "vendor"
 	env.VendorSrcDir = path.Join("vendor", "src")
 
 	return env

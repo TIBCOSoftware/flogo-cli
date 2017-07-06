@@ -79,7 +79,7 @@ func (c *cmdCreate) Exec(args []string) error {
 		}
 
 		deviceName = args[0]
-		deviceJson = tplSimpleDevice2
+		deviceJson = tplSimpleDevice
 	}
 
 	currentDir, err := os.Getwd()
@@ -93,28 +93,12 @@ func (c *cmdCreate) Exec(args []string) error {
 	return CreateDevice(SetupNewProjectEnv(), deviceJson, deviceDir, deviceName)
 }
 
-var tplSimpleDevice = `{
-  "name": "MyDevice",
-  "type": "flogo:device",
-  "version": "0.0.1",
-  "description": "My flogo device description",
-  "device_type":"feather_m0_wifi",
-  "settings": {
-	"mqtt:server":"192.168.1.50",
-    "mqtt:port":"1883",
-    "mqtt:user":"",
-	"mqtt:pass":"",
-	"wifi:ssid":"mynetwork",
-	"wifi:password": "mypass"
-  }
-}`
-
-var tplSimpleDevice2 =`{
+var tplSimpleDevice =`{
   "name": "mydevice",
   "type": "flogo:device",
   "version": "0.0.1",
   "description": "My flogo device application description",
-  "device_type":"feather_m0_wifi2",
+  "device_profile": "github.com/TIBCOSoftware/flogo-contrib/device/profile/feather_m0_wifi",
   "mqtt_enabled":true,
   "settings": {
     "mqtt:server":"192.168.1.50",
@@ -132,24 +116,6 @@ var tplSimpleDevice2 =`{
       "settings": {
         "topic": "recievetopic"
       }
-    },
-    {
-      "id": "pin_trigger",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/device-pin",
-      "actionId": "send_msg",
-      "settings": {
-        "pin" : "A1",
-        "digital" : "false",
-        "condition" : "> 200"
-      }
-    },
-    {
-      "id": "btn_trigger",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/device-button",
-      "actionId": "send_msg",
-      "settings": {
-        "pin" : "A3"
-      }
     }
   ],
   "actions": [
@@ -163,19 +129,6 @@ var tplSimpleDevice2 =`{
             "pin": "A1",
             "digital": "true",
             "value": "HIGH"
-          }
-        }
-      }
-    },
-    {
-      "id": "send_msg",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/device-activity",
-      "data": {
-        "activity": {
-          "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/device-mqtt",
-          "settings" : {
-            "topic" : "sendtopic",
-            "msg" : "${T.value}"
           }
         }
       }
