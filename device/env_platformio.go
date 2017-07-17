@@ -140,7 +140,8 @@ func (p *PioProject) InstallContribution(depPath string, version string) error {
 	}
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", "-branch", "device_contribs", depPath)
+		//cmd = exec.Command("gb", "vendor", "fetch", "-branch", "device_contribs", depPath)
+		cmd = exec.Command("gb", "vendor", "fetch", depPath)
 	} else {
 		var tag string
 
@@ -150,7 +151,8 @@ func (p *PioProject) InstallContribution(depPath string, version string) error {
 			tag = version
 		}
 
-		cmd = exec.Command("gb", "vendor", "fetch", "-branch", "device_contribs", "-tag", tag, depPath)
+		//cmd = exec.Command("gb", "vendor", "fetch", "-branch", "device_contribs", "-tag", tag, depPath)
+		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, depPath)
 	}
 
 	os.Chdir(p.RootDir)
