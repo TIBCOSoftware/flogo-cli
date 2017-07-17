@@ -15,7 +15,14 @@ type Descriptor struct {
 type FlogoDeviceDescriptor struct {
 	*Descriptor
 
-	Profile  string `json:"device_profile"`
+	Device   *DeviceDetails    `json:"device"`
+	Actions  []*ActionConfig   `json:"actions"`
+	Triggers []*TriggerConfig  `json:"triggers"`
+}
+
+// FlogoAppDescriptor is the descriptor for a Flogo application
+type DeviceDetails struct {
+	Profile     string `json:"profile"`
 	MqttEnabled bool   `json:"mqtt_enabled"`
 	Settings    map[string]string `json:"settings"`
 
@@ -26,8 +33,8 @@ type FlogoDeviceDescriptor struct {
 type ActivityDescriptor struct {
 	*Descriptor
 
-	Ref           string `json:"ref"`
-	Libs          []*Lib  `json:"libs"`
+	Ref           string      `json:"ref"`
+	Libs          []*Lib      `json:"libs"`
 	Settings      []*Setting  `json:"settings"`
 	DeviceSupport []*DeviceSupportDetails `json:"device_support"`
 }
@@ -35,8 +42,8 @@ type ActivityDescriptor struct {
 type TriggerDescriptor struct {
 	*Descriptor
 
-	Ref           string `json:"ref"`
-	Libs          []*Lib  `json:"libs"`
+	Ref           string      `json:"ref"`
+	Libs          []*Lib      `json:"libs"`
 	Settings      []*Setting  `json:"settings"`
 	Outputs       []*Setting  `json:"outputs"`
 	DeviceSupport []*DeviceSupportDetails `json:"device_support"`
@@ -71,8 +78,8 @@ type DevicePlatform struct {
 
 	Framework    string `json:"arduino"`
 	MainTemplate string `json:"main_template"`
-	WifiDetails []*PlatformFeature `json:"wifi"`
-	MqttDetails *PlatformFeature `json:"mqtt"`
+	WifiDetails  []*PlatformFeature `json:"wifi"`
+	MqttDetails  *PlatformFeature `json:"mqtt"`
 }
 
 type PlatformFeature struct {
@@ -81,7 +88,6 @@ type PlatformFeature struct {
 	Header   string `json:"header"`
 	Libs     []*Lib `json:"libs"`
 }
-
 
 // TriggerConfig is the configuration for a Trigger
 type TriggerConfig struct {
@@ -101,7 +107,6 @@ type ActionConfig struct {
 	Ref  string          `json:"ref"`
 	Data json.RawMessage `json:"data"`
 }
-
 
 //todo consolidate parsing functions
 

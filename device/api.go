@@ -59,7 +59,7 @@ func CreateDevice(project Project, deviceJson string, deviceDir string, deviceNa
 	project.Init(deviceDir)
 	project.Create()
 
-	profile, err := GetDeviceProfile(project, descriptor.Profile)
+	profile, err := GetDeviceProfile(project, descriptor.Device.Profile)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func PrepareDevice(project Project, options *PrepareOptions) (err error) {
 		return err
 	}
 
-	profile, err := GetDeviceProfile(project, descriptor.Profile)
+	profile, err := GetDeviceProfile(project, descriptor.Device.Profile)
 	if err != nil {
 		return err
 	}
@@ -411,7 +411,7 @@ func generatePlatformCode(proj Project, descriptor *FlogoDeviceDescriptor, profi
 		Triggers     []string
 		MqttTriggers map[string]string
 	}{
-		descriptor.MqttEnabled,
+		descriptor.Device.MqttEnabled,
 		actionIds,
 		triggerIds,
 		mqttTriggers,
@@ -432,7 +432,7 @@ func generatePlatformCode(proj Project, descriptor *FlogoDeviceDescriptor, profi
 		return err
 	}
 
-	if descriptor.MqttEnabled {
+	if descriptor.Device.MqttEnabled {
 		err = generateWifiCode(proj, descriptor, platform, profile)
 		if err != nil {
 			return err
@@ -449,7 +449,7 @@ func generatePlatformCode(proj Project, descriptor *FlogoDeviceDescriptor, profi
 
 func generateWifiCode(project Project, descriptor *FlogoDeviceDescriptor, platform *DevicePlatform, profile *DeviceProfile) error {
 
-	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Settings}
+	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Device.Settings}
 
 	for _, value := range platform.WifiDetails {
 		if value.Name == profile.PlatformWifi {
@@ -479,7 +479,7 @@ func generateWifiCode(project Project, descriptor *FlogoDeviceDescriptor, platfo
 
 func generateMqttCode(project Project, descriptor *FlogoDeviceDescriptor, platform *DevicePlatform, profile *DeviceProfile) error {
 
-	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Settings}
+	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Device.Settings}
 
 	tpl,err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, platform.MqttDetails.Template))
 	if err != nil {

@@ -1,6 +1,9 @@
 package device
 
-import "math"
+import (
+	"math"
+	"strings"
+)
 
 func init() {
 
