@@ -3,16 +3,20 @@
   "type": "flogo:device",
   "version": "0.0.1",
   "description": "My flogo device application description",
-  "device_type": "feather_m0_wifi",
-  "mqtt_enabled": true,
-  "settings": {
-    "mqtt:server": "192.168.50.164",
-    "mqtt:port": "1883",
-    "mqtt:user": "",
-    "mqtt:pass": "",
-    "wifi:ssid": "RT-N600_D8_2G",
-    "wifi:password": "random_7943"
+
+  "device" : {
+    "profile" : "github.com/TIBCOSoftware/flogo-contrib/device/profile/feather_m0_wifi",
+    "mqtt_enabled": true,
+    "settings": {
+      "mqtt:server": "192.168.50.164",
+      "mqtt:port": "1883",
+      "mqtt:user": "",
+      "mqtt:pass": "",
+      "wifi:ssid": "RT-N600_D8_2G",
+      "wifi:password": "random_7943"
+    }
   },
+
   "triggers": [
     {
       "id": "l0x_trigger",
