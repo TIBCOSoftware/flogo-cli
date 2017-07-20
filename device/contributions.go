@@ -1,7 +1,7 @@
 package device
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"path"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
