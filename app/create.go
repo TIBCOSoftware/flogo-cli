@@ -126,6 +126,7 @@ var tplSimpleApp = `{
   "actions": [
     {
       "id": "my_simple_flow",
+      "name": "my simple flow",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
       "data": {
         "flow": {
