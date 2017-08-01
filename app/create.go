@@ -129,6 +129,7 @@ var tplSimpleApp = `{
       "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
       "data": {
         "flow": {
+          "name": "my simple flow",
           "attributes": [],
           "rootTask": {
             "id": 1,
