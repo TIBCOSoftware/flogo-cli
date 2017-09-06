@@ -182,6 +182,9 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 			return
 		}
 	case TARGET_FUNCTION:
+		if !options.EmbedConfig {
+			return fmt.Errorf("Function should be built with -e (Embedded option)")
+		}
 		err = buildFunction(env)
 		if err != nil{
 			return

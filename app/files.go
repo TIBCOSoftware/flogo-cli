@@ -231,13 +231,38 @@ var lambdaHandlerGoFile = `// Do not change this file, it has been generated usi
 package main
 
 import (
+	"encoding/json"
+
 	"github.com/eawsy/aws-lambda-go-core/service/lambda/runtime"
+	"flag"
 )
 
-func Handle(evt interface{}, ctx *runtime.Context) (string, error) {
+func Handle(evt json.RawMessage, ctx *runtime.Context) (string, error) {
+	err := setupArgs(evt, ctx)
+	if err != nil {
+		return "", err
+	}
 	e := startEngine()
 	stopEngine(e)
 	return "Flow finished succesfully", nil
+}
+
+func setupArgs(evt json.RawMessage, ctx *runtime.Context) error {
+	// Setup environment argument
+	evtJson, err := json.Marshal(&evt)
+	if err != nil {
+		return err
+	}
+	flag.String("evt", string(evtJson), "Lambda Environment Arguments")
+
+	// Setup context argument
+	ctxJson, err := json.Marshal(ctx)
+	if err != nil {
+		return err
+	}
+	flag.String("ctx", string(ctxJson), "Lambda Context Arguments")
+
+	return nil
 }
 `
 
