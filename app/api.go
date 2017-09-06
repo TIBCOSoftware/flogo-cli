@@ -173,10 +173,8 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		}
 	}
 
-	targetBuild := options.Target
-
-	switch targetBuild {
-	default:
+	switch targetBuild := options.Target; targetBuild {
+	case "":
 		err = env.Build()
 		if err != nil {
 			return
@@ -186,9 +184,12 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 			return fmt.Errorf("Function should be built with -e (Embedded option)")
 		}
 		err = buildFunction(env)
-		if err != nil{
+		if err != nil {
 			return
 		}
+
+	default:
+		return fmt.Errorf("Unsupported target '%s'", targetBuild)
 	}
 
 	if !options.EmbedConfig {
@@ -238,17 +239,16 @@ func buildFunction(env env.Project) error {
 	// Copy the vendor folder (Ugly workaround, this will go once our app is golang structure compliant)
 	vendorDestDir := path.Join(appDir, "vendor")
 	_, err = os.Stat(vendorDestDir)
-	if err == nil{
+	if err == nil {
 		// We don't support existing vendor folders yet
 		return fmt.Errorf("Unsupported vendor folder found for function build, please create an issue on https://github.com/TIBCOSoftware/flogo")
 	}
 	// Create vendor folder
 	err = CopyDir(env.GetVendorSrcDir(), vendorDestDir)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(vendorDestDir)
-
 
 	// Execute make
 	cmd := exec.Command("make", "-C", appDir)
@@ -258,9 +258,8 @@ func buildFunction(env env.Project) error {
 		fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
 	)
 
-
 	err = cmd.Run()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
