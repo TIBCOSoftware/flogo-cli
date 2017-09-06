@@ -84,7 +84,7 @@ func startEngine() engine.Engine{
 	return e
 }
 
-func stopEngine(e engine.IEngine){
+func stopEngine(e engine.Engine){
 	e.Stop()
 }
 
