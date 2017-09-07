@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"github.com/TIBCOSoftware/flogo-cli/env"
+	"github.com/TIBCOSoftware/flogo-cli/util"
+	"os/exec"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -83,7 +84,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, 0777)
 
-	createMainGoFile(cmdPath,"")
+	createMainGoFile(cmdPath, "")
 	createImportsGoFile(cmdPath, deps)
 
 	return nil
@@ -116,7 +117,7 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	}
 
 	//load descriptor
-	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(),"flogo.json"))
+	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), "flogo.json"))
 
 	if err != nil {
 		return err
@@ -153,6 +154,8 @@ type BuildOptions struct {
 	*PrepareOptions
 
 	SkipPrepare bool
+
+	Target string
 }
 
 // BuildApp build the flogo application
@@ -170,21 +173,102 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		}
 	}
 
-	err = env.Build()
-	if err != nil {
-		return err
+	switch targetBuild := options.Target; targetBuild {
+	case "":
+		err = env.Build()
+		if err != nil {
+			return
+		}
+	case TARGET_FUNCTION:
+		if !options.EmbedConfig {
+			return fmt.Errorf("Function should be built with -e (Embedded option)")
+		}
+		err = buildFunction(env)
+		if err != nil {
+			return
+		}
+
+	default:
+		return fmt.Errorf("Unsupported target '%s'", targetBuild)
 	}
 
 	if !options.EmbedConfig {
-		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		err = fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
 		if err != nil {
-			return err
+			return
 		}
 	} else {
 		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
 	}
 
 	return
+}
+
+func buildFunction(env env.Project) error {
+	//load descriptor
+	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), fileDescriptor))
+
+	if err != nil {
+		return err
+	}
+	descriptor, err := ParseAppDescriptor(appJson)
+	if err != nil {
+		return err
+	}
+
+	appDir := path.Join(env.GetSourceDir(), descriptor.Name)
+
+	// Create bin if it doesn't exist
+	os.MkdirAll(env.GetBinDir(), os.ModePerm)
+
+	// Embed config
+	err = fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+	if err != nil {
+		return err
+	}
+	// Create handler file
+	err = createLambdaHandlerGoFile(appDir)
+	if err != nil {
+		return err
+	}
+	defer removeLambdaHandlerGoFile(appDir)
+	// Create make file
+	err = createLambdaMakeFile(appDir)
+	if err != nil {
+		return err
+	}
+	defer removeLambdaMakeFile(appDir)
+
+	// Copy the vendor folder (Ugly workaround, this will go once our app is golang structure compliant)
+	vendorDestDir := path.Join(appDir, "vendor")
+	_, err = os.Stat(vendorDestDir)
+	if err == nil {
+		// We don't support existing vendor folders yet
+		return fmt.Errorf("Unsupported vendor folder found for function build, please create an issue on https://github.com/TIBCOSoftware/flogo")
+	}
+	// Create vendor folder
+	err = CopyDir(env.GetVendorSrcDir(), vendorDestDir)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(vendorDestDir)
+
+	// Execute make
+	cmd := exec.Command("make", "-C", appDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+	)
+
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Function succesfully created at '%s'\n", path.Join(env.GetRootDir(), lambdaHandlerZip))
+
+	return nil
 }
 
 // InstallPalette install a palette
@@ -256,7 +340,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "trigger.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0:len(filePath)-12]
+				dir := filePath[0 : len(filePath)-12]
 				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
 					//old trigger.json, ignore
 					return nil
@@ -270,7 +354,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "activity.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0:len(filePath)-13]
+				dir := filePath[0 : len(filePath)-13]
 				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
 					//old activity.json, ignore
 					return nil
