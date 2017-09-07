@@ -218,6 +218,9 @@ func buildFunction(env env.Project) error {
 
 	appDir := path.Join(env.GetSourceDir(), descriptor.Name)
 
+	// Create bin if it doesn't exist
+	os.MkdirAll(env.GetSourceDir(), os.ModePerm)
+
 	// Embed config
 	err = fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
 	if err != nil {
