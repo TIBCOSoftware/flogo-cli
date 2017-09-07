@@ -266,7 +266,7 @@ func buildFunction(env env.Project) error {
 		return err
 	}
 
-	fmt.Printf("Function succesfully created at '%s'\n", path.Join(env.GetRootDir(), lambdaHandlerZip))
+	fmt.Printf("Function succesfully created at '%s'\n", path.Join(appDir, lambdaHandlerZip))
 
 	return nil
 }
