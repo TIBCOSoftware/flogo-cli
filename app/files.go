@@ -248,19 +248,25 @@ func Handle(evt json.RawMessage, ctx *runtime.Context) (string, error) {
 }
 
 func setupArgs(evt json.RawMessage, ctx *runtime.Context) error {
-	// Setup environment argument
-	evtJson, err := json.Marshal(&evt)
-	if err != nil {
-		return err
+	evtFlag := flag.Lookup("evt")
+	if evtFlag == nil {
+		// Setup environment argument
+		evtJson, err := json.Marshal(&evt)
+		if err != nil {
+			return err
+		}
+		flag.String("evt", string(evtJson), "Lambda Environment Arguments")
 	}
-	flag.String("evt", string(evtJson), "Lambda Environment Arguments")
 
-	// Setup context argument
-	ctxJson, err := json.Marshal(ctx)
-	if err != nil {
-		return err
+	ctxFlag := flag.Lookup("ctx")
+	if ctxFlag == nil {
+		// Setup context argument
+		ctxJson, err := json.Marshal(ctx)
+		if err != nil {
+			return err
+		}
+		flag.String("ctx", string(ctxJson), "Lambda Context Arguments")
 	}
-	flag.String("ctx", string(ctxJson), "Lambda Context Arguments")
 
 	return nil
 }
