@@ -225,18 +225,23 @@ var tplEntrypointGoFile = `// Do not change this file, it has been generated usi
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/TIBCOSoftware/flogo-lib/config"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
-	"encoding/json"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
+
 )
 
 // embedded flogo app descriptor file
 const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
 
 func init() {
+	config.SetDefaultLogLevel("ERROR")
+	logger.SetLogLevel(logger.ErrorLevel)
 
 	var cp app.ConfigProvider
 
