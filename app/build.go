@@ -18,6 +18,7 @@ Options:
     -o   optimize for directly referenced contributions
     -e   embed application configuration into executable
     -sp  skip prepare
+    -ep  trigger entrypoint
 `,
 }
 
@@ -30,6 +31,7 @@ type cmdBuild struct {
 	optimize    bool
 	skipPrepare bool
 	embedConfig bool
+	entrypoint  string
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -42,6 +44,7 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.embedConfig), "e", false, "embed config")
 	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
+	fs.StringVar(&(c.entrypoint), "ep", "", "entrypoint")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -54,6 +57,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig}}
+	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig, Entrypoint: c.entrypoint}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }

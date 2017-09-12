@@ -12,6 +12,7 @@ const (
 	fileMainGo        string = "main.go"
 	fileImportsGo     string = "imports.go"
 	fileEmbeddedAppGo string = "embeddedapp.go"
+	fileEntrypointGo  string = "entrypoint.go"
 
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
@@ -28,6 +29,10 @@ func createMainGoFile(codeSourcePath string, flogoJSON string) {
 	f, _ := os.Create(path.Join(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplNewMainGoFile, &data)
 	f.Close()
+}
+
+func removeMainGoFile(codeSourcePath string) {
+	os.Remove(path.Join(codeSourcePath, fileMainGo))
 }
 
 var tplNewMainGoFile = `package main
@@ -189,5 +194,90 @@ func (d *embeddedProvider) GetApp() (*app.Config, error){
 		return nil, err
 	}
 	return app, nil
+}
+`
+
+func createEntrypointGoFile(codeSourcePath string, flogoJSON string, embeddedConfig bool) {
+
+	configJson := ""
+
+	if embeddedConfig {
+		configJson = flogoJSON
+	}
+
+	data := struct {
+		FlogoJSON string
+	}{
+		configJson,
+	}
+
+	f, _ := os.Create(path.Join(codeSourcePath, fileEntrypointGo))
+	fgutil.RenderTemplate(f, tplEntrypointGoFile, &data)
+	f.Close()
+}
+
+func removeEntrypointGoFile(codeSourcePath string) {
+	os.Remove(path.Join(codeSourcePath, fileEntrypointGo))
+}
+
+var tplEntrypointGoFile = `// Do not change this file, it has been generated using flogo-cli
+// If you change it and rebuild the application your changes might get lost
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"encoding/json"
+)
+
+// embedded flogo app descriptor file
+const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+
+func init() {
+
+	var cp app.ConfigProvider
+
+	if flogoJSON != "" {
+		cp = EmbeddedProvider()
+	} else {
+		cp = app.DefaultConfigProvider()
+	}
+
+	app, err := cp.GetApp()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	e, err := engine.New(app)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	e.Init(true)
+}
+
+// embeddedConfigProvider implementation of ConfigProvider
+type embeddedProvider struct {
+}
+
+//EmbeddedProvider returns an app config from a compiled json file
+func EmbeddedProvider() (app.ConfigProvider){
+	return &embeddedProvider{}
+}
+
+// GetApp returns the app configuration
+func (d *embeddedProvider) GetApp() (*app.Config, error){
+
+	appCfg := &app.Config{}
+	err := json.Unmarshal([]byte(flogoJSON), appCfg)
+	if err != nil {
+		return nil, err
+	}
+	return appCfg, nil
 }
 `

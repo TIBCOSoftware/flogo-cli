@@ -165,7 +165,7 @@ func (e *GbProject) InstallDependency(depPath string, version string) error {
 	}
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", depPath)
+		cmd = exec.Command("gb", "vendor", "fetch", "-branch", "entrypoint", depPath)
 	} else {
 		var tag string
 
