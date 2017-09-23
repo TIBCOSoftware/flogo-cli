@@ -165,7 +165,11 @@ func (e *GbProject) InstallDependency(depPath string, version string) error {
 	}
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", "-branch", "entrypoint", depPath)
+		if strings.HasPrefix(depPath,"github.com/TIBCOSoftware/flogo-") {
+			cmd = exec.Command("gb", "vendor", "fetch", "-branch", "entrypoint", depPath)
+		} else {
+			cmd = exec.Command("gb", "vendor", "fetch", depPath)
+		}
 	} else {
 		var tag string
 
