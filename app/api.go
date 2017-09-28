@@ -93,7 +93,7 @@ type PrepareOptions struct {
 	PreProcessor    BuildPreProcessor
 	OptimizeImports bool
 	EmbedConfig     bool
-	Entrypoint      string
+	Shim      string
 }
 
 // PrepareApp do all pre-build setup and pre-processing
@@ -110,8 +110,8 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 		}
 	}
 
-	//generate metadatas
-	err = generateGoMetadatas(env)
+	//generate metadata
+	err = generateGoMetadata(env)
 	if err != nil {
 		return err
 	}
@@ -142,19 +142,19 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	createImportsGoFile(cmdPath, deps)
 
 	removeEmbeddedAppGoFile(cmdPath)
-	removeEntrypointGoFile(cmdPath)
+	removeShimGoFiles(cmdPath)
 
-	if options.Entrypoint != "" {
+	if options.Shim != "" {
 
-		removeMainGoFile(cmdPath)
-		createEntrypointGoFile(cmdPath, appJson, options.EmbedConfig)
+		removeMainGoFile(cmdPath)//todo maybe rename if it exists
+		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
 
-		fmt.Println("Entrypoint:", options.Entrypoint)
+		fmt.Println("Shim:", options.Shim)
 
 		for _, value := range descriptor.Triggers {
 
 			fmt.Println("Id:", value.ID)
-			if value.ID == options.Entrypoint {
+			if value.ID == options.Shim {
 				triggerPath := path.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
 
 				mdJson, err := fgutil.LoadLocalFile(triggerPath)
@@ -166,9 +166,19 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 					return err
 				}
 
-				fmt.Println("Entrypoint File:", path.Join(env.GetVendorSrcDir(), value.Ref, metadata.Entrypoint+".entrypoint"))
+				if metadata.Shim != "" {
 
-				fgutil.CopyFile(path.Join(env.GetVendorSrcDir(), value.Ref, metadata.Entrypoint+".entrypoint"), path.Join(cmdPath, metadata.Entrypoint+".go"))
+					//todo blow up if shim file not found
+					shimFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
+					fmt.Println("Shim File:", shimFilePath)
+					fgutil.CopyFile(shimFilePath, path.Join(cmdPath, fileShimGo))
+
+					if metadata.Shim == "plugin" {
+						//look for Makefile and execute it
+					}
+				}
+
+				break
 			}
 		}
 
@@ -349,7 +359,7 @@ func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
 	return ParseDescriptor(string(raw))
 }
 
-func generateGoMetadatas(env env.Project) error {
+func generateGoMetadata(env env.Project) error {
 	//todo optimize metadata recreation to minimize compile times
 	dependencies, err := ListDependencies(env, 0)
 

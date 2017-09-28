@@ -10,15 +10,15 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-i][-bp]",
+	UsageLine: "build [-o][-e][-sp][-shim]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
-    -o   optimize for directly referenced contributions
-    -e   embed application configuration into executable
-    -sp  skip prepare
-    -ep  trigger entrypoint
+    -o    optimize for directly referenced contributions
+    -e    embed application configuration into executable
+    -sp   skip prepare
+    -shim trigger shim
 `,
 }
 
@@ -31,7 +31,7 @@ type cmdBuild struct {
 	optimize    bool
 	skipPrepare bool
 	embedConfig bool
-	entrypoint  string
+	shim        string
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -44,7 +44,7 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.embedConfig), "e", false, "embed config")
 	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
-	fs.StringVar(&(c.entrypoint), "ep", "", "entrypoint")
+	fs.StringVar(&(c.shim), "shim", "", "trigger shim")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -57,6 +57,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig, Entrypoint: c.entrypoint}}
+	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig, Shim: c.shim}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }

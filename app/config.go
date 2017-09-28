@@ -58,9 +58,9 @@ type TriggerDescriptor struct {
 }
 
 type TriggerMetadata struct {
-	Name       string `json:"name"`
-	Ref        string `json:"ref"`
-	Entrypoint string `json:"entrypoint"`
+	Name string `json:"name"`
+	Ref  string `json:"ref"`
+	Shim string `json:"shim"`
 }
 
 // todo make make ActionDescriptor generic

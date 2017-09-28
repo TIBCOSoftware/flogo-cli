@@ -12,11 +12,12 @@ const (
 	fileMainGo        string = "main.go"
 	fileImportsGo     string = "imports.go"
 	fileEmbeddedAppGo string = "embeddedapp.go"
-	fileEntrypointGo  string = "entrypoint.go"
+	fileShimGo        string = "shim.go"
+	fileShimSupportGo string = "shim_support.go"
 
+	dirShim      string = "shim"
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
-
 
 func createMainGoFile(codeSourcePath string, flogoJSON string) {
 
@@ -158,7 +159,6 @@ func removeEmbeddedAppGoFile(codeSourcePath string) {
 	os.Remove(path.Join(codeSourcePath, fileEmbeddedAppGo))
 }
 
-
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
 package main
@@ -197,7 +197,7 @@ func (d *embeddedProvider) GetApp() (*app.Config, error){
 }
 `
 
-func createEntrypointGoFile(codeSourcePath string, flogoJSON string, embeddedConfig bool) {
+func createShimSupportGoFile(codeSourcePath string, flogoJSON string, embeddedConfig bool) {
 
 	configJson := ""
 
@@ -211,16 +211,17 @@ func createEntrypointGoFile(codeSourcePath string, flogoJSON string, embeddedCon
 		configJson,
 	}
 
-	f, _ := os.Create(path.Join(codeSourcePath, fileEntrypointGo))
-	fgutil.RenderTemplate(f, tplEntrypointGoFile, &data)
+	f, _ := os.Create(path.Join(codeSourcePath, fileShimSupportGo))
+	fgutil.RenderTemplate(f, tplShimSupportGoFile, &data)
 	f.Close()
 }
 
-func removeEntrypointGoFile(codeSourcePath string) {
-	os.Remove(path.Join(codeSourcePath, fileEntrypointGo))
+func removeShimGoFiles(codeSourcePath string) {
+	os.Remove(path.Join(codeSourcePath, fileShimGo))
+	os.Remove(path.Join(codeSourcePath, fileShimSupportGo))
 }
 
-var tplEntrypointGoFile = `// Do not change this file, it has been generated using flogo-cli
+var tplShimSupportGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
 package main
 
