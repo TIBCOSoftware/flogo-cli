@@ -83,7 +83,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, 0777)
 
-	createMainGoFile(cmdPath,"")
+	createMainGoFile(cmdPath, "")
 	createImportsGoFile(cmdPath, deps)
 
 	return nil
@@ -93,6 +93,7 @@ type PrepareOptions struct {
 	PreProcessor    BuildPreProcessor
 	OptimizeImports bool
 	EmbedConfig     bool
+	Shim      string
 }
 
 // PrepareApp do all pre-build setup and pre-processing
@@ -109,14 +110,14 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 		}
 	}
 
-	//generate metadatas
-	err = generateGoMetadatas(env)
+	//generate metadata
+	err = generateGoMetadata(env)
 	if err != nil {
 		return err
 	}
 
 	//load descriptor
-	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(),"flogo.json"))
+	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), "flogo.json"))
 
 	if err != nil {
 		return err
@@ -140,10 +141,49 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
 	createImportsGoFile(cmdPath, deps)
 
-	if options.EmbedConfig {
+	removeEmbeddedAppGoFile(cmdPath)
+	removeShimGoFiles(cmdPath)
+
+	if options.Shim != "" {
+
+		removeMainGoFile(cmdPath)//todo maybe rename if it exists
+		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
+
+		fmt.Println("Shim:", options.Shim)
+
+		for _, value := range descriptor.Triggers {
+
+			fmt.Println("Id:", value.ID)
+			if value.ID == options.Shim {
+				triggerPath := path.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
+
+				mdJson, err := fgutil.LoadLocalFile(triggerPath)
+				if err != nil {
+					return err
+				}
+				metadata, err := ParseTriggerMetadata(mdJson)
+				if err != nil {
+					return err
+				}
+
+				if metadata.Shim != "" {
+
+					//todo blow up if shim file not found
+					shimFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
+					fmt.Println("Shim File:", shimFilePath)
+					fgutil.CopyFile(shimFilePath, path.Join(cmdPath, fileShimGo))
+
+					if metadata.Shim == "plugin" {
+						//look for Makefile and execute it
+					}
+				}
+
+				break
+			}
+		}
+
+	} else if options.EmbedConfig {
 		createEmbeddedAppGoFile(cmdPath, appJson)
-	} else {
-		removeEmbeddedAppGoFile(cmdPath)
 	}
 
 	return
@@ -319,7 +359,7 @@ func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
 	return ParseDescriptor(string(raw))
 }
 
-func generateGoMetadatas(env env.Project) error {
+func generateGoMetadata(env env.Project) error {
 	//todo optimize metadata recreation to minimize compile times
 	dependencies, err := ListDependencies(env, 0)
 
@@ -442,4 +482,17 @@ func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
 	}
 
 	return descriptor, nil
+}
+
+// ParseTriggerMetadata parse the trigger metadata
+func ParseTriggerMetadata(metadataJson string) (*TriggerMetadata, error) {
+	metadata := &TriggerMetadata{}
+
+	err := json.Unmarshal([]byte(metadataJson), metadata)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
 }

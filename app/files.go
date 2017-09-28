@@ -12,10 +12,12 @@ const (
 	fileMainGo        string = "main.go"
 	fileImportsGo     string = "imports.go"
 	fileEmbeddedAppGo string = "embeddedapp.go"
+	fileShimGo        string = "shim.go"
+	fileShimSupportGo string = "shim_support.go"
 
+	dirShim      string = "shim"
 	pathFlogoLib string = "github.com/TIBCOSoftware/flogo-lib"
 )
-
 
 func createMainGoFile(codeSourcePath string, flogoJSON string) {
 
@@ -28,6 +30,10 @@ func createMainGoFile(codeSourcePath string, flogoJSON string) {
 	f, _ := os.Create(path.Join(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplNewMainGoFile, &data)
 	f.Close()
+}
+
+func removeMainGoFile(codeSourcePath string) {
+	os.Remove(path.Join(codeSourcePath, fileMainGo))
 }
 
 var tplNewMainGoFile = `package main
@@ -153,7 +159,6 @@ func removeEmbeddedAppGoFile(codeSourcePath string) {
 	os.Remove(path.Join(codeSourcePath, fileEmbeddedAppGo))
 }
 
-
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
 package main
@@ -189,5 +194,96 @@ func (d *embeddedProvider) GetApp() (*app.Config, error){
 		return nil, err
 	}
 	return app, nil
+}
+`
+
+func createShimSupportGoFile(codeSourcePath string, flogoJSON string, embeddedConfig bool) {
+
+	configJson := ""
+
+	if embeddedConfig {
+		configJson = flogoJSON
+	}
+
+	data := struct {
+		FlogoJSON string
+	}{
+		configJson,
+	}
+
+	f, _ := os.Create(path.Join(codeSourcePath, fileShimSupportGo))
+	fgutil.RenderTemplate(f, tplShimSupportGoFile, &data)
+	f.Close()
+}
+
+func removeShimGoFiles(codeSourcePath string) {
+	os.Remove(path.Join(codeSourcePath, fileShimGo))
+	os.Remove(path.Join(codeSourcePath, fileShimSupportGo))
+}
+
+var tplShimSupportGoFile = `// Do not change this file, it has been generated using flogo-cli
+// If you change it and rebuild the application your changes might get lost
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/TIBCOSoftware/flogo-lib/app"
+	"github.com/TIBCOSoftware/flogo-lib/config"
+	"github.com/TIBCOSoftware/flogo-lib/engine"
+	"github.com/TIBCOSoftware/flogo-lib/logger"
+
+)
+
+// embedded flogo app descriptor file
+const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+
+func init() {
+	config.SetDefaultLogLevel("ERROR")
+	logger.SetLogLevel(logger.ErrorLevel)
+
+	var cp app.ConfigProvider
+
+	if flogoJSON != "" {
+		cp = EmbeddedProvider()
+	} else {
+		cp = app.DefaultConfigProvider()
+	}
+
+	app, err := cp.GetApp()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	e, err := engine.New(app)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	e.Init(true)
+}
+
+// embeddedConfigProvider implementation of ConfigProvider
+type embeddedProvider struct {
+}
+
+//EmbeddedProvider returns an app config from a compiled json file
+func EmbeddedProvider() (app.ConfigProvider){
+	return &embeddedProvider{}
+}
+
+// GetApp returns the app configuration
+func (d *embeddedProvider) GetApp() (*app.Config, error){
+
+	appCfg := &app.Config{}
+	err := json.Unmarshal([]byte(flogoJSON), appCfg)
+	if err != nil {
+		return nil, err
+	}
+	return appCfg, nil
 }
 `

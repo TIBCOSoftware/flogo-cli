@@ -57,6 +57,12 @@ type TriggerDescriptor struct {
 	Ref string `json:"ref"`
 }
 
+type TriggerMetadata struct {
+	Name string `json:"name"`
+	Ref  string `json:"ref"`
+	Shim string `json:"shim"`
+}
+
 // todo make make ActionDescriptor generic
 // ActionDescriptor is the config descriptor for an Action
 type ActionDescriptor struct {
@@ -133,7 +139,7 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 	dh := &depHolder{}
 
 	for _, action := range descriptor.Actions {
-		dh.deps = append(dh.deps, &Dependency{ContribType:ACTION, Ref:action.Ref})
+		dh.deps = append(dh.deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
 
 		if action.Data != nil && action.Data.Flow != nil {
 			extractDepsFromTask(action.Data.Flow.RootTask, dh)
@@ -145,7 +151,7 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 	}
 
 	for _, trigger := range descriptor.Triggers {
-		dh.deps = append(dh.deps,&Dependency{ContribType:TRIGGER, Ref:trigger.Ref})
+		dh.deps = append(dh.deps, &Dependency{ContribType: TRIGGER, Ref: trigger.Ref})
 	}
 
 	return dh.deps
@@ -155,7 +161,7 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 func extractDepsFromTask(task *Task, dh *depHolder) {
 
 	if task.Ref != "" {
-		dh.deps = append(dh.deps, &Dependency{ContribType:ACTIVITY, Ref:task.Ref})
+		dh.deps = append(dh.deps, &Dependency{ContribType: ACTIVITY, Ref: task.Ref})
 	}
 
 	for _, childTask := range task.Tasks {
