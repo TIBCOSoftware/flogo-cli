@@ -19,24 +19,30 @@ var (
 )
 
 func SetupNewProjectEnv() env.Project {
+	if IsBuildExperimental(){
+		return env.NewDepProject()
+	}
 	return env.NewGbProjectEnv()
 }
 
 func SetupExistingProjectEnv(appDir string) env.Project {
 
-	env := env.NewGbProjectEnv()
+	proj := env.NewGbProjectEnv()
+	if IsBuildExperimental(){
+		proj = env.NewDepProject()
+	}
 
-	if err := env.Init(appDir); err != nil {
+	if err := proj.Init(appDir); err != nil {
 		fmt.Fprintf(os.Stderr, "Error initializing flogo app project: %s\n\n", err.Error())
 		os.Exit(2)
 	}
 
-	if err := env.Open(); err != nil {
+	if err := proj.Open(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error opening flogo app project: %s\n\n", err.Error())
 		os.Exit(2)
 	}
 
-	return env
+	return proj
 }
 
 func splitVersion(t string) (path string, version string) {
@@ -211,3 +217,8 @@ func CopyDir(src string, dst string) (err error) {
 
 	return
 }
+// IsBuildExperimental returns true if the feature toggle experimental has been set
+func IsBuildExperimental() bool{
+	return os.Getenv("FLOGO_BUILD_EXPERIMENTAL") == "true"
+}
+

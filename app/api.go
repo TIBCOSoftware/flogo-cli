@@ -21,6 +21,10 @@ type BuildPreProcessor interface {
 
 // CreateApp creates an application from the specified json application descriptor
 func CreateApp(env env.Project, appJson string, appDir string, appName string, vendorDir string) error {
+	if IsBuildExperimental(){
+		return doCreate(env, appJson, appDir, appName, vendorDir)
+	}
+
 
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -93,6 +97,65 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	return nil
 }
 
+// doCreate performs the app creation
+func doCreate(env env.Project, appJson string, appDir string, appName string, vendorDir string) error{
+	descriptor, err := ParseAppDescriptor(appJson)
+	if err != nil {
+		return err
+	}
+	if appName != "" {
+		// override the application name
+
+		altJson := strings.Replace(appJson, `"`+descriptor.Name+`"`, `"`+appName+`"`, 1)
+		altDescriptor, err := ParseAppDescriptor(altJson)
+
+		//see if we can get away with simple replace so we don't reorder the existing json
+		if err == nil && altDescriptor.Name == appName {
+			appJson = altJson
+		} else {
+			//simple replace didn't work so we have to unmarshal & re-marshal the supplied json
+			var appObj map[string]interface{}
+			err := json.Unmarshal([]byte(appJson), &appObj)
+			if err != nil {
+				return err
+			}
+
+			appObj["name"] = appName
+
+			updApp, err := json.MarshalIndent(appObj, "", "  ")
+			if err != nil {
+				return err
+			}
+			appJson = string(updApp)
+		}
+
+		descriptor.Name = appName
+	}
+
+	err = env.Init(appDir)
+	if err != nil {
+		return err
+	}
+	err = env.Create(false, vendorDir)
+	if err != nil {
+		return err
+	}
+
+	err = fgutil.CreateFileFromString(path.Join(appDir, "flogo.json"), appJson)
+	if err != nil {
+		return err
+	}
+
+	deps := ExtractDependencies(descriptor)
+	// create source files
+	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
+	os.MkdirAll(cmdPath, os.ModePerm)
+
+	createMainGoFile(cmdPath, "")
+	createImportsGoFile(cmdPath, deps)
+	return nil
+}
+
 type PrepareOptions struct {
 	PreProcessor    BuildPreProcessor
 	OptimizeImports bool
@@ -102,7 +165,9 @@ type PrepareOptions struct {
 
 // PrepareApp do all pre-build setup and pre-processing
 func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
-
+	if IsBuildExperimental(){
+		return doPrepare(env, options)
+	}
 	if options == nil {
 		options = &PrepareOptions{}
 	}
@@ -232,6 +297,82 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	return
 }
 
+// doPrepare performs all the prepare functionality
+func doPrepare(env env.Project, options *PrepareOptions) (err error) {
+	if options == nil {
+		options = &PrepareOptions{}
+	}
+
+	if options.PreProcessor != nil {
+		err = options.PreProcessor.PrepareForBuild(env)
+		if err != nil {
+			return err
+		}
+	}
+	//load descriptor
+	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), "flogo.json"))
+
+	if err != nil {
+		return err
+	}
+	descriptor, err := ParseAppDescriptor(appJson)
+	if err != nil {
+		return err
+	}
+
+	//generate imports file
+	deps := ExtractDependencies(descriptor)
+
+	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
+	createImportsGoFile(cmdPath, deps)
+
+	removeEmbeddedAppGoFile(cmdPath)
+	removeShimGoFiles(cmdPath)
+
+	if options.Shim != "" {
+
+		removeMainGoFile(cmdPath)//todo maybe rename if it exists
+		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
+
+		fmt.Println("Shim:", options.Shim)
+
+		for _, value := range descriptor.Triggers {
+
+			fmt.Println("Id:", value.ID)
+			if value.ID == options.Shim {
+				triggerPath := path.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
+
+				mdJson, err := fgutil.LoadLocalFile(triggerPath)
+				if err != nil {
+					return err
+				}
+				metadata, err := ParseTriggerMetadata(mdJson)
+				if err != nil {
+					return err
+				}
+
+				if metadata.Shim != "" {
+
+					//todo blow up if shim file not found
+					shimFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
+					fmt.Println("Shim File:", shimFilePath)
+					fgutil.CopyFile(shimFilePath, path.Join(cmdPath, fileShimGo))
+
+					if metadata.Shim == "plugin" {
+						//look for Makefile and execute it
+					}
+				}
+
+				break
+			}
+		}
+
+	} else if options.EmbedConfig {
+		createEmbeddedAppGoFile(cmdPath, appJson)
+	}
+	return
+}
+
 type BuildOptions struct {
 	*PrepareOptions
 
@@ -241,6 +382,41 @@ type BuildOptions struct {
 // BuildApp build the flogo application
 func BuildApp(env env.Project, options *BuildOptions) (err error) {
 
+	if IsBuildExperimental(){
+		return doBuild(env, options)
+	}
+
+	if options == nil {
+		options = &BuildOptions{}
+	}
+
+	if !options.SkipPrepare {
+		err = PrepareApp(env, options.PrepareOptions)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	err = env.Build()
+	if err != nil {
+		return err
+	}
+
+	if !options.EmbedConfig {
+		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		if err != nil {
+			return err
+		}
+	} else {
+		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
+	}
+
+	return
+}
+
+// doBuildApp performs the build functionality
+func doBuild(env env.Project, options *BuildOptions) (err error) {
 	if options == nil {
 		options = &BuildOptions{}
 	}
