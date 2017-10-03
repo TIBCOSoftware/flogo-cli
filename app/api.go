@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"github.com/TIBCOSoftware/flogo-cli/env"
+	"github.com/TIBCOSoftware/flogo-cli/util"
+	"os/exec"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -93,7 +94,7 @@ type PrepareOptions struct {
 	PreProcessor    BuildPreProcessor
 	OptimizeImports bool
 	EmbedConfig     bool
-	Shim      string
+	Shim            string
 }
 
 // PrepareApp do all pre-build setup and pre-processing
@@ -146,7 +147,7 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 
 	if options.Shim != "" {
 
-		removeMainGoFile(cmdPath)//todo maybe rename if it exists
+		removeMainGoFile(cmdPath) //todo maybe rename if it exists
 		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
 
 		fmt.Println("Shim:", options.Shim)
@@ -175,6 +176,36 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 
 					if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
+						makeFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, makeFile)
+						fmt.Println("Make File:", makeFilePath)
+						fgutil.CopyFile(makeFilePath, path.Join(cmdPath, makeFile))
+
+						// Copy the vendor folder (Ugly workaround, this will go once our app is golang structure compliant)
+						vendorDestDir := path.Join(cmdPath, "vendor")
+						_, err = os.Stat(vendorDestDir)
+						if err == nil {
+							// We don't support existing vendor folders yet
+							return fmt.Errorf("Unsupported vendor folder found for function build, please create an issue on https://github.com/TIBCOSoftware/flogo")
+						}
+						// Create vendor folder
+						err = CopyDir(env.GetVendorSrcDir(), vendorDestDir)
+						if err != nil {
+							return err
+						}
+						defer os.RemoveAll(vendorDestDir)
+
+						// Execute make
+						cmd := exec.Command("make", "-C", cmdPath)
+						cmd.Stdout = os.Stdout
+						cmd.Stderr = os.Stderr
+						cmd.Env = append(os.Environ(),
+							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+						)
+
+						err = cmd.Run()
+						if err != nil {
+							return err
+						}
 					}
 				}
 
@@ -296,7 +327,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "trigger.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0:len(filePath)-12]
+				dir := filePath[0 : len(filePath)-12]
 				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
 					//old trigger.json, ignore
 					return nil
@@ -310,7 +341,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "activity.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0:len(filePath)-13]
+				dir := filePath[0 : len(filePath)-13]
 				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
 					//old activity.json, ignore
 					return nil

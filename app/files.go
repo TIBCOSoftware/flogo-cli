@@ -12,6 +12,7 @@ const (
 	fileMainGo        string = "main.go"
 	fileImportsGo     string = "imports.go"
 	fileEmbeddedAppGo string = "embeddedapp.go"
+	makeFile          string = "Makefile"
 	fileShimGo        string = "shim.go"
 	fileShimSupportGo string = "shim_support.go"
 
