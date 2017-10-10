@@ -24,6 +24,7 @@ func NewDepProject() Project {
 	return &DepProject{}
 }
 
+
 func (e *DepProject) Init(basePath string) error {
 
 	exists := fgutil.ExecutableExists("dep")
@@ -36,7 +37,7 @@ func (e *DepProject) Init(basePath string) error {
 	return nil
 }
 
-// Init creates directories for the project
+// Create creates directories for the project
 func (e *DepProject) Create(createBin bool, vendorDir string) error {
 
 	if _, err := os.Stat(e.RootDir); err == nil {
