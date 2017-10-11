@@ -11,19 +11,84 @@ import (
 	"path"
 )
 
+// TempEnv allows you to temporarily change the value of an env variable
+type TempEnv struct {
+	key   string
+	newValue string
+	oldValue string
+	wasSet   bool
+}
+
+
 type DepProject struct {
 	BinDir         string
 	RootDir        string
 	SourceDir      string
 	VendorDir      string
-	VendorSrcDir string
+	VendorSrcDir   string
 	CodeSourcePath string
+}
+
+type DepManager struct {
+	AppDir string
+}
+
+func NewTempEnv(key, newValue string) *TempEnv {
+	return &TempEnv{key:key, newValue:newValue}
+}
+
+// change changes the environment keys to the new value
+func (te *TempEnv) change() error{
+	// Save values
+	te.oldValue, te.wasSet = os.LookupEnv(te.key)
+	// Change
+	return os.Setenv(te.key, te.newValue)
+}
+
+// revert reverts any changes performed by change
+func (te *TempEnv) revert() error {
+	if !te.wasSet {
+		os.Unsetenv(te.key)
+		return nil
+	}
+	return os.Setenv(te.key, te.oldValue)
+}
+
+// Init initializes the dependency manager
+func (b *DepManager) Init(rootDir, appDir string) error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+	}
+
+	// Change GOPATH temporarily
+	tempEnv := NewTempEnv("GOPATH", rootDir)
+	tempEnv.change()
+	defer tempEnv.revert()
+
+	cmd := exec.Command("dep", "init", appDir)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// TODO remove this prune once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
+	cmdPrune := exec.Command("dep", "prune")
+	cmdPrune.Dir = appDir
+	
+	cmdPrune.Stdout = os.Stdout
+	cmdPrune.Stderr = os.Stderr
+
+	return cmdPrune.Run()
 }
 
 func NewDepProject() Project {
 	return &DepProject{}
 }
-
 
 func (e *DepProject) Init(basePath string) error {
 

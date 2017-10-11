@@ -20,9 +20,9 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson string, appDir string, appName string, vendorDir string) error {
+func CreateApp(env env.Project, appJson , appDir , appName , vendorDir , libVersion string) error {
 	if IsBuildExperimental(){
-		return doCreate(env, appJson, appDir, appName, vendorDir)
+		return doCreate(env, appJson, appDir, appName, vendorDir, libVersion)
 	}
 
 
@@ -98,7 +98,7 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 }
 
 // doCreate performs the app creation
-func doCreate(env env.Project, appJson string, appDir string, appName string, vendorDir string) error{
+func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir , libVersion string) error{
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
 		return err
@@ -132,11 +132,11 @@ func doCreate(env env.Project, appJson string, appDir string, appName string, ve
 		descriptor.Name = appName
 	}
 
-	err = env.Init(appDir)
+	err = enviro.Init(appDir)
 	if err != nil {
 		return err
 	}
-	err = env.Create(false, vendorDir)
+	err = enviro.Create(false, vendorDir)
 	if err != nil {
 		return err
 	}
@@ -148,11 +148,21 @@ func doCreate(env env.Project, appJson string, appDir string, appName string, ve
 
 	deps := ExtractDependencies(descriptor)
 	// create source files
-	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
+	cmdPath := path.Join(enviro.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, os.ModePerm)
 
 	createMainGoFile(cmdPath, "")
 	createImportsGoFile(cmdPath, deps)
+
+	// Create the dep manager
+	depManager := &env.DepManager{AppDir:cmdPath}
+	// Initialize the dep manager
+	err = depManager.Init(appDir, cmdPath)
+	if err != nil {
+		return err
+	}
+
+	//enviro.InstallDependency(pathFlogoLib, libVersion)
 
 	return nil
 }

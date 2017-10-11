@@ -98,7 +98,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	appDir := path.Join(currentDir, appName)
 
-	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
+	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir, c.libVersion)
 }
 
 func getwd() (dir string, err error){
