@@ -25,7 +25,7 @@ Options:
 }
 
 func init() {
-	CommandRegistry.RegisterCommand(&cmdCreate{option: optCreate})
+	CommandRegistry.RegisterCommand(&cmdCreate{option: optCreate, currentDir: getwd})
 }
 
 type cmdCreate struct {
@@ -33,6 +33,7 @@ type cmdCreate struct {
 	libVersion string
 	fileName string
 	vendorDir string
+	currentDir func ()(dir string, err error)
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -89,7 +90,7 @@ func (c *cmdCreate) Exec(args []string) error {
 		appJson = tplSimpleApp
 	}
 
-	currentDir, err := os.Getwd()
+	currentDir, err := c.currentDir()
 
 	if err != nil {
 		return err
@@ -98,6 +99,10 @@ func (c *cmdCreate) Exec(args []string) error {
 	appDir := path.Join(currentDir, appName)
 
 	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
+}
+
+func getwd() (dir string, err error){
+	return os.Getwd()
 }
 
 var tplSimpleApp = `{
