@@ -62,11 +62,15 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 	}
 
 	// Change GOPATH temporarily
-	tempEnv := NewTempEnv("GOPATH", rootDir)
-	tempEnv.change()
-	defer tempEnv.revert()
+	//tempEnv := NewTempEnv("GOPATH", rootDir)
+	//tempEnv.change()
+	//defer tempEnv.revert()
 
 	cmd := exec.Command("dep", "init", appDir)
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	cmd.Env = newEnv
+
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -77,13 +81,14 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 	}
 
 	// TODO remove this prune once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
-	cmdPrune := exec.Command("dep", "prune")
-	cmdPrune.Dir = appDir
-	
-	cmdPrune.Stdout = os.Stdout
-	cmdPrune.Stderr = os.Stderr
+	cmd = exec.Command("dep", "prune")
+	cmd.Dir = appDir
+	cmd.Env = newEnv
 
-	return cmdPrune.Run()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
 
 func NewDepProject() Project {
