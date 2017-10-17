@@ -12,6 +12,8 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/TIBCOSoftware/flogo-cli/config"
+	"os/exec"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -77,7 +79,7 @@ func CreateApp(env env.Project, appJson , appDir , appName , vendorDir string) e
 	//todo allow ability to specify flogo-lib version
 	env.InstallDependency(pathFlogoLib, "")
 
-	deps := ExtractDependencies(descriptor)
+	deps := config.ExtractDependencies(descriptor)
 
 	for _, dep := range deps {
 		path, version := splitVersion(dep.Ref)
@@ -146,7 +148,7 @@ func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string)
 		return err
 	}
 
-	deps := ExtractDependencies(descriptor)
+	deps := config.ExtractDependencies(descriptor)
 	// create source files
 	cmdPath := path.Join(enviro.GetSourceDir(), strings.ToLower(descriptor.Name))
 	os.MkdirAll(cmdPath, os.ModePerm)
@@ -206,11 +208,11 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	}
 
 	//generate imports file
-	var deps []*Dependency
+	var deps []*config.Dependency
 
 	if options.OptimizeImports {
 
-		deps = ExtractDependencies(descriptor)
+		deps = config.ExtractDependencies(descriptor)
 
 	} else {
 		deps, err = ListDependencies(env, 0)
@@ -414,12 +416,12 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 	}
 
 	if !options.EmbedConfig {
-		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		fgutil.CopyFile(path.Join(env.GetRootDir(), config.FileDescriptor), path.Join(env.GetBinDir(), config.FileDescriptor))
 		if err != nil {
 			return err
 		}
 	} else {
-		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
+		os.Remove(path.Join(env.GetBinDir(), config.FileDescriptor))
 	}
 
 	return
@@ -445,12 +447,12 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 	}
 
 	if !options.EmbedConfig {
-		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		fgutil.CopyFile(path.Join(env.GetRootDir(), config.FileDescriptor), path.Join(env.GetBinDir(), config.FileDescriptor))
 		if err != nil {
 			return err
 		}
 	} else {
-		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
+		os.Remove(path.Join(env.GetBinDir(), config.FileDescriptor))
 	}
 
 	return
@@ -463,10 +465,10 @@ func InstallPalette(env env.Project, path string) error {
 
 	file, _ = ioutil.ReadFile(path)
 
-	var paletteDescriptor *FlogoPaletteDescriptor
+	var paletteDescriptor *config.FlogoPaletteDescriptor
 	err := json.Unmarshal(file, &paletteDescriptor)
 
-	var deps []Dependency
+	var deps []config.Dependency
 
 	if err != nil {
 		err = json.Unmarshal(file, &deps)
@@ -493,9 +495,13 @@ func InstallPalette(env env.Project, path string) error {
 }
 
 // InstallDependency install a dependency
-func InstallDependency(env env.Project, path string, version string) error {
-
-	return env.InstallDependency(path, version)
+func InstallDependency(environ env.Project, path string, version string) error {
+	if IsBuildExperimental(){
+		// Create the dep manager
+		depManager := &env.DepManager{AppDir:environ.GetRootDir()}
+		return depManager.InstallDependency(environ.GetRootDir(), environ.GetAppDir(), path, version)
+	}
+	return environ.InstallDependency(path, version)
 }
 
 // UninstallDependency uninstall a dependency
@@ -505,10 +511,10 @@ func UninstallDependency(env env.Project, path string) error {
 }
 
 // ListDependencies lists all installed dependencies
-func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error) {
+func ListDependencies(env env.Project, cType config.ContribType) ([]*config.Dependency, error) {
 
 	vendorSrc := env.GetVendorSrcDir()
-	var deps []*Dependency
+	var deps []*config.Dependency
 
 	err := filepath.Walk(vendorSrc, func(filePath string, info os.FileInfo, _ error) error {
 
@@ -516,11 +522,11 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 
 			switch info.Name() {
 			case "action.json":
-				if cType == 0 || cType == ACTION {
+				if cType == 0 || cType == config.ACTION {
 					ref := refPath(vendorSrc, filePath)
 					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:action" {
-						deps = append(deps, &Dependency{ContribType: ACTION, Ref: ref})
+						deps = append(deps, &config.Dependency{ContribType: config.ACTION, Ref: ref})
 					}
 				}
 			case "trigger.json":
@@ -530,11 +536,11 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 					//old trigger.json, ignore
 					return nil
 				}
-				if cType == 0 || cType == TRIGGER {
+				if cType == 0 || cType == config.TRIGGER {
 					ref := refPath(vendorSrc, filePath)
 					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:trigger" {
-						deps = append(deps, &Dependency{ContribType: TRIGGER, Ref: ref})
+						deps = append(deps, &config.Dependency{ContribType: config.TRIGGER, Ref: ref})
 					}
 				}
 			case "activity.json":
@@ -544,19 +550,19 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 					//old activity.json, ignore
 					return nil
 				}
-				if cType == 0 || cType == ACTIVITY {
+				if cType == 0 || cType == config.ACTIVITY {
 					ref := refPath(vendorSrc, filePath)
 					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:activity" {
-						deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: ref})
+						deps = append(deps, &config.Dependency{ContribType: config.ACTIVITY, Ref: ref})
 					}
 				}
 			case "flow-model.json":
-				if cType == 0 || cType == FLOW_MODEL {
+				if cType == 0 || cType == config.FLOW_MODEL {
 					ref := refPath(vendorSrc, filePath)
 					desc, err := readDescriptor(filePath, info)
 					if err == nil && desc.Type == "flogo:flow-model" {
-						deps = append(deps, &Dependency{ContribType: FLOW_MODEL, Ref: ref})
+						deps = append(deps, &config.Dependency{ContribType: config.FLOW_MODEL, Ref: ref})
 					}
 				}
 			}
@@ -577,7 +583,7 @@ func refPath(vendorSrc string, filePath string) string {
 	return strings.Replace(filePath[startIdx:endIdx], string(os.PathSeparator), "/", -1)
 }
 
-func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
+func readDescriptor(path string, info os.FileInfo) (*config.Descriptor, error) {
 
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -603,7 +609,7 @@ func generateGoMetadata(env env.Project) error {
 	return nil
 }
 
-func createMetadata(env env.Project, dependency *Dependency) error {
+func createMetadata(env env.Project, dependency *config.Dependency) error {
 
 	vendorSrc := env.GetVendorSrcDir()
 	mdFilePath := path.Join(vendorSrc, dependency.Ref)
@@ -613,14 +619,14 @@ func createMetadata(env env.Project, dependency *Dependency) error {
 	tplMetadata := tplMetadataGoFile
 
 	switch dependency.ContribType {
-	case ACTION:
+	case config.ACTION:
 		mdFilePath = path.Join(mdFilePath, "action.json")
 		mdGoFilePath = path.Join(mdGoFilePath, "action_metadata.go")
-	case TRIGGER:
+	case config.TRIGGER:
 		mdFilePath = path.Join(mdFilePath, "trigger.json")
 		mdGoFilePath = path.Join(mdGoFilePath, "trigger_metadata.go")
 		tplMetadata = tplTriggerMetadataGoFile
-	case ACTIVITY:
+	case config.ACTIVITY:
 		mdFilePath = path.Join(mdFilePath, "activity.json")
 		mdGoFilePath = path.Join(mdGoFilePath, "activity_metadata.go")
 		tplMetadata = tplActivityMetadataGoFile
@@ -688,8 +694,8 @@ func init() {
 `
 
 // ParseDescriptor parse a descriptor
-func ParseDescriptor(descJson string) (*Descriptor, error) {
-	descriptor := &Descriptor{}
+func ParseDescriptor(descJson string) (*config.Descriptor, error) {
+	descriptor := &config.Descriptor{}
 
 	err := json.Unmarshal([]byte(descJson), descriptor)
 
@@ -701,8 +707,8 @@ func ParseDescriptor(descJson string) (*Descriptor, error) {
 }
 
 // ParseAppDescriptor parse the application descriptor
-func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
-	descriptor := &FlogoAppDescriptor{}
+func ParseAppDescriptor(appJson string) (*config.FlogoAppDescriptor, error) {
+	descriptor := &config.FlogoAppDescriptor{}
 
 	err := json.Unmarshal([]byte(appJson), descriptor)
 
@@ -714,8 +720,8 @@ func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
 }
 
 // ParseTriggerMetadata parse the trigger metadata
-func ParseTriggerMetadata(metadataJson string) (*TriggerMetadata, error) {
-	metadata := &TriggerMetadata{}
+func ParseTriggerMetadata(metadataJson string) (*config.TriggerMetadata, error) {
+	metadata := &config.TriggerMetadata{}
 
 	err := json.Unmarshal([]byte(metadataJson), metadata)
 

@@ -26,6 +26,9 @@ type Project interface {
 	// GetVendorSrcDir get the vendor source directory of the project
 	GetVendorSrcDir() string
 
+	// GetAppDir get the app directory of the project
+	GetAppDir() string
+
 	// Install a go dependency
 	InstallDependency(path string, version string) error
 

@@ -2,15 +2,14 @@ package app
 
 import (
 	"os"
-
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"path"
+
+	"github.com/TIBCOSoftware/flogo-cli/config"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 const (
-	fileDescriptor    string = "flogo.json"
 	fileMainGo        string = "main.go"
-	fileImportsGo     string = "imports.go"
 	fileEmbeddedAppGo string = "embeddedapp.go"
 	makeFile          string = "Makefile"
 	fileShimGo        string = "shim.go"
@@ -121,8 +120,8 @@ func setupSignalHandling() chan int {
 }
 `
 
-func createImportsGoFile(codeSourcePath string, deps []*Dependency) error {
-	f, err := os.Create(path.Join(codeSourcePath, fileImportsGo))
+func createImportsGoFile(codeSourcePath string, deps []*config.Dependency) error {
+	f, err := os.Create(path.Join(codeSourcePath, config.FileImportsGo))
 
 	if err != nil {
 		return err

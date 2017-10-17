@@ -1,58 +1,40 @@
 package env
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-	//"strings"
 
+	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"io/ioutil"
 	"path"
+	"go/parser"
+	"go/token"
+	"go/ast"
+	"strconv"
 )
 
-// TempEnv allows you to temporarily change the value of an env variable
-type TempEnv struct {
-	key   string
-	newValue string
-	oldValue string
-	wasSet   bool
-}
-
+const (
+	fileDescriptor string = "flogo.json"
+)
 
 type DepProject struct {
-	BinDir         string
-	RootDir        string
-	SourceDir      string
-	VendorDir      string
-	VendorSrcDir   string
-	CodeSourcePath string
+	BinDir             string
+	RootDir            string
+	SourceDir          string
+	VendorDir          string
+	VendorSrcDir       string
+	CodeSourcePath     string
+	AppDir             string
+	FileDescriptorPath string
 }
 
 type DepManager struct {
 	AppDir string
 }
-
-/*func NewTempEnv(key, newValue string) *TempEnv {
-	return &TempEnv{key:key, newValue:newValue}
-}
-
-// change changes the environment keys to the new value
-func (te *TempEnv) change() error{
-	// Save values
-	te.oldValue, te.wasSet = os.LookupEnv(te.key)
-	// Change
-	return os.Setenv(te.key, te.newValue)
-}
-
-// revert reverts any changes performed by change
-func (te *TempEnv) revert() error {
-	if !te.wasSet {
-		os.Unsetenv(te.key)
-		return nil
-	}
-	return os.Setenv(te.key, te.oldValue)
-}*/
 
 // Init initializes the dependency manager
 func (b *DepManager) Init(rootDir, appDir string) error {
@@ -66,7 +48,6 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
 	cmd.Env = newEnv
-
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -87,14 +68,41 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 	return cmd.Run()
 }
 
-
-
 // Init initializes the dependency manager
-func (b *DepManager) InstallDependency(rootDir, appDir string, path string, version string) error {
+func (b *DepManager) InstallDependency(rootDir, appDir string, depPath string, depVersion string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
 	}
+
+	// Load imports file
+	importsPath := path.Join(appDir, config.FileImportsGo)
+	// Validate that it exists
+	_, err := os.Stat(importsPath)
+
+	if err != nil {
+		return fmt.Errorf("Error installing dependency, import file '%s' doesn't exists", importsPath)
+	}
+
+	fset := token.NewFileSet()
+
+	importsFile, err := parser.ParseFile(fset, importsPath, nil, parser.ParseComments)
+	if err != nil {
+		return fmt.Errorf("Error parsing import file '%s', %s", importsPath, err)
+	}
+	iSpec := &ast.ImportSpec{Name: &ast.Ident{Name: "_"}, Path: &ast.BasicLit{Value: strconv.Quote(depPath)}}
+	newImports := append(importsFile.Imports, iSpec)
+
+	importsFile.Imports = newImports
+
+	ast.SortImports(fset, importsFile)
+
+	// Print the imports from the file's AST.
+	for _, s := range importsFile.Imports {
+		fmt.Println(s.Name, s.Path.Value)
+	}
+
+	/*fmt.Println("Executing dep ensure -add")
 	cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s@%s", path, version))
 	cmd.Dir = appDir
 	newEnv := os.Environ()
@@ -104,7 +112,8 @@ func (b *DepManager) InstallDependency(rootDir, appDir string, path string, vers
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	return cmd.Run()*/
+	return nil
 }
 
 // InstallDependency installs  the dependency
@@ -129,15 +138,15 @@ func NewDepProject() Project {
 	return &DepProject{}
 }
 
-func (e *DepProject) Init(basePath string) error {
+func (e *DepProject) Init(rootDir string) error {
 
 	exists := fgutil.ExecutableExists("dep")
 
 	if !exists {
 		return errors.New("dep not installed")
 	}
-	e.RootDir = basePath
-	e.SourceDir = path.Join(basePath, "src")
+	e.RootDir = rootDir
+	e.SourceDir = path.Join(e.RootDir, "src")
 	return nil
 }
 
@@ -157,16 +166,47 @@ func (e *DepProject) Create(createBin bool, vendorDir string) error {
 // Open the project directory and validate its structure
 func (e *DepProject) Open() error {
 
+	// Check root dir
 	info, err := os.Stat(e.RootDir)
 
 	if err != nil || !info.IsDir() {
 		return fmt.Errorf("Cannot open project, directory '%s' doesn't exists", e.RootDir)
 	}
 
+	// Check source dir
 	info, err = os.Stat(e.SourceDir)
 
 	if err != nil || !info.IsDir() {
 		return errors.New("Invalid project, source directory doesn't exists")
+	}
+
+	// Check file descriptor
+	fd := path.Join(e.RootDir, config.FileDescriptor)
+	_, err = os.Stat(fd)
+
+	if err != nil {
+		return fmt.Errorf("Invalid project, file descriptor '%s' doesn't exists", fd)
+	}
+	e.FileDescriptorPath = fd
+
+	fdbytes, err := ioutil.ReadFile(fd)
+	if err != nil {
+		return fmt.Errorf("Invalid reading file descriptor '%s' error: %s", fd, err)
+	}
+
+	descriptor, err := ParseAppDescriptor(string(fdbytes))
+	if err != nil {
+		return fmt.Errorf("Invalid parsing file descriptor '%s' error: %s", fd, err)
+	}
+
+	appName := descriptor.Name
+
+	// Validate that there is an app dir
+	e.AppDir = path.Join(e.SourceDir, appName)
+	info, err = os.Stat(e.AppDir)
+
+	if err != nil || !info.IsDir() {
+		return fmt.Errorf("Invalid project, app directory '%s' doesn't exists", e.AppDir)
 	}
 
 	return nil
@@ -190,6 +230,11 @@ func (e *DepProject) GetVendorDir() string {
 
 func (e *DepProject) GetVendorSrcDir() string {
 	return e.VendorSrcDir
+}
+
+// GetAppDir returns the directory of the app
+func (e *DepProject) GetAppDir() string {
+	return e.AppDir
 }
 
 func (e *DepProject) InstallDependency(depPath string, version string) error {
@@ -380,4 +425,17 @@ func (e *Dep) Build() error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+// ParseAppDescriptor parse the application descriptor
+func ParseAppDescriptor(appJson string) (*config.FlogoAppDescriptor, error) {
+	descriptor := &config.FlogoAppDescriptor{}
+
+	err := json.Unmarshal([]byte(appJson), descriptor)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return descriptor, nil
 }

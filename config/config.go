@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"encoding/json"
@@ -11,6 +11,10 @@ const (
 	TRIGGER
 	ACTIVITY
 	FLOW_MODEL
+
+
+	FileDescriptor    string = "flogo.json"
+	FileImportsGo     string = "imports.go"
 )
 
 var ctStr = [...]string{

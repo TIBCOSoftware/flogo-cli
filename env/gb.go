@@ -151,6 +151,10 @@ func (e *GbProject) GetVendorSrcDir() string {
 	return e.VendorSrcDir
 }
 
+func (e *GbProject) GetAppDir() string {
+	return ""
+}
+
 func (e *GbProject) InstallDependency(depPath string, version string) error {
 	var cmd *exec.Cmd
 
