@@ -33,7 +33,7 @@ type DepManager struct {
 	AppDir string
 }
 
-func NewTempEnv(key, newValue string) *TempEnv {
+/*func NewTempEnv(key, newValue string) *TempEnv {
 	return &TempEnv{key:key, newValue:newValue}
 }
 
@@ -52,7 +52,7 @@ func (te *TempEnv) revert() error {
 		return nil
 	}
 	return os.Setenv(te.key, te.oldValue)
-}
+}*/
 
 // Init initializes the dependency manager
 func (b *DepManager) Init(rootDir, appDir string) error {
@@ -61,12 +61,8 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 		return errors.New("dep not installed")
 	}
 
-	// Change GOPATH temporarily
-	//tempEnv := NewTempEnv("GOPATH", rootDir)
-	//tempEnv.change()
-	//defer tempEnv.revert()
-
-	cmd := exec.Command("dep", "init", appDir)
+	cmd := exec.Command("dep", "init")
+	cmd.Dir = appDir
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
 	cmd.Env = newEnv
@@ -80,9 +76,47 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 		return err
 	}
 
-	// TODO remove this prune once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
+	// TODO remove this prune cmd once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
 	cmd = exec.Command("dep", "prune")
 	cmd.Dir = appDir
+	cmd.Env = newEnv
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+
+
+// Init initializes the dependency manager
+func (b *DepManager) InstallDependency(rootDir, appDir string, path string, version string) error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+	}
+	cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s@%s", path, version))
+	cmd.Dir = appDir
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	cmd.Env = newEnv
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+// InstallDependency installs  the dependency
+func (b *DepManager) UpdateDependency(rootDir, appDir string, path string, version string) error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+	}
+	cmd := exec.Command("dep", "ensure", "-update", fmt.Sprintf("%s@%s", path, version))
+	cmd.Dir = appDir
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
