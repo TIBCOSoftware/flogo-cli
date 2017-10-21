@@ -32,6 +32,9 @@ type Project interface {
 	// Uninstall a go dependency
 	UninstallDependency(path string) error
 
+	// Restore go dependencies
+	RestoreDependency() error
+
 	// Build the project
 	Build() error
 }
