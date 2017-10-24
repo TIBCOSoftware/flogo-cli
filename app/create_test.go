@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"bytes"
+	"github.com/TIBCOSoftware/flogo-cli/config"
+	"path/filepath"
 )
 
 var GOLD_FLOGO_JSON = `{
@@ -83,6 +85,7 @@ func (t *TestEnv) cleanup(){
 }
 
 
+// Use case 1: Creation with default template
 // TestCmdCreate_Exec test the default cmd create, create new app
 func TestCmdCreate_Exec (t *testing.T) {
 	// TODO remote this after merging
@@ -95,8 +98,16 @@ func TestCmdCreate_Exec (t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
+	if err == nil {
+		// Sym link
+		tempDir = tempDirInfo
+	}
+
 	testEnv := &TestEnv{currentDir:tempDir}
+
 	defer testEnv.cleanup()
+
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	cmd := &cmdCreate{option: optCreate, currentDir: testEnv.getTestwd}
 	fs := flag.NewFlagSet("test", flag.ExitOnError)
@@ -120,7 +131,7 @@ func TestCmdCreate_Exec (t *testing.T) {
 	assert.True(t, fi.IsDir(), "There should be a folder for app name '%s'", appFolderPath)
 
 	// There should be a flogo.json file
-	flogojsonPath := path.Join(appFolderPath, fileDescriptor)
+	flogojsonPath := path.Join(appFolderPath, config.FileDescriptor)
 	fi, err = os.Stat(flogojsonPath)
 	assert.Nil(t, err, "There should be a file for flogo json '%s'", flogojsonPath)
 
@@ -149,13 +160,7 @@ func TestCmdCreate_Exec (t *testing.T) {
 	assert.Nil(t, err, "There should be a file for main.go '%s'", mainPath)
 
 	// There should be an imports file
-	importsPath := path.Join(appSrcFolderPath, fileImportsGo)
+	importsPath := path.Join(appSrcFolderPath, config.FileImportsGo)
 	fi, err = os.Stat(importsPath)
 	assert.Nil(t, err, "There should be a file for imports.go '%s'", importsPath)
-
-
-
-
-
-
 }

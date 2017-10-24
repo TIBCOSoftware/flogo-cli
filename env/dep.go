@@ -72,8 +72,8 @@ func (b *DepManager) Init(rootDir, appDir string) error {
 	return cmd.Run()
 }
 
-// Init initializes the dependency manager
-func (b *DepManager) InstallDependency(rootDir, appDir string, depPath string, depVersion string) error {
+// InstallDependency installs the given dependency
+func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
@@ -116,19 +116,20 @@ func (b *DepManager) InstallDependency(rootDir, appDir string, depPath string, d
 		// Contraint does not exist add it
 		fmt.Printf("Adding new dependency '%s' version '%s' \n", depPath, depVersion)
 		cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s@%s", depPath, depVersion))
-		//cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s", depPath))
 		cmd.Dir = appDir
 		newEnv := os.Environ()
 		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
 		cmd.Env = newEnv
 
-		out, err := cmd.Output()
+		// Only show errors
+		//cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
 		if err != nil {
-			return fmt.Errorf("Error adding dependency '%s', '%s'", depPath, string(out))
+			return fmt.Errorf("Error adding dependency '%s', '%s'", depPath, err.Error())
 		}
 	}
-
-	return nil
 
 	// Add the import
 	for i := 0; i < len(importsFileAst.Decls); i++ {
@@ -162,6 +163,150 @@ func (b *DepManager) InstallDependency(rootDir, appDir string, depPath string, d
 		return fmt.Errorf("Error creating import file '%s', %s", importsPath, err)
 	}
 
+	// Sync up
+	fmt.Printf("Synching up Gopkg.yaml and imports \n")
+	cmd := exec.Command("dep", "ensure")
+	cmd.Dir = appDir
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	cmd.Env = newEnv
+
+	// Only show errors
+	//cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Error Synching up Gopkg.yaml and imports '%s', '%s'", depPath, err.Error())
+	}
+
+	fmt.Printf("'%s' installed successfully \n", depPath)
+
+	return nil
+}
+
+
+// UninstallDependency deletes the given dependency
+func (b *DepManager) UninstallDependency(rootDir, appDir , depPath string) error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+	}
+
+	// Load imports file
+	importsPath := path.Join(appDir, config.FileImportsGo)
+	// Validate that it exists
+	_, err := os.Stat(importsPath)
+
+	if err != nil {
+		return fmt.Errorf("Error installing dependency, import file '%s' doesn't exists", importsPath)
+	}
+
+	fset := token.NewFileSet()
+
+	importsFileAst, err := parser.ParseFile(fset, importsPath, nil, parser.ParseComments)
+	if err != nil {
+		return fmt.Errorf("Error parsing import file '%s', %s", importsPath, err)
+	}
+
+	exists = false
+
+	//Validate that the install exists in imports.go file
+	for _, imp := range importsFileAst.Imports {
+		if imp.Path.Value == strconv.Quote(depPath) {
+			exists = true
+			break
+		}
+	}
+
+	if !exists{
+		fmt.Printf("No import '%s' found in import file \n", depPath)
+		// Just sync up and return
+		// Sync up
+		fmt.Printf("Synching up Gopkg.yaml and imports \n")
+		cmd := exec.Command("dep", "ensure")
+		cmd.Dir = appDir
+		newEnv := os.Environ()
+		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+		cmd.Env = newEnv
+
+		// Only show errors
+		//cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("Error Synching up Gopkg.yaml and imports '%s', '%s'", depPath, err.Error())
+		}
+
+		fmt.Printf("'%s' uninstalled successfully \n", depPath)
+		return nil
+	}
+
+	fmt.Printf("Deleting import from imports file \n")
+	// Delete the import
+	for i := 0; i < len(importsFileAst.Decls); i++ {
+		d := importsFileAst.Decls[i]
+
+		switch d.(type) {
+		case *ast.FuncDecl:
+		// No action
+		case *ast.GenDecl:
+			dd := d.(*ast.GenDecl)
+
+			// IMPORT Declarations
+			if dd.Tok == token.IMPORT {
+				var newSpecs []ast.Spec
+				for _, spec := range dd.Specs {
+					importSpec, ok := spec.(*ast.ImportSpec)
+					if !ok{
+						newSpecs = append(newSpecs, spec)
+						continue
+					}
+					// Check Path
+					if importPath := importSpec.Path; importPath.Value != strconv.Quote(depPath) {
+						// Add import
+						newSpecs = append(newSpecs, spec)
+						continue
+					}
+				}
+				// Update specs
+				dd.Specs = newSpecs
+				break
+			}
+		}
+	}
+
+	ast.SortImports(fset, importsFileAst)
+
+	out, err := GenerateFile(fset, importsFileAst)
+	if err != nil {
+		return fmt.Errorf("Error creating import file '%s', %s", importsPath, err)
+	}
+
+	err = ioutil.WriteFile(importsPath, out, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Error creating import file '%s', %s", importsPath, err)
+	}
+
+	// Sync up
+	fmt.Printf("Synching up Gopkg.yaml and imports \n")
+	cmd := exec.Command("dep", "ensure")
+	cmd.Dir = appDir
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	cmd.Env = newEnv
+
+	// Only show errors
+	//cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Error Synching up Gopkg.yaml and imports '%s', '%s'", depPath, err.Error())
+	}
+
+	fmt.Printf("'%s' uninstalled successfully \n", depPath)
 	return nil
 }
 
@@ -219,24 +364,6 @@ func GenerateFile(fset *token.FileSet, file *ast.File) ([]byte, error) {
 	}
 
 	return buffer.Bytes(), nil
-}
-
-// InstallDependency installs  the dependency
-func (b *DepManager) UpdateDependency(rootDir, appDir string, path string, version string) error {
-	exists := fgutil.ExecutableExists("dep")
-	if !exists {
-		return errors.New("dep not installed")
-	}
-	cmd := exec.Command("dep", "ensure", "-update", fmt.Sprintf("%s@%s", path, version))
-	cmd.Dir = appDir
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
-	cmd.Env = newEnv
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
 }
 
 func NewDepProject() Project {

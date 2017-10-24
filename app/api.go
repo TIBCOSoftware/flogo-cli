@@ -248,6 +248,8 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 					return err
 				}
 
+				fmt.Println("Shim Metadata:", metadata.Shim)
+
 				if metadata.Shim != "" {
 
 					//todo blow up if shim file not found
@@ -505,9 +507,14 @@ func InstallDependency(environ env.Project, path string, version string) error {
 }
 
 // UninstallDependency uninstall a dependency
-func UninstallDependency(env env.Project, path string) error {
+func UninstallDependency(environ env.Project, path string) error {
+	if IsBuildExperimental(){
+		// Create the dep manager
+		depManager := &env.DepManager{AppDir:environ.GetRootDir()}
+		return depManager.UninstallDependency(environ.GetRootDir(), environ.GetAppDir(), path)
+	}
 
-	return env.UninstallDependency(path)
+	return environ.UninstallDependency(path)
 }
 
 // ListDependencies lists all installed dependencies
