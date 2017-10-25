@@ -379,6 +379,7 @@ func (e *DepProject) Init(rootDir string) error {
 	}
 	e.RootDir = rootDir
 	e.SourceDir = path.Join(e.RootDir, "src")
+	e.BinDir = path.Join(e.RootDir, "bin")
 	return nil
 }
 
@@ -440,6 +441,9 @@ func (e *DepProject) Open() error {
 	if err != nil || !info.IsDir() {
 		return fmt.Errorf("Invalid project, app directory '%s' doesn't exists", e.AppDir)
 	}
+
+	e.VendorDir = path.Join(e.AppDir, "vendor")
+	e.VendorSrcDir = e.VendorDir
 
 	return nil
 }
@@ -531,15 +535,19 @@ func (e *DepProject) UninstallDependency(depPath string) error {
 }
 
 func (e *DepProject) Build() error {
-	cmd := exec.Command("gb", "build")
+	exists := fgutil.ExecutableExists("go")
+	if !exists {
+		return errors.New("go not installed")
+	}
+
+	cmd := exec.Command("go", "install", "./...")
+	cmd.Dir = e.GetAppDir()
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", e.GetRootDir()))
+	cmd.Env = newEnv
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-
-	cwd, _ := os.Getwd()
-	defer os.Chdir(cwd)
-
-	os.Chdir(e.RootDir)
-	fmt.Println(e.RootDir)
 
 	return cmd.Run()
 }
