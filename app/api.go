@@ -101,7 +101,7 @@ func CreateApp(env env.Project, appJson , appDir , appName , vendorDir string) e
 
 // doCreate performs the app creation
 func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string) error{
-	fmt.Printf("Creating initial project structure, this migh take a few seconds ...")
+	fmt.Printf("Creating initial project structure, this migh take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
 		return err
@@ -133,12 +133,16 @@ func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string)
 		}
 
 		descriptor.Name = appName
+	} else {
+		appName = descriptor.Name
+		appDir = path.Join(appDir, appName)
 	}
 
 	err = enviro.Init(appDir)
 	if err != nil {
 		return err
 	}
+
 	err = enviro.Create(false, vendorDir)
 	if err != nil {
 		return err
@@ -151,7 +155,7 @@ func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string)
 
 	deps := config.ExtractDependencies(descriptor)
 	// create source files
-	cmdPath := path.Join(enviro.GetSourceDir(), strings.ToLower(descriptor.Name))
+	cmdPath := path.Join(enviro.GetSourceDir(), descriptor.Name)
 	os.MkdirAll(cmdPath, os.ModePerm)
 
 	createMainGoFile(cmdPath, "")
