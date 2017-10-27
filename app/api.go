@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"github.com/TIBCOSoftware/flogo-cli/config"
@@ -100,7 +101,7 @@ func CreateApp(env env.Project, appJson , appDir , appName , vendorDir string) e
 }
 
 // doCreate performs the app creation
-func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string) error{
+func doCreate(enviro env.Project, appJson , rootDir , appName , vendorDir string) error{
 	fmt.Printf("Creating initial project structure, this migh take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -135,10 +136,10 @@ func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string)
 		descriptor.Name = appName
 	} else {
 		appName = descriptor.Name
-		appDir = path.Join(appDir, appName)
+		rootDir = path.Join(rootDir, appName)
 	}
 
-	err = enviro.Init(appDir)
+	err = enviro.Init(rootDir)
 	if err != nil {
 		return err
 	}
@@ -148,23 +149,23 @@ func doCreate(enviro env.Project, appJson , appDir , appName , vendorDir string)
 		return err
 	}
 
-	err = fgutil.CreateFileFromString(path.Join(appDir, "flogo.json"), appJson)
+	err = fgutil.CreateFileFromString(path.Join(rootDir, "flogo.json"), appJson)
 	if err != nil {
 		return err
 	}
 
 	deps := config.ExtractDependencies(descriptor)
 	// create source files
-	cmdPath := path.Join(enviro.GetSourceDir(), descriptor.Name)
-	os.MkdirAll(cmdPath, os.ModePerm)
+	appDir := path.Join(enviro.GetSourceDir(), descriptor.Name)
+	os.MkdirAll(appDir, os.ModePerm)
 
-	createMainGoFile(cmdPath, "")
-	createImportsGoFile(cmdPath, deps)
+	createMainGoFile(appDir, "")
+	createImportsGoFile(appDir, deps)
 
 	// Create the dep manager
-	depManager := &env.DepManager{AppDir:cmdPath}
+	depManager := &dep.DepManager{AppDir:appDir}
 	// Initialize the dep manager
-	err = depManager.Init(appDir, cmdPath)
+	err = depManager.Init(rootDir)
 	if err != nil {
 		return err
 	}
@@ -317,6 +318,32 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 
 // doPrepare performs all the prepare functionality
 func doPrepare(env env.Project, options *PrepareOptions) (err error) {
+	// Create the dep manager
+	depManager := &dep.DepManager{AppDir:env.GetAppDir()}
+	if !depManager.IsInitialized(){
+		// This is an old app
+		fmt.Println("Initializing dependency management files ....")
+		err := depManager.Init(env.GetRootDir())
+		if err != nil {
+			return err
+		}
+		// Move old vendor folder to _old_vendor
+		oldVendorDir := path.Join(env.GetRootDir(), "vendor")
+		_, err = os.Stat(oldVendorDir)
+		if err == nil {
+			newVendorDir, _ := path.Split(env.GetVendorDir())
+			newVendorDir = path.Join(newVendorDir, "_old_vendor")
+			fmt.Printf("Moving old vendoring directory %s to %s \n", oldVendorDir, newVendorDir)
+			// Vendor found, move it
+			err = CopyDir(oldVendorDir, newVendorDir)
+			if err != nil {
+				return err
+			}
+			defer os.RemoveAll(oldVendorDir)
+		}
+
+	}
+
 	if options == nil {
 		options = &PrepareOptions{}
 	}
@@ -328,6 +355,7 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 			return err
 		}
 	}
+
 
 	//generate metadata
 	err = generateGoMetadata(env)
@@ -524,7 +552,7 @@ func InstallPalette(env env.Project, path string) error {
 func InstallDependency(environ env.Project, path string, version string) error {
 	if IsBuildExperimental(){
 		// Create the dep manager
-		depManager := &env.DepManager{AppDir:environ.GetRootDir()}
+		depManager := &dep.DepManager{AppDir:environ.GetRootDir()}
 		return depManager.InstallDependency(environ.GetRootDir(), environ.GetAppDir(), path, version)
 	}
 	return environ.InstallDependency(path, version)
@@ -534,7 +562,7 @@ func InstallDependency(environ env.Project, path string, version string) error {
 func UninstallDependency(environ env.Project, path string) error {
 	if IsBuildExperimental(){
 		// Create the dep manager
-		depManager := &env.DepManager{AppDir:environ.GetRootDir()}
+		depManager := &dep.DepManager{AppDir:environ.GetRootDir()}
 		return depManager.UninstallDependency(environ.GetRootDir(), environ.GetAppDir(), path)
 	}
 
