@@ -2,14 +2,14 @@ package device
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"path"
-	"strings"
-	"io"
-	"text/template"
-	"fmt"
 	"strconv"
-	"errors"
+	"strings"
+	"text/template"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
@@ -372,10 +372,9 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 		}
 	}
 
-
 	libs := make([]*Lib, 0, len(libMap))
 
-	for  _, value := range libMap {
+	for _, value := range libMap {
 		libs = append(libs, value)
 	}
 
@@ -422,7 +421,7 @@ func generatePlatformCode(proj Project, descriptor *FlogoDeviceDescriptor, profi
 
 	platformDir := path.Join(proj.GetContributionDir(), profile.Platform)
 
-	tpl,err := fgutil.LoadLocalFile(path.Join(platformDir, platform.MainTemplate))
+	tpl, err := fgutil.LoadLocalFile(path.Join(platformDir, platform.MainTemplate))
 	if err != nil {
 		return err
 	}
@@ -457,7 +456,7 @@ func generateWifiCode(project Project, descriptor *FlogoDeviceDescriptor, platfo
 	for _, value := range platform.WifiDetails {
 		if value.Name == profile.PlatformWifi {
 
-			tpl,err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, value.Template))
+			tpl, err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, value.Template))
 			if err != nil {
 				return err
 			}
@@ -484,7 +483,7 @@ func generateMqttCode(project Project, descriptor *FlogoDeviceDescriptor, platfo
 
 	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Device.Settings}
 
-	tpl,err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, platform.MqttDetails.Template))
+	tpl, err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, platform.MqttDetails.Template))
 	if err != nil {
 		return err
 	}

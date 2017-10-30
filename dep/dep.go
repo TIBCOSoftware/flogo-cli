@@ -1,46 +1,50 @@
 package dep
 
 import (
-	"strings"
-	"go/token"
-	"go/ast"
 	"bytes"
-	"go/printer"
-	"os/exec"
-	"os"
-	"fmt"
-	"path"
-	"go/parser"
-	"strconv"
-	"io/ioutil"
-	"errors"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/printer"
+	"go/token"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
+	"strconv"
+	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/config"
+	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 type DepManager struct {
-	AppDir string
+	Env env.Project
 }
-
 
 type ConstraintDef struct {
 	ProjectRoot string
 	Version     string
 }
 
+func New(env env.Project) *DepManager {
+	return &DepManager{Env: env}
+}
+
 // Init initializes the dependency manager
-func (b *DepManager) Init(rootDir string) error {
+func (b *DepManager) Init() error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
 	}
 
 	cmd := exec.Command("dep", "init")
-	cmd.Dir = b.AppDir
+	cmd.Dir = b.Env.GetAppDir()
 	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
@@ -53,7 +57,7 @@ func (b *DepManager) Init(rootDir string) error {
 
 	// TODO remove this prune cmd once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
 	cmd = exec.Command("dep", "prune")
-	cmd.Dir = b.AppDir
+	cmd.Dir = b.Env.GetAppDir()
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
@@ -62,24 +66,64 @@ func (b *DepManager) Init(rootDir string) error {
 	return cmd.Run()
 }
 
-
 // IsInitialized Returns true if a dep environment has been initialized
 func (b *DepManager) IsInitialized() bool {
 
-	_, err :=os.Stat(path.Join(b.AppDir, "Gopkg.toml"))
-	if err != nil{
+	_, err := os.Stat(path.Join(b.Env.GetAppDir(), "Gopkg.toml"))
+	if err != nil {
 		return false
 	}
-	_, err =os.Stat(path.Join(b.AppDir, "Gopkg.lock"))
-	if err != nil{
+	_, err = os.Stat(path.Join(b.Env.GetAppDir(), "Gopkg.lock"))
+	if err != nil {
 		return false
 	}
 
 	return true
 }
 
+// Ensure wraps dep ensure command
+func (b *DepManager) Ensure(args ...string) error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+
+	}
+
+	if !b.IsInitialized() {
+		return fmt.Errorf("Dependency management not initialized, please run flogo init")
+	}
+
+	ensureArgs := []string{"ensure"}
+
+	ensureArgs = append(ensureArgs, args...)
+
+	cmd := exec.Command("dep", ensureArgs...)
+	cmd.Dir = b.Env.GetAppDir()
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
+	cmd.Env = newEnv
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	// TODO remove this prune cmd once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
+	cmd = exec.Command("dep", "prune")
+	cmd.Dir = b.Env.GetAppDir()
+	cmd.Env = newEnv
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 // InstallDependency installs the given dependency
-func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion string) error {
+func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
@@ -87,7 +131,7 @@ func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion str
 	fmt.Println("Validating existing dependencies, this might take a few seconds...")
 
 	// Load imports file
-	importsPath := path.Join(appDir, config.FileImportsGo)
+	importsPath := path.Join(b.Env.GetAppDir(), config.FileImportsGo)
 	// Validate that it exists
 	_, err := os.Stat(importsPath)
 
@@ -109,7 +153,7 @@ func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion str
 		}
 	}
 
-	existingConstraint, err := GetExistingConstraint(rootDir, appDir, depPath)
+	existingConstraint, err := GetExistingConstraint(b.Env.GetRootDir(), b.Env.GetAppDir(), depPath)
 	if err != nil {
 		return err
 	}
@@ -122,9 +166,9 @@ func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion str
 		// Contraint does not exist add it
 		fmt.Printf("Adding new dependency '%s' version '%s' \n", depPath, depVersion)
 		cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s@%s", depPath, depVersion))
-		cmd.Dir = appDir
+		cmd.Dir = b.Env.GetAppDir()
 		newEnv := os.Environ()
-		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 		cmd.Env = newEnv
 
 		// Only show errors
@@ -172,9 +216,9 @@ func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion str
 	// Sync up
 	fmt.Printf("Synching up Gopkg.toml and imports \n")
 	cmd := exec.Command("dep", "ensure")
-	cmd.Dir = appDir
+	cmd.Dir = b.Env.GetAppDir()
 	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 	cmd.Env = newEnv
 
 	// Only show errors
@@ -191,16 +235,15 @@ func (b *DepManager) InstallDependency(rootDir, appDir, depPath , depVersion str
 	return nil
 }
 
-
 // UninstallDependency deletes the given dependency
-func (b *DepManager) UninstallDependency(rootDir, appDir , depPath string) error {
+func (b *DepManager) UninstallDependency(depPath string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
 	}
 
 	// Load imports file
-	importsPath := path.Join(appDir, config.FileImportsGo)
+	importsPath := path.Join(b.Env.GetAppDir(), config.FileImportsGo)
 	// Validate that it exists
 	_, err := os.Stat(importsPath)
 
@@ -225,15 +268,15 @@ func (b *DepManager) UninstallDependency(rootDir, appDir , depPath string) error
 		}
 	}
 
-	if !exists{
+	if !exists {
 		fmt.Printf("No import '%s' found in import file \n", depPath)
 		// Just sync up and return
 		// Sync up
 		fmt.Printf("Synching up Gopkg.toml and imports \n")
 		cmd := exec.Command("dep", "ensure")
-		cmd.Dir = appDir
+		cmd.Dir = b.Env.GetAppDir()
 		newEnv := os.Environ()
-		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 		cmd.Env = newEnv
 
 		// Only show errors
@@ -265,7 +308,7 @@ func (b *DepManager) UninstallDependency(rootDir, appDir , depPath string) error
 				var newSpecs []ast.Spec
 				for _, spec := range dd.Specs {
 					importSpec, ok := spec.(*ast.ImportSpec)
-					if !ok{
+					if !ok {
 						newSpecs = append(newSpecs, spec)
 						continue
 					}
@@ -298,9 +341,9 @@ func (b *DepManager) UninstallDependency(rootDir, appDir , depPath string) error
 	// Sync up
 	fmt.Printf("Synching up Gopkg.toml and imports \n")
 	cmd := exec.Command("dep", "ensure")
-	cmd.Dir = appDir
+	cmd.Dir = b.Env.GetAppDir()
 	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 	cmd.Env = newEnv
 
 	// Only show errors
@@ -371,4 +414,3 @@ func GenerateFile(fset *token.FileSet, file *ast.File) ([]byte, error) {
 
 	return buffer.Bytes(), nil
 }
-

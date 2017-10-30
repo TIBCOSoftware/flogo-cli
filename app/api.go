@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"github.com/TIBCOSoftware/flogo-cli/config"
 	"os/exec"
 )
 
@@ -23,11 +23,10 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson , appDir , appName , vendorDir string) error {
-	if IsBuildExperimental(){
+func CreateApp(env env.Project, appJson, appDir, appName, vendorDir string) error {
+	if IsBuildExperimental() {
 		return doCreate(env, appJson, appDir, appName, vendorDir)
 	}
-
 
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -101,7 +100,7 @@ func CreateApp(env env.Project, appJson , appDir , appName , vendorDir string) e
 }
 
 // doCreate performs the app creation
-func doCreate(enviro env.Project, appJson , rootDir , appName , vendorDir string) error{
+func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) error {
 	fmt.Printf("Creating initial project structure, this migh take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -163,9 +162,9 @@ func doCreate(enviro env.Project, appJson , rootDir , appName , vendorDir string
 	createImportsGoFile(appDir, deps)
 
 	// Create the dep manager
-	depManager := &dep.DepManager{AppDir:appDir}
+	depManager := &dep.DepManager{Env: enviro}
 	// Initialize the dep manager
-	err = depManager.Init(rootDir)
+	err = depManager.Init()
 	if err != nil {
 		return err
 	}
@@ -182,7 +181,7 @@ type PrepareOptions struct {
 
 // PrepareApp do all pre-build setup and pre-processing
 func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
-	if IsBuildExperimental(){
+	if IsBuildExperimental() {
 		return doPrepare(env, options)
 	}
 	if options == nil {
@@ -319,11 +318,11 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 // doPrepare performs all the prepare functionality
 func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 	// Create the dep manager
-	depManager := &dep.DepManager{AppDir:env.GetAppDir()}
-	if !depManager.IsInitialized(){
+	depManager := &dep.DepManager{Env: env}
+	if !depManager.IsInitialized() {
 		// This is an old app
 		fmt.Println("Initializing dependency management files ....")
-		err := depManager.Init(env.GetRootDir())
+		err := depManager.Init()
 		if err != nil {
 			return err
 		}
@@ -355,7 +354,6 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 			return err
 		}
 	}
-
 
 	//generate metadata
 	err = generateGoMetadata(env)
@@ -448,7 +446,7 @@ type BuildOptions struct {
 // BuildApp build the flogo application
 func BuildApp(env env.Project, options *BuildOptions) (err error) {
 
-	if IsBuildExperimental(){
+	if IsBuildExperimental() {
 		return doBuild(env, options)
 	}
 
@@ -550,20 +548,20 @@ func InstallPalette(env env.Project, path string) error {
 
 // InstallDependency install a dependency
 func InstallDependency(environ env.Project, path string, version string) error {
-	if IsBuildExperimental(){
+	if IsBuildExperimental() {
 		// Create the dep manager
-		depManager := &dep.DepManager{AppDir:environ.GetRootDir()}
-		return depManager.InstallDependency(environ.GetRootDir(), environ.GetAppDir(), path, version)
+		depManager := &dep.DepManager{Env: environ}
+		return depManager.InstallDependency(path, version)
 	}
 	return environ.InstallDependency(path, version)
 }
 
 // UninstallDependency uninstall a dependency
 func UninstallDependency(environ env.Project, path string) error {
-	if IsBuildExperimental(){
+	if IsBuildExperimental() {
 		// Create the dep manager
-		depManager := &dep.DepManager{AppDir:environ.GetRootDir()}
-		return depManager.UninstallDependency(environ.GetRootDir(), environ.GetAppDir(), path)
+		depManager := &dep.DepManager{Env: environ}
+		return depManager.UninstallDependency(path)
 	}
 
 	return environ.UninstallDependency(path)

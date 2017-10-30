@@ -11,7 +11,6 @@ const (
 )
 
 type TriggerGenerator struct {
-
 }
 
 func (g *TriggerGenerator) Description() string {
@@ -159,7 +158,7 @@ const testConfig string = ` + "`" + `{
       }
     }
   ]
-}` + "`" +`
+}` + "`" + `
 
 func TestInit(t *testing.T) {
 

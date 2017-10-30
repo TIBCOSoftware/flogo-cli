@@ -11,7 +11,6 @@ const (
 )
 
 type ActionGenerator struct {
-
 }
 
 func (g *ActionGenerator) Description() string {
@@ -44,7 +43,6 @@ var tplActionDescriptor = `{
   "description": "action description",
   "author": "Your Name <you.name@example.org>",
 }`
-
 
 var tplActionGo = `package {{.Name}}
 

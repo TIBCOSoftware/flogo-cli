@@ -21,7 +21,7 @@ func init() {
 }
 
 type cmdUninstall struct {
-	option   *cli.OptionInfo
+	option *cli.OptionInfo
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -57,4 +57,3 @@ func (c *cmdUninstall) Exec(args []string) error {
 
 	return UninstallDependency(SetupExistingProjectEnv(appDir), contribPath)
 }
-

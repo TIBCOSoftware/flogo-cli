@@ -93,7 +93,7 @@ func (c *cmdCreate) Exec(args []string) error {
 	return CreateDevice(SetupNewProjectEnv(), deviceJson, deviceDir, deviceName)
 }
 
-var tplSimpleDevice =`{
+var tplSimpleDevice = `{
   "name": "mydevice",
   "type": "flogo:device",
   "version": "0.0.1",

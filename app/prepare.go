@@ -3,9 +3,9 @@ package app
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optPrepare = &cli.OptionInfo{
@@ -51,6 +51,6 @@ func (c *cmdPrepare) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig}
+	options := &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig}
 	return PrepareApp(SetupExistingProjectEnv(appDir), options)
 }

@@ -1,16 +1,16 @@
 package app
 
 import (
-	"testing"
+	"bytes"
 	"flag"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
-	"os"
-	"path"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"bytes"
-	"github.com/TIBCOSoftware/flogo-cli/config"
+	"os"
+	"path"
 	"path/filepath"
+	"testing"
 )
 
 var GOLD_FLOGO_JSON = `{
@@ -76,18 +76,17 @@ type TestEnv struct {
 	currentDir string
 }
 
-func (t *TestEnv) getTestwd() (dir string, err error){
+func (t *TestEnv) getTestwd() (dir string, err error) {
 	return t.currentDir, nil
 }
 
-func (t *TestEnv) cleanup(){
+func (t *TestEnv) cleanup() {
 	os.RemoveAll(t.currentDir)
 }
 
-
 // Use case 1: Creation with default template
 // TestCmdCreate_Exec test the default cmd create, create new app
-func TestCmdCreate_Exec (t *testing.T) {
+func TestCmdCreate_Exec(t *testing.T) {
 	// TODO remote this after merging
 	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
 	if err != nil {
@@ -104,7 +103,7 @@ func TestCmdCreate_Exec (t *testing.T) {
 		tempDir = tempDirInfo
 	}
 
-	testEnv := &TestEnv{currentDir:tempDir}
+	testEnv := &TestEnv{currentDir: tempDir}
 
 	defer testEnv.cleanup()
 

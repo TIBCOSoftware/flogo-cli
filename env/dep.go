@@ -24,7 +24,6 @@ type DepProject struct {
 	FileDescriptorPath string
 }
 
-
 func NewDepProject() Project {
 	return &DepProject{}
 }

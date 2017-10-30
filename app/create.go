@@ -29,11 +29,11 @@ func init() {
 }
 
 type cmdCreate struct {
-	option   *cli.OptionInfo
+	option     *cli.OptionInfo
 	libVersion string
-	fileName string
-	vendorDir string
-	currentDir func ()(dir string, err error)
+	fileName   string
+	vendorDir  string
+	currentDir func() (dir string, err error)
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -101,7 +101,7 @@ func (c *cmdCreate) Exec(args []string) error {
 	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
 }
 
-func getwd() (dir string, err error){
+func getwd() (dir string, err error) {
 	return os.Getwd()
 }
 

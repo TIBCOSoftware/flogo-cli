@@ -3,9 +3,9 @@ package device
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optBuild = &cli.OptionInfo{
@@ -48,6 +48,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{}}
+	options := &BuildOptions{SkipPrepare: c.skipPrepare, PrepareOptions: &PrepareOptions{}}
 	return BuildDevice(SetupExistingProjectEnv(appDir), options)
 }

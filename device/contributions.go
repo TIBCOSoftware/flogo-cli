@@ -135,7 +135,6 @@ func LoadActivityContrib(proj Project, ref string) (*ActivityContrib, error) {
 			}
 		}
 
-
 		if details != nil {
 			tmplFile := path.Join(proj.GetContributionDir(), ref, details.TemplateFile)
 			tmpl, err := fgutil.LoadLocalFile(tmplFile)

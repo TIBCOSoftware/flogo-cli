@@ -7,14 +7,13 @@ import (
 type ContribType int
 
 const (
-	ACTION     ContribType = 1 + iota
+	ACTION ContribType = 1 + iota
 	TRIGGER
 	ACTIVITY
 	FLOW_MODEL
 
-
-	FileDescriptor    string = "flogo.json"
-	FileImportsGo     string = "imports.go"
+	FileDescriptor string = "flogo.json"
+	FileImportsGo  string = "imports.go"
 )
 
 var ctStr = [...]string{
@@ -51,7 +50,7 @@ type FlogoAppDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 
-	Actions  []*ActionDescriptor `json:"actions"`
+	Actions  []*ActionDescriptor  `json:"actions"`
 	Triggers []*TriggerDescriptor `json:"triggers"`
 }
 
@@ -70,8 +69,8 @@ type TriggerMetadata struct {
 // todo make make ActionDescriptor generic
 // ActionDescriptor is the config descriptor for an Action
 type ActionDescriptor struct {
-	ID  string `json:"id"`
-	Ref string `json:"ref"`
+	ID   string `json:"id"`
+	Ref  string `json:"ref"`
 	Data *struct {
 		Flow *struct {
 			RootTask         *Task `json:"rootTask"`
@@ -82,7 +81,7 @@ type ActionDescriptor struct {
 
 // Task is part of the flow structure
 type Task struct {
-	Ref   string `json:"activityRef"`
+	Ref   string  `json:"activityRef"`
 	Tasks []*Task `json:"tasks"`
 }
 
@@ -110,7 +109,7 @@ type Dependency struct {
 func (d *Dependency) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ContribType string `json:"type"`
-		Ref         string   `json:"ref"`
+		Ref         string `json:"ref"`
 	}{
 		ContribType: d.ContribType.String(),
 		Ref:         d.Ref,
@@ -120,7 +119,7 @@ func (d *Dependency) MarshalJSON() ([]byte, error) {
 func (d *Dependency) UnmarshalJSON(data []byte) error {
 	ser := &struct {
 		ContribType string `json:"type"`
-		Ref         string   `json:"ref"`
+		Ref         string `json:"ref"`
 	}{}
 
 	if err := json.Unmarshal(data, ser); err != nil {

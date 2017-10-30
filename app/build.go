@@ -3,9 +3,9 @@ package app
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optBuild = &cli.OptionInfo{
@@ -57,6 +57,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare:c.skipPrepare, PrepareOptions:&PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig, Shim: c.shim}}
+	options := &BuildOptions{SkipPrepare: c.skipPrepare, PrepareOptions: &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig, Shim: c.shim}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }

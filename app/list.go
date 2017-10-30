@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"encoding/json"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/config"
-	"encoding/json"
 )
 
 var optList = &cli.OptionInfo{

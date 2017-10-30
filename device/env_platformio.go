@@ -1,12 +1,12 @@
 package device
 
 import (
-	"os/exec"
-	"os"
-	"strconv"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 	"path"
+	"strconv"
 )
 
 type PioProject struct {
@@ -32,7 +32,7 @@ func (p *PioProject) Init(basePath string) error {
 	}
 
 	p.RootDir = basePath
-	p.SourceDir = path.Join(basePath,"src")
+	p.SourceDir = path.Join(basePath, "src")
 	p.LibDir = path.Join(basePath, "lib")
 	p.ContributionDir = path.Join(basePath, "vendor", "src")
 	return nil
@@ -105,7 +105,7 @@ func (p *PioProject) Open() error {
 		return fmt.Errorf("Cannot open project, directory '%s' doesn't exists", p.RootDir)
 	}
 
-	if _, err := os.Stat(path.Join(p.RootDir,"platformio.ini")); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(p.RootDir, "platformio.ini")); os.IsNotExist(err) {
 		return errors.New("Invalid device project, platformio.ini doesn't exists")
 	}
 

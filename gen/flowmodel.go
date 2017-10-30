@@ -11,7 +11,6 @@ const (
 )
 
 type FlowModelGenerator struct {
-
 }
 
 func (g *FlowModelGenerator) Description() string {
