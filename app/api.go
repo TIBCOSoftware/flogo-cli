@@ -101,7 +101,7 @@ func CreateApp(env env.Project, appJson, appDir, appName, vendorDir string) erro
 
 // doCreate performs the app creation
 func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) error {
-	fmt.Printf("Creating initial project structure, this migh take a few seconds ... \n")
+	fmt.Printf("Creating initial project structure, this might take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
 		return err
@@ -160,6 +160,11 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) e
 
 	createMainGoFile(appDir, "")
 	createImportsGoFile(appDir, deps)
+
+	err = enviro.Open()
+	if err != nil {
+		return err
+	}
 
 	// Create the dep manager
 	depManager := &dep.DepManager{Env: enviro}

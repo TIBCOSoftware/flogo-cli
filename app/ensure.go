@@ -32,7 +32,7 @@ type cmdEnsure struct {
 	option     *cli.OptionInfo
 	update     bool
 	noVendor   bool
-	v          bool
+	verbose         bool
 	vendorOnly bool
 }
 
@@ -44,9 +44,9 @@ func (c *cmdEnsure) OptionInfo() *cli.OptionInfo {
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdEnsure) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.update), "update", false, "update")
-	fs.BoolVar(&(c.update), "no-vendor", false, "no-vendor")
-	fs.BoolVar(&(c.update), "v", false, "v")
-	fs.BoolVar(&(c.update), "vendor-only", false, "vendor-only")
+	fs.BoolVar(&(c.noVendor), "no-vendor", false, "no-vendor")
+	fs.BoolVar(&(c.verbose), "verbose", false, "verbose")
+	fs.BoolVar(&(c.vendorOnly), "vendor-only", false, "vendor-only")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -67,18 +67,20 @@ func (c *cmdEnsure) Exec(args []string) error {
 	// Create args
 	ensureArgs := []string{}
 	if c.update {
-		args = append(ensureArgs, "-update")
+		ensureArgs = append(ensureArgs, "-update")
 	}
-	if c.v {
-		args = append(ensureArgs, "-v")
+	if c.verbose {
+		ensureArgs = append(ensureArgs, "-v")
 	}
 	if c.noVendor {
-		args = append(ensureArgs, "-no-vendor")
+		ensureArgs = append(ensureArgs, "-no-vendor")
 	} else if c.vendorOnly {
-		args = append(ensureArgs, "vendor-only")
+		ensureArgs = append(ensureArgs, "vendor-only")
 	}
 
 	depManager := dep.New(SetupExistingProjectEnv(rootDir))
+
+	fmt.Printf("Constructed args: %+v", ensureArgs)
 
 	return depManager.Ensure(ensureArgs...)
 }

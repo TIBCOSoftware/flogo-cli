@@ -97,6 +97,8 @@ func (b *DepManager) Ensure(args ...string) error {
 
 	ensureArgs = append(ensureArgs, args...)
 
+	fmt.Printf("Executing %+v", ensureArgs)
+
 	cmd := exec.Command("dep", ensureArgs...)
 	cmd.Dir = b.Env.GetAppDir()
 	newEnv := os.Environ()
@@ -128,6 +130,11 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	if !exists {
 		return errors.New("dep not installed")
 	}
+
+	if !b.IsInitialized(){
+		return fmt.Errorf("No Gopkg.toml found at %s, please run flogo build", b.Env.GetAppDir())
+	}
+
 	fmt.Println("Validating existing dependencies, this might take a few seconds...")
 
 	// Load imports file
@@ -240,6 +247,10 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
+	}
+
+	if !b.IsInitialized(){
+		return fmt.Errorf("No Gopkg.toml found at %s, please run flogo build", b.Env.GetAppDir())
 	}
 
 	// Load imports file
