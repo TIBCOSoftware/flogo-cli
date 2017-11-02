@@ -132,7 +132,10 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	}
 
 	if !b.IsInitialized(){
-		return fmt.Errorf("No Gopkg.toml found at %s, please run flogo build", b.Env.GetAppDir())
+		err := b.Init()
+		if err != nil{
+			return fmt.Errorf("Error Initializing the project dependencies, '%s'", err)
+		}
 	}
 
 	fmt.Println("Validating existing dependencies, this might take a few seconds...")
@@ -250,7 +253,10 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 	}
 
 	if !b.IsInitialized(){
-		return fmt.Errorf("No Gopkg.toml found at %s, please run flogo build", b.Env.GetAppDir())
+		err := b.Init()
+		if err != nil{
+			return fmt.Errorf("Error Initializing the project dependencies, '%s'", err)
+		}
 	}
 
 	// Load imports file
