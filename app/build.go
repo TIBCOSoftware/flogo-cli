@@ -10,15 +10,17 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-e][-sp][-shim]",
+	UsageLine: "build [-o][-e][-sp][-gen || -nogen][-shim]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
 Options:
-    -o    optimize for directly referenced contributions
-    -e    embed application configuration into executable
-    -sp   skip prepare
-    -shim trigger shim
+    -o      optimize for directly referenced contributions
+    -e      embed application configuration into executable
+    -nogen  ONLY perform the build, without performing the generation of metadata
+    -gen    ONLY perform generation of metadata, without performing the build
+    -sp     [Deprecated, use '-nogen' instead] skip prepare
+    -shim   trigger shim
 `,
 }
 
@@ -30,6 +32,8 @@ type cmdBuild struct {
 	option      *cli.OptionInfo
 	optimize    bool
 	skipPrepare bool
+	noGeneration bool
+	generationOnly bool
 	embedConfig bool
 	shim        string
 }
@@ -44,6 +48,8 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.optimize), "o", false, "optimize build")
 	fs.BoolVar(&(c.embedConfig), "e", false, "embed config")
 	fs.BoolVar(&(c.skipPrepare), "sp", false, "skip prepare")
+	fs.BoolVar(&(c.noGeneration), "nogen", false, "no generation")
+	fs.BoolVar(&(c.generationOnly), "gen", false, "only generation")
 	fs.StringVar(&(c.shim), "shim", "", "trigger shim")
 }
 
@@ -57,6 +63,12 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare: c.skipPrepare, PrepareOptions: &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig, Shim: c.shim}}
+	// Validate exclusive params
+	if c.generationOnly && c.noGeneration {
+		fmt.Fprint(os.Stderr, "Error: -nogen and -gen flags are mutually exclusive, please choose just one\n\n")
+		os.Exit(2)
+	}
+
+	options := &BuildOptions{SkipPrepare: c.skipPrepare, NoGeneration: c.noGeneration, GenerationOnly: c.generationOnly, PrepareOptions: &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig, Shim: c.shim}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }

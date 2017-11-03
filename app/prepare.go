@@ -12,7 +12,7 @@ var optPrepare = &cli.OptionInfo{
 	Name:      "prepare",
 	UsageLine: "prepare [-o][-e]",
 	Short:     "prepare the flogo application",
-	Long: `Prepare the flogo application.
+	Long: `[Deprecated, use 'build [-gen]' instead]Prepare the flogo application.
 
 Options:
     -o   optimize for directly referenced contributions
