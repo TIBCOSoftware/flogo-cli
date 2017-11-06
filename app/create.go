@@ -17,7 +17,7 @@ var optCreate = &cli.OptionInfo{
 	Long: `Creates a flogo project.
 
 Options:
-    -flv     specify the flogo-lib version
+    -flv     specify the flogo dependency constraints as comma separated value (for example github.com/TIBCOSoftware/flogo-lib@0.0.0,github.com/TIBCOSoftware/flogo-contrib@0.0.0)
     -f       specify the flogo.json to create project from
     -vendor  specify existing vendor directory to copy
 
@@ -29,11 +29,11 @@ func init() {
 }
 
 type cmdCreate struct {
-	option     *cli.OptionInfo
-	libVersion string
-	fileName   string
-	vendorDir  string
-	currentDir func() (dir string, err error)
+	option      *cli.OptionInfo
+	constraints string
+	fileName    string
+	vendorDir   string
+	currentDir  func() (dir string, err error)
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -43,7 +43,7 @@ func (c *cmdCreate) OptionInfo() *cli.OptionInfo {
 
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdCreate) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&(c.libVersion), "flv", "", "flogo-lib version")
+	fs.StringVar(&(c.constraints), "flv", "", "flogo library constraints")
 	fs.StringVar(&(c.fileName), "f", "", "flogo app file")
 	fs.StringVar(&(c.vendorDir), "vendor", "", "vendor dir")
 }
@@ -98,7 +98,7 @@ func (c *cmdCreate) Exec(args []string) error {
 
 	appDir := path.Join(currentDir, appName)
 
-	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir)
+	return CreateApp(SetupNewProjectEnv(), appJson, appDir, appName, c.vendorDir, c.constraints)
 }
 
 func getwd() (dir string, err error) {

@@ -23,9 +23,9 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson, appDir, appName, vendorDir string) error {
+func CreateApp(env env.Project, appJson, appDir, appName, vendorDir, constraints string) error {
 	if IsBuildExperimental() {
-		return doCreate(env, appJson, appDir, appName, vendorDir)
+		return doCreate(env, appJson, appDir, appName, vendorDir, constraints)
 	}
 
 	descriptor, err := ParseAppDescriptor(appJson)
@@ -100,7 +100,7 @@ func CreateApp(env env.Project, appJson, appDir, appName, vendorDir string) erro
 }
 
 // doCreate performs the app creation
-func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) error {
+func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constraints string) error {
 	fmt.Printf("Creating initial project structure, this might take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
@@ -152,14 +152,9 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) e
 	if err != nil {
 		return err
 	}
-
-	deps := config.ExtractDependencies(descriptor)
-	// create source files
+	// create initial structure
 	appDir := path.Join(enviro.GetSourceDir(), descriptor.Name)
 	os.MkdirAll(appDir, os.ModePerm)
-
-	createMainGoFile(appDir, "")
-	createImportsGoFile(appDir, deps)
 
 	err = enviro.Open()
 	if err != nil {
@@ -168,8 +163,37 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir string) e
 
 	// Create the dep manager
 	depManager := &dep.DepManager{Env: enviro}
+
 	// Initialize the dep manager
 	err = depManager.Init()
+	if err != nil {
+		return err
+	}
+
+	// Create initial files
+	deps := config.ExtractDependencies(descriptor)
+	createMainGoFile(appDir, "")
+	createImportsGoFile(appDir, deps)
+
+	// Add constraints
+	if len(constraints) > 0 {
+		fmt.Println("Creating the constraints")
+		newConstraints := []string{"-add"}
+		newConstraints = append(newConstraints, strings.Split(constraints, ",")...)
+		err = depManager.Ensure(newConstraints...)
+		if err != nil{
+			return err
+		}
+	}
+
+	// Sync up
+	err = depManager.Ensure()
+	if err != nil {
+		return err
+	}
+
+	// Prune
+	err = depManager.Prune()
 	if err != nil {
 		return err
 	}
@@ -443,9 +467,9 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 type BuildOptions struct {
 	*PrepareOptions
 
-	NoGeneration bool
+	NoGeneration   bool
 	GenerationOnly bool
-	SkipPrepare bool
+	SkipPrepare    bool
 }
 
 // BuildApp build the flogo application
@@ -459,7 +483,7 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		options = &BuildOptions{}
 	}
 
-	if options.GenerationOnly{
+	if options.GenerationOnly {
 		// Only perform prepare
 		return PrepareApp(env, options.PrepareOptions)
 	}
@@ -495,7 +519,7 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 		options = &BuildOptions{}
 	}
 
-	if options.GenerationOnly{
+	if options.GenerationOnly {
 		// Only perform prepare
 		return PrepareApp(env, options.PrepareOptions)
 	}
@@ -507,7 +531,6 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 			return err
 		}
 	}
-
 
 	err = env.Build()
 	if err != nil {
@@ -567,7 +590,14 @@ func InstallDependency(environ env.Project, path string, version string) error {
 	if IsBuildExperimental() {
 		// Create the dep manager
 		depManager := &dep.DepManager{Env: environ}
-		return depManager.InstallDependency(path, version)
+		err := depManager.InstallDependency(path, version)
+		if err != nil{
+			return err
+		}
+		err = depManager.Prune()
+		if err != nil{
+			return err
+		}
 	}
 	return environ.InstallDependency(path, version)
 }
@@ -577,7 +607,14 @@ func UninstallDependency(environ env.Project, path string) error {
 	if IsBuildExperimental() {
 		// Create the dep manager
 		depManager := &dep.DepManager{Env: environ}
-		return depManager.UninstallDependency(path)
+		err := depManager.UninstallDependency(path)
+		if err != nil{
+			return err
+		}
+		err = depManager.Prune()
+		if err != nil{
+			return err
+		}
 	}
 
 	return environ.UninstallDependency(path)

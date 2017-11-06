@@ -50,14 +50,19 @@ func (b *DepManager) Init() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
+	return cmd.Run()
+}
 
-	// TODO remove this prune cmd once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
-	cmd = exec.Command("dep", "prune")
+// Prune prunes the vendor directory
+func (b *DepManager) Prune() error {
+	exists := fgutil.ExecutableExists("dep")
+	if !exists {
+		return errors.New("dep not installed")
+	}
+	cmd := exec.Command("dep", "prune")
 	cmd.Dir = b.Env.GetAppDir()
+	newEnv := os.Environ()
+	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
@@ -97,25 +102,10 @@ func (b *DepManager) Ensure(args ...string) error {
 
 	ensureArgs = append(ensureArgs, args...)
 
-	fmt.Printf("Executing %+v", ensureArgs)
-
 	cmd := exec.Command("dep", ensureArgs...)
 	cmd.Dir = b.Env.GetAppDir()
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-	cmd.Env = newEnv
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	// TODO remove this prune cmd once it gets absorved into dep ensure https://github.com/golang/dep/issues/944
-	cmd = exec.Command("dep", "prune")
-	cmd.Dir = b.Env.GetAppDir()
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
@@ -173,19 +163,9 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 			fmt.Printf("Existing root package version found '%s', to update it please change Gopkg.toml manually\n", existingConstraint.Version)
 		}
 	} else {
-		// Contraint does not exist add it
+		// Constraint does not exist add it
 		fmt.Printf("Adding new dependency '%s' version '%s' \n", depPath, depVersion)
-		cmd := exec.Command("dep", "ensure", "-add", fmt.Sprintf("%s@%s", depPath, depVersion))
-		cmd.Dir = b.Env.GetAppDir()
-		newEnv := os.Environ()
-		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-		cmd.Env = newEnv
-
-		// Only show errors
-		//cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		err := cmd.Run()
+		err := b.Ensure("-add", fmt.Sprintf("%s@%s", depPath, depVersion))
 		if err != nil {
 			return fmt.Errorf("Error adding dependency '%s', '%s'", depPath, err.Error())
 		}
@@ -224,18 +204,8 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	}
 
 	// Sync up
-	fmt.Printf("Synching up Gopkg.toml and imports \n")
-	cmd := exec.Command("dep", "ensure")
-	cmd.Dir = b.Env.GetAppDir()
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-	cmd.Env = newEnv
-
-	// Only show errors
-	//cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err = cmd.Run()
+	fmt.Printf("Syncing up Gopkg.toml and imports \n")
+	err = b.Ensure()
 	if err != nil {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}
@@ -287,20 +257,8 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 
 	if !exists {
 		fmt.Printf("No import '%s' found in import file \n", depPath)
-		// Just sync up and return
 		// Sync up
-		fmt.Printf("Synching up Gopkg.toml and imports \n")
-		cmd := exec.Command("dep", "ensure")
-		cmd.Dir = b.Env.GetAppDir()
-		newEnv := os.Environ()
-		newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-		cmd.Env = newEnv
-
-		// Only show errors
-		//cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		err = cmd.Run()
+		err := b.Ensure()
 		if err != nil {
 			return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 		}
@@ -357,17 +315,7 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 
 	// Sync up
 	fmt.Printf("Synching up Gopkg.toml and imports \n")
-	cmd := exec.Command("dep", "ensure")
-	cmd.Dir = b.Env.GetAppDir()
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-	cmd.Env = newEnv
-
-	// Only show errors
-	//cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err = cmd.Run()
+	err = b.Ensure()
 	if err != nil {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}

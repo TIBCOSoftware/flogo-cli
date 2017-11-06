@@ -20,7 +20,7 @@ var (
 
 func SetupNewProjectEnv() env.Project {
 	if IsBuildExperimental() {
-		return env.NewDepProject()
+		return env.NewFlogoProject()
 	}
 	return env.NewGbProjectEnv()
 }
@@ -29,7 +29,7 @@ func SetupExistingProjectEnv(rootDir string) env.Project {
 
 	proj := env.NewGbProjectEnv()
 	if IsBuildExperimental() {
-		proj = env.NewDepProject()
+		proj = env.NewFlogoProject()
 	}
 
 	if err := proj.Init(rootDir); err != nil {

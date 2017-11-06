@@ -13,7 +13,7 @@ import (
 	"path"
 )
 
-type DepProject struct {
+type FlogoProject struct {
 	BinDir             string
 	RootDir            string
 	SourceDir          string
@@ -24,11 +24,11 @@ type DepProject struct {
 	FileDescriptorPath string
 }
 
-func NewDepProject() Project {
-	return &DepProject{}
+func NewFlogoProject() Project {
+	return &FlogoProject{}
 }
 
-func (e *DepProject) Init(rootDir string) error {
+func (e *FlogoProject) Init(rootDir string) error {
 
 	exists := fgutil.ExecutableExists("dep")
 
@@ -42,7 +42,7 @@ func (e *DepProject) Init(rootDir string) error {
 }
 
 // Create creates directories for the project
-func (e *DepProject) Create(createBin bool, vendorDir string) error {
+func (e *FlogoProject) Create(createBin bool, vendorDir string) error {
 
 	if _, err := os.Stat(e.RootDir); err == nil {
 		return fmt.Errorf("Cannot create project, directory '%s' already exists", e.RootDir)
@@ -55,7 +55,7 @@ func (e *DepProject) Create(createBin bool, vendorDir string) error {
 }
 
 // Open the project directory and validate its structure
-func (e *DepProject) Open() error {
+func (e *FlogoProject) Open() error {
 
 	// Check root dir
 	info, err := os.Stat(e.RootDir)
@@ -106,42 +106,42 @@ func (e *DepProject) Open() error {
 	return nil
 }
 
-func (e *DepProject) GetBinDir() string {
+func (e *FlogoProject) GetBinDir() string {
 	return e.BinDir
 }
 
-func (e *DepProject) GetRootDir() string {
+func (e *FlogoProject) GetRootDir() string {
 	return e.RootDir
 }
 
-func (e *DepProject) GetSourceDir() string {
+func (e *FlogoProject) GetSourceDir() string {
 	return e.SourceDir
 }
 
-func (e *DepProject) GetVendorDir() string {
+func (e *FlogoProject) GetVendorDir() string {
 	return e.VendorDir
 }
 
-func (e *DepProject) GetVendorSrcDir() string {
+func (e *FlogoProject) GetVendorSrcDir() string {
 	return e.VendorSrcDir
 }
 
 // GetAppDir returns the directory of the app
-func (e *DepProject) GetAppDir() string {
+func (e *FlogoProject) GetAppDir() string {
 	return e.AppDir
 }
 
-func (e *DepProject) InstallDependency(depPath string, version string) error {
+func (e *FlogoProject) InstallDependency(depPath string, version string) error {
 	// Deprecated, dependency managements responsibility
 	return nil
 }
 
-func (e *DepProject) UninstallDependency(depPath string) error {
+func (e *FlogoProject) UninstallDependency(depPath string) error {
 	// Deprecated, dependency managements responsibility
 	return nil
 }
 
-func (e *DepProject) Build() error {
+func (e *FlogoProject) Build() error {
 	exists := fgutil.ExecutableExists("go")
 	if !exists {
 		return errors.New("go not installed")
@@ -153,121 +153,6 @@ func (e *DepProject) Build() error {
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", e.GetRootDir()))
 	cmd.Env = newEnv
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-func IsDepProject(projectPath string) bool {
-
-	sourceDir := path.Join(projectPath, "src")
-	vendorDir := path.Join(projectPath, "vendor", "src")
-
-	info, err := os.Stat(sourceDir)
-
-	if err != nil || !info.IsDir() {
-		return false
-	}
-
-	info, err = os.Stat(vendorDir)
-
-	if err != nil || !info.IsDir() {
-		return false
-	}
-
-	return true
-}
-
-//Env checker?
-//IsProject(path.Join string) bool
-
-// Gb structure that contains gb project paths
-type Dep struct {
-	BinPath        string
-	SourcePath     string
-	VendorPath     string
-	CodeSourcePath string
-}
-
-// NewGb creates a new Gb struct
-func NewDep(codePath string) *Gb {
-
-	env := &Gb{}
-	env.BinPath = "bin"
-	env.SourcePath = "src"
-	env.VendorPath = path.Join("vendor", "src")
-	env.CodeSourcePath = path.Join("src", codePath)
-
-	return env
-}
-
-// Init creates directories for the gb project
-func (e *Dep) Init(createBin bool) {
-	os.MkdirAll(e.SourcePath, 0777)
-	os.MkdirAll(e.VendorPath, 0777)
-	os.MkdirAll(e.CodeSourcePath, 0777)
-
-	if createBin {
-		os.MkdirAll(e.BinPath, 0777)
-	}
-}
-
-// Installed indicates if gb is installed
-func (e *Dep) Installed() bool {
-	return fgutil.ExecutableExists("gb")
-}
-
-// NewBinFilepath.Join creates a new file path.Join in the bin directory
-func (e *Dep) NewBinFilePath(fileName string) string {
-	return path.Join(e.BinPath, fileName)
-}
-
-// VendorFetch performs a 'gb vendor fetch'
-func (e *Dep) VendorFetch(depPath string, version string) error {
-
-	var cmd *exec.Cmd
-
-	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch", depPath)
-	} else {
-
-		var tag string
-
-		if version[0] != 'v' {
-			tag = "v" + version
-		} else {
-			tag = version
-		}
-
-		cmd = exec.Command("gb", "vendor", "fetch", "-tag", tag, depPath)
-	}
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-// VendorDeleteSilent performs a 'gb vendor delete' silently
-func (e *Dep) VendorDeleteSilent(depPath string) error {
-	cmd := exec.Command("gb", "vendor", "delete", depPath)
-
-	return cmd.Run()
-}
-
-// VendorDelete performs a 'gb vendor delete'
-func (e *Dep) VendorDelete(depPath string) error {
-	cmd := exec.Command("gb", "vendor", "delete", depPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-// Build performs a 'gb build'
-func (e *Dep) Build() error {
-	cmd := exec.Command("gb", "build")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
