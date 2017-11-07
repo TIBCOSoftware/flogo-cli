@@ -155,29 +155,13 @@ func PrepareApp(env env.Project, options *PrepareOptions) error {
 // doPrepare performs all the prepare functionality
 func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 	// Create the dep manager
-	depManager := &dep.DepManager{Env: env}
+	depManager := dep.DepManager{Env: env}
 	if !depManager.IsInitialized() {
 		// This is an old app
-		fmt.Println("Initializing dependency management files ....")
-		err := depManager.Init()
+		err = MigrateOldApp(env, depManager)
 		if err != nil {
 			return err
 		}
-		// Move old vendor folder to _old_vendor
-		oldVendorDir := path.Join(env.GetRootDir(), "vendor")
-		_, err = os.Stat(oldVendorDir)
-		if err == nil {
-			newVendorDir, _ := path.Split(env.GetVendorDir())
-			newVendorDir = path.Join(newVendorDir, "_old_vendor")
-			fmt.Printf("Moving old vendoring directory %s to %s \n", oldVendorDir, newVendorDir)
-			// Vendor found, move it
-			err = CopyDir(oldVendorDir, newVendorDir)
-			if err != nil {
-				return err
-			}
-			defer os.RemoveAll(oldVendorDir)
-		}
-
 	}
 
 	if options == nil {
@@ -274,6 +258,30 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 	return
 }
 
+func MigrateOldApp(env env.Project, depManager dep.DepManager) error{
+	// This is an old app
+	fmt.Println("Initializing dependency management files ....")
+	err := depManager.Init()
+	if err != nil {
+		return err
+	}
+	// Move old vendor folder to _old_vendor
+	oldVendorDir := path.Join(env.GetRootDir(), "vendor")
+	_, err = os.Stat(oldVendorDir)
+	if err == nil {
+		newVendorDir, _ := path.Split(env.GetVendorDir())
+		newVendorDir = path.Join(newVendorDir, "_old_vendor")
+		fmt.Printf("Moving old vendoring directory %s to %s \n", oldVendorDir, newVendorDir)
+		// Vendor found, move it
+		err = CopyDir(oldVendorDir, newVendorDir)
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(oldVendorDir)
+	}
+	return nil
+}
+
 type BuildOptions struct {
 	*PrepareOptions
 
@@ -362,7 +370,14 @@ func InstallPalette(env env.Project, path string) error {
 // InstallDependency install a dependency
 func InstallDependency(environ env.Project, path string, version string) error {
 	// Create the dep manager
-	depManager := &dep.DepManager{Env: environ}
+	depManager := dep.DepManager{Env: environ}
+	if !depManager.IsInitialized() {
+		// This is an old app
+		err := MigrateOldApp(environ, depManager)
+		if err != nil {
+			return err
+		}
+	}
 	err := depManager.InstallDependency(path, version)
 	if err != nil {
 		return err
@@ -377,7 +392,14 @@ func InstallDependency(environ env.Project, path string, version string) error {
 // UninstallDependency uninstall a dependency
 func UninstallDependency(environ env.Project, path string) error {
 	// Create the dep manager
-	depManager := &dep.DepManager{Env: environ}
+	depManager := dep.DepManager{Env: environ}
+	if !depManager.IsInitialized() {
+		// This is an old app
+		err := MigrateOldApp(environ, depManager)
+		if err != nil {
+			return err
+		}
+	}
 	err := depManager.UninstallDependency(path)
 	if err != nil {
 		return err

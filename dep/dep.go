@@ -121,13 +121,6 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 		return errors.New("dep not installed")
 	}
 
-	if !b.IsInitialized(){
-		err := b.Init()
-		if err != nil{
-			return fmt.Errorf("Error Initializing the project dependencies, '%s'", err)
-		}
-	}
-
 	fmt.Println("Validating existing dependencies, this might take a few seconds...")
 
 	// Load imports file
@@ -225,13 +218,6 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
-	}
-
-	if !b.IsInitialized(){
-		err := b.Init()
-		if err != nil{
-			return fmt.Errorf("Error Initializing the project dependencies, '%s'", err)
-		}
 	}
 
 	// Load imports file
