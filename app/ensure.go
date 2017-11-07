@@ -32,7 +32,7 @@ type cmdEnsure struct {
 	option     *cli.OptionInfo
 	update     bool
 	noVendor   bool
-	verbose         bool
+	verbose    bool
 	vendorOnly bool
 }
 

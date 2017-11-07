@@ -181,16 +181,14 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 		newConstraints := []string{"-add"}
 		newConstraints = append(newConstraints, strings.Split(constraints, ",")...)
 		err = depManager.Ensure(newConstraints...)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
 
-
-
 	ensureArgs := []string{}
 
-	if len(vendorDir) > 0{
+	if len(vendorDir) > 0 {
 		// Copy vendor directory
 		fgutil.CopyDir(vendorDir, enviro.GetVendorDir())
 		// Do not touch vendor folder when ensuring
@@ -604,11 +602,11 @@ func InstallDependency(environ env.Project, path string, version string) error {
 		// Create the dep manager
 		depManager := &dep.DepManager{Env: environ}
 		err := depManager.InstallDependency(path, version)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		err = depManager.Prune()
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
@@ -621,11 +619,11 @@ func UninstallDependency(environ env.Project, path string) error {
 		// Create the dep manager
 		depManager := &dep.DepManager{Env: environ}
 		err := depManager.UninstallDependency(path)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		err = depManager.Prune()
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}

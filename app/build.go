@@ -29,13 +29,13 @@ func init() {
 }
 
 type cmdBuild struct {
-	option      *cli.OptionInfo
-	optimize    bool
-	skipPrepare bool
-	noGeneration bool
+	option         *cli.OptionInfo
+	optimize       bool
+	skipPrepare    bool
+	noGeneration   bool
 	generationOnly bool
-	embedConfig bool
-	shim        string
+	embedConfig    bool
+	shim           string
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
