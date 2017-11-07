@@ -80,7 +80,5 @@ func (c *cmdEnsure) Exec(args []string) error {
 
 	depManager := dep.New(SetupExistingProjectEnv(rootDir))
 
-	fmt.Printf("Constructed args: %+v", ensureArgs)
-
 	return depManager.Ensure(ensureArgs...)
 }
