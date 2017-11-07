@@ -24,79 +24,7 @@ type BuildPreProcessor interface {
 
 // CreateApp creates an application from the specified json application descriptor
 func CreateApp(env env.Project, appJson, appDir, appName, vendorDir, constraints string) error {
-	if IsBuildExperimental() {
-		return doCreate(env, appJson, appDir, appName, vendorDir, constraints)
-	}
-
-	descriptor, err := ParseAppDescriptor(appJson)
-	if err != nil {
-		return err
-	}
-
-	if appName != "" {
-		// override the application name
-
-		altJson := strings.Replace(appJson, `"`+descriptor.Name+`"`, `"`+appName+`"`, 1)
-		altDescriptor, err := ParseAppDescriptor(altJson)
-
-		//see if we can get away with simple replace so we don't reorder the existing json
-		if err == nil && altDescriptor.Name == appName {
-			appJson = altJson
-		} else {
-			//simple replace didn't work so we have to unmarshal & re-marshal the supplied json
-			var appObj map[string]interface{}
-			err := json.Unmarshal([]byte(appJson), &appObj)
-			if err != nil {
-				return err
-			}
-
-			appObj["name"] = appName
-
-			updApp, err := json.MarshalIndent(appObj, "", "  ")
-			if err != nil {
-				return err
-			}
-			appJson = string(updApp)
-		}
-
-		descriptor.Name = appName
-	} else {
-		appName = descriptor.Name
-		appDir = path.Join(appDir, appName)
-	}
-
-	env.Init(appDir)
-	err = env.Create(false, vendorDir)
-	if err != nil {
-		return err
-	}
-
-	err = fgutil.CreateFileFromString(path.Join(appDir, "flogo.json"), appJson)
-	if err != nil {
-		return err
-	}
-
-	//todo allow ability to specify flogo-lib version
-	env.InstallDependency(pathFlogoLib, "")
-
-	deps := config.ExtractDependencies(descriptor)
-
-	for _, dep := range deps {
-		path, version := splitVersion(dep.Ref)
-		err = env.InstallDependency(path, version)
-		if err != nil {
-			return err
-		}
-	}
-
-	// create source files
-	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
-	os.MkdirAll(cmdPath, 0777)
-
-	createMainGoFile(cmdPath, "")
-	createImportsGoFile(cmdPath, deps)
-
-	return nil
+	return doCreate(env, appJson, appDir, appName, vendorDir, constraints)
 }
 
 // doCreate performs the app creation
@@ -220,137 +148,8 @@ type PrepareOptions struct {
 }
 
 // PrepareApp do all pre-build setup and pre-processing
-func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
-	if IsBuildExperimental() {
-		return doPrepare(env, options)
-	}
-	if options == nil {
-		options = &PrepareOptions{}
-	}
-
-	if options.PreProcessor != nil {
-		err = options.PreProcessor.PrepareForBuild(env)
-		if err != nil {
-			return err
-		}
-	}
-
-	//generate metadata
-	err = generateGoMetadata(env)
-	if err != nil {
-		return err
-	}
-
-	//load descriptor
-	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), "flogo.json"))
-
-	if err != nil {
-		return err
-	}
-	descriptor, err := ParseAppDescriptor(appJson)
-	if err != nil {
-		return err
-	}
-
-	//generate imports file
-	var deps []*config.Dependency
-
-	if options.OptimizeImports {
-
-		deps = config.ExtractDependencies(descriptor)
-
-	} else {
-		deps, err = ListDependencies(env, 0)
-	}
-
-	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
-	createImportsGoFile(cmdPath, deps)
-
-	removeEmbeddedAppGoFile(cmdPath)
-
-	wasUsingShim := fgutil.FileExists(path.Join(cmdPath, fileShimGo))
-	removeShimGoFiles(cmdPath)
-
-	if options.Shim != "" {
-
-		removeMainGoFile(cmdPath) //todo maybe rename if it exists
-		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
-
-		fmt.Println("Shim:", options.Shim)
-
-		for _, value := range descriptor.Triggers {
-
-			fmt.Println("Id:", value.ID)
-			if value.ID == options.Shim {
-				triggerPath := path.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
-
-				mdJson, err := fgutil.LoadLocalFile(triggerPath)
-				if err != nil {
-					return err
-				}
-				metadata, err := ParseTriggerMetadata(mdJson)
-				if err != nil {
-					return err
-				}
-
-				if metadata.Shim != "" {
-
-					//todo blow up if shim file not found
-					shimFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
-					fmt.Println("Shim File:", shimFilePath)
-					fgutil.CopyFile(shimFilePath, path.Join(cmdPath, fileShimGo))
-
-					if metadata.Shim == "plugin" {
-						//look for Makefile and execute it
-						makeFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, makeFile)
-						fmt.Println("Make File:", makeFilePath)
-						fgutil.CopyFile(makeFilePath, path.Join(cmdPath, makeFile))
-
-						// Copy the vendor folder (Ugly workaround, this will go once our app is golang structure compliant)
-						vendorDestDir := path.Join(cmdPath, "vendor")
-						_, err = os.Stat(vendorDestDir)
-						if err == nil {
-							// We don't support existing vendor folders yet
-							return fmt.Errorf("Unsupported vendor folder found for function build, please create an issue on https://github.com/TIBCOSoftware/flogo")
-						}
-						// Create vendor folder
-						err = CopyDir(env.GetVendorSrcDir(), vendorDestDir)
-						if err != nil {
-							return err
-						}
-						defer os.RemoveAll(vendorDestDir)
-
-						// Execute make
-						cmd := exec.Command("make", "-C", cmdPath)
-						cmd.Stdout = os.Stdout
-						cmd.Stderr = os.Stderr
-						cmd.Env = append(os.Environ(),
-							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
-						)
-
-						err = cmd.Run()
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				break
-			}
-		}
-
-	} else {
-
-		if wasUsingShim {
-			createMainGoFile(cmdPath, "")
-		}
-
-		if options.EmbedConfig {
-			createEmbeddedAppGoFile(cmdPath, appJson)
-		}
-	}
-
-	return
+func PrepareApp(env env.Project, options *PrepareOptions) error {
+	return doPrepare(env, options)
 }
 
 // doPrepare performs all the prepare functionality
@@ -484,44 +283,8 @@ type BuildOptions struct {
 }
 
 // BuildApp build the flogo application
-func BuildApp(env env.Project, options *BuildOptions) (err error) {
-
-	if IsBuildExperimental() {
-		return doBuild(env, options)
-	}
-
-	if options == nil {
-		options = &BuildOptions{}
-	}
-
-	if options.GenerationOnly {
-		// Only perform prepare
-		return PrepareApp(env, options.PrepareOptions)
-	}
-
-	if !options.SkipPrepare && !options.NoGeneration {
-		err = PrepareApp(env, options.PrepareOptions)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	err = env.Build()
-	if err != nil {
-		return err
-	}
-
-	if !options.EmbedConfig {
-		fgutil.CopyFile(path.Join(env.GetRootDir(), config.FileDescriptor), path.Join(env.GetBinDir(), config.FileDescriptor))
-		if err != nil {
-			return err
-		}
-	} else {
-		os.Remove(path.Join(env.GetBinDir(), config.FileDescriptor))
-	}
-
-	return
+func BuildApp(env env.Project, options *BuildOptions) error {
+	return doBuild(env, options)
 }
 
 // doBuildApp performs the build functionality
@@ -598,37 +361,32 @@ func InstallPalette(env env.Project, path string) error {
 
 // InstallDependency install a dependency
 func InstallDependency(environ env.Project, path string, version string) error {
-	if IsBuildExperimental() {
-		// Create the dep manager
-		depManager := &dep.DepManager{Env: environ}
-		err := depManager.InstallDependency(path, version)
-		if err != nil {
-			return err
-		}
-		err = depManager.Prune()
-		if err != nil {
-			return err
-		}
+	// Create the dep manager
+	depManager := &dep.DepManager{Env: environ}
+	err := depManager.InstallDependency(path, version)
+	if err != nil {
+		return err
 	}
-	return environ.InstallDependency(path, version)
+	err = depManager.Prune()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // UninstallDependency uninstall a dependency
 func UninstallDependency(environ env.Project, path string) error {
-	if IsBuildExperimental() {
-		// Create the dep manager
-		depManager := &dep.DepManager{Env: environ}
-		err := depManager.UninstallDependency(path)
-		if err != nil {
-			return err
-		}
-		err = depManager.Prune()
-		if err != nil {
-			return err
-		}
+	// Create the dep manager
+	depManager := &dep.DepManager{Env: environ}
+	err := depManager.UninstallDependency(path)
+	if err != nil {
+		return err
 	}
-
-	return environ.UninstallDependency(path)
+	err = depManager.Prune()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ListDependencies lists all installed dependencies
