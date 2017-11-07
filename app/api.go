@@ -258,7 +258,7 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 	return
 }
 
-func MigrateOldApp(env env.Project, depManager dep.DepManager) error{
+func MigrateOldApp(env env.Project, depManager dep.DepManager) error {
 	// This is an old app
 	fmt.Println("Initializing dependency management files ....")
 	err := depManager.Init()
