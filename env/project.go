@@ -131,11 +131,13 @@ func (e *FlogoProject) GetAppDir() string {
 	return e.AppDir
 }
 
+// Deprecated, dependency managements responsibility
 func (e *FlogoProject) InstallDependency(depPath string, version string) error {
 	// Deprecated, dependency managements responsibility
 	return nil
 }
 
+// Deprecated, dependency managements responsibility
 func (e *FlogoProject) UninstallDependency(depPath string) error {
 	// Deprecated, dependency managements responsibility
 	return nil

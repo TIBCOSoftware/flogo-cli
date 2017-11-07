@@ -95,7 +95,7 @@ func (b *DepManager) Ensure(args ...string) error {
 	}
 
 	if !b.IsInitialized() {
-		return fmt.Errorf("Dependency management not initialized, please run flogo init")
+		return fmt.Errorf("Dependency management not initialized, please run flogo build")
 	}
 
 	ensureArgs := []string{"ensure"}
@@ -210,6 +210,11 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}
 
+	err = b.Prune()
+	if err != nil {
+		return fmt.Errorf("Error prunning up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
+	}
+
 	fmt.Printf("'%s' installed successfully \n", depPath)
 
 	return nil
@@ -318,6 +323,11 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 	err = b.Ensure()
 	if err != nil {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
+	}
+
+	err = b.Prune()
+	if err != nil {
+		return fmt.Errorf("Error prunning up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}
 
 	fmt.Printf("'%s' uninstalled successfully \n", depPath)
