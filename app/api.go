@@ -129,13 +129,13 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 		return err
 	}
 
-	if len(vendorDir) == 0 {
+	/*if len(vendorDir) == 0 {
 		// Prune
 		err = depManager.Prune()
 		if err != nil {
 			return err
 		}
-	}
+	}*/
 
 	return nil
 }
@@ -367,10 +367,10 @@ func InstallDependency(environ env.Project, path string, version string) error {
 	if err != nil {
 		return err
 	}
-	err = depManager.Prune()
+	/*err = depManager.Prune()
 	if err != nil {
 		return err
-	}
+	}*/
 	return nil
 }
 
@@ -382,10 +382,10 @@ func UninstallDependency(environ env.Project, path string) error {
 	if err != nil {
 		return err
 	}
-	err = depManager.Prune()
+	/*err = depManager.Prune()
 	if err != nil {
 		return err
-	}
+	}*/
 	return nil
 }
 

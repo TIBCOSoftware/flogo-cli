@@ -54,7 +54,7 @@ func (b *DepManager) Init() error {
 }
 
 // Prune prunes the vendor directory
-func (b *DepManager) Prune() error {
+/*func (b *DepManager) Prune() error {
 	exists := fgutil.ExecutableExists("dep")
 	if !exists {
 		return errors.New("dep not installed")
@@ -69,7 +69,7 @@ func (b *DepManager) Prune() error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
-}
+}*/
 
 // IsInitialized Returns true if a dep environment has been initialized
 func (b *DepManager) IsInitialized() bool {
@@ -210,10 +210,10 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}
 
-	err = b.Prune()
+	/*err = b.Prune()
 	if err != nil {
 		return fmt.Errorf("Error prunning up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
-	}
+	}*/
 
 	fmt.Printf("'%s' installed successfully \n", depPath)
 
@@ -325,10 +325,10 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 		return fmt.Errorf("Error Synching up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
 	}
 
-	err = b.Prune()
+	/*err = b.Prune()
 	if err != nil {
 		return fmt.Errorf("Error prunning up Gopkg.toml and imports '%s', '%s'", depPath, err.Error())
-	}
+	}*/
 
 	fmt.Printf("'%s' uninstalled successfully \n", depPath)
 	return nil
