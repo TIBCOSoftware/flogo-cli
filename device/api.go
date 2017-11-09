@@ -54,6 +54,9 @@ func CreateDevice(project Project, deviceJson string, deviceDir string, deviceNa
 		}
 
 		descriptor.Name = deviceName
+	} else {
+		deviceName = descriptor.Name
+		deviceDir = path.Join(deviceDir, deviceName)
 	}
 
 	project.Init(deviceDir)

@@ -54,6 +54,9 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 		}
 
 		descriptor.Name = appName
+	} else {
+		appName = descriptor.Name
+		appDir = path.Join(appDir, appName)
 	}
 
 	env.Init(appDir)
