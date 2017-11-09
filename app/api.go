@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"os/exec"
+
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
@@ -69,18 +71,23 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 	if err != nil {
 		return err
 	}
+	//if manifest exists in the parent folder, use it to set up the dependecies
+	err = env.RestoreDependency()
+	var deps []*Dependency
+	//if restore didn't occur, install dependencies
+	if err != nil {
 
-	//todo allow ability to specify flogo-lib version
-	env.InstallDependency(pathFlogoLib, "")
+		//todo allow ability to specify flogo-lib version
+		env.InstallDependency("github.com/TIBCOSoftware/flogo-lib", "")
 
-	deps := ExtractDependencies(descriptor)
+		deps := ExtractDependencies(descriptor)
 
-	for _, dep := range deps {
-		path, version := splitVersion(dep.Ref)
-		err = env.InstallDependency(path, version)
-		if err != nil {
-			return err
+		for _, dep := range deps {
+			path, version := splitVersion(dep.Ref)
+			err = env.InstallDependency(path, version)
 		}
+	} else {
+		fmt.Println("Dependencies are restored.")
 	}
 
 	// create source files

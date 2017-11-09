@@ -3,12 +3,14 @@ package env
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"path"
+
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 type GbProject struct {
@@ -205,6 +207,57 @@ func (e *GbProject) UninstallDependency(depPath string) error {
 	os.Chdir(e.RootDir)
 
 	cmd := exec.Command("gb", "vendor", "delete", depPath)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+//Restores dependecies using a manifest in the current working directory.
+func (e *GbProject) RestoreDependency() error {
+	var cmd *exec.Cmd
+
+	cwd, _ := os.Getwd()
+	defer os.Chdir(cwd)
+
+	//if manifest doesn't exists in cwd, no need to restore. return wihtout error
+	var manifest = path.Join(cwd, "manifest")
+	if _, err := os.Stat(manifest); err != nil {
+		return err
+	}
+
+	var manifestcopy = path.Join(e.VendorDir, "manifest")
+
+	// Open manifest in the workding dir
+	mfSrc, err := os.Open(manifest)
+	defer mfSrc.Close()
+	if err != nil {
+		return err
+	}
+
+	// Create a manifest copy to the gb vendor dir
+	mfTrg, err := os.Create(manifestcopy)
+	defer mfTrg.Close()
+	if err != nil {
+		return err
+	}
+
+	// Copy the bytes to destination from source
+	_, err = io.Copy(mfTrg, mfSrc)
+	if err != nil {
+		return err
+	}
+
+	// Flushes to disk
+	err = mfTrg.Sync()
+	if err != nil {
+		return err
+	}
+
+	cmd = exec.Command("gb", "vendor", "restore")
+
+	os.Chdir(e.RootDir)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
