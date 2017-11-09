@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"os/exec"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -143,6 +143,8 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	createImportsGoFile(cmdPath, deps)
 
 	removeEmbeddedAppGoFile(cmdPath)
+
+	wasUsingShim := fgutil.FileExists(path.Join(cmdPath, fileShimGo))
 	removeShimGoFiles(cmdPath)
 
 	if options.Shim != "" {
@@ -213,8 +215,15 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 			}
 		}
 
-	} else if options.EmbedConfig {
-		createEmbeddedAppGoFile(cmdPath, appJson)
+	} else {
+
+		if wasUsingShim {
+			createMainGoFile(cmdPath, "")
+		}
+
+		if options.EmbedConfig {
+			createEmbeddedAppGoFile(cmdPath, appJson)
+		}
 	}
 
 	return
@@ -327,7 +336,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "trigger.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0 : len(filePath)-12]
+				dir := filePath[0: len(filePath)-12]
 				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
 					//old trigger.json, ignore
 					return nil
@@ -341,7 +350,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "activity.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0 : len(filePath)-13]
+				dir := filePath[0: len(filePath)-13]
 				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
 					//old activity.json, ignore
 					return nil
