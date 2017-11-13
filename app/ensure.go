@@ -11,11 +11,12 @@ import (
 
 var optEnsure = &cli.OptionInfo{
 	Name:      "ensure",
-	UsageLine: "ensure [-update][-no-vendor | -vendor-only][-v]",
+	UsageLine: "ensure [-add][-update][-no-vendor | -vendor-only][-v]",
 	Short:     "Ensure gets a project into a complete, reproducible, and likely compilable state",
 	Long: `Ensure gets a project into a complete, reproducible, and likely compilable state:
 
   Options:
+    -add              add new dependencies, or populate Gopkg.toml with constraints for existing dependencies (default: false)
     -no-vendor        update Gopkg.lock (if needed), but do not update vendor/ (default: false)
     -update           update the named dependencies (or all, if none are named) in Gopkg.lock to the latest allowed by Gopkg.toml (default: false)
     -v                enable verbose logging (default: false)
@@ -30,6 +31,7 @@ func init() {
 
 type cmdEnsure struct {
 	option     *cli.OptionInfo
+	add        string
 	update     bool
 	noVendor   bool
 	verbose    bool
@@ -43,6 +45,7 @@ func (c *cmdEnsure) OptionInfo() *cli.OptionInfo {
 
 // AddFlags implementation of cli.Command.AddFlags
 func (c *cmdEnsure) AddFlags(fs *flag.FlagSet) {
+	fs.StringVar(&(c.add), "add", "", "add")
 	fs.BoolVar(&(c.update), "update", false, "update")
 	fs.BoolVar(&(c.noVendor), "no-vendor", false, "no-vendor")
 	fs.BoolVar(&(c.verbose), "verbose", false, "verbose")
@@ -66,6 +69,9 @@ func (c *cmdEnsure) Exec(args []string) error {
 
 	// Create args
 	ensureArgs := []string{}
+	if len(c.add) > 0 {
+		ensureArgs = append(ensureArgs, "-add", c.add)
+	}
 	if c.update {
 		ensureArgs = append(ensureArgs, "-update")
 	}
