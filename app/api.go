@@ -7,14 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"go/build"
 	"os/exec"
+	"path/filepath"
 )
 
 // BuildPreProcessor interface for build pre-processors
@@ -411,77 +412,70 @@ func UninstallDependency(environ env.Project, path string) error {
 	return nil
 }
 
-// ListDependencies lists all installed dependencies
 func ListDependencies(env env.Project, cType config.ContribType) ([]*config.Dependency, error) {
-
-	vendorSrc := env.GetVendorSrcDir()
+	// Get build context
+	bc := build.Default
+	currentGoPath := bc.GOPATH
+	bc.GOPATH = env.GetRootDir()
+	defer func() { bc.GOPATH = currentGoPath }()
+	pkgs, err := bc.ImportDir(env.GetAppDir(), build.IgnoreVendor)
+	if err != nil {
+		return nil, err
+	}
 	var deps []*config.Dependency
-
-	err := filepath.Walk(vendorSrc, func(filePath string, info os.FileInfo, _ error) error {
-
-		if !info.IsDir() {
-
-			switch info.Name() {
-			case "action.json":
-				if cType == 0 || cType == config.ACTION {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:action" {
-						deps = append(deps, &config.Dependency{ContribType: config.ACTION, Ref: ref})
-					}
-				}
-			case "trigger.json":
-				//temporary hack to handle old contrib dir layout
-				dir := filePath[0: len(filePath)-12]
-				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
-					//old trigger.json, ignore
-					return nil
-				}
-				if cType == 0 || cType == config.TRIGGER {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:trigger" {
-						deps = append(deps, &config.Dependency{ContribType: config.TRIGGER, Ref: ref})
-					}
-				}
-			case "activity.json":
-				//temporary hack to handle old contrib dir layout
-				dir := filePath[0: len(filePath)-13]
-				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
-					//old activity.json, ignore
-					return nil
-				}
-				if cType == 0 || cType == config.ACTIVITY {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:activity" {
-						deps = append(deps, &config.Dependency{ContribType: config.ACTIVITY, Ref: ref})
-					}
-				}
-			case "flow-model.json":
-				if cType == 0 || cType == config.FLOW_MODEL {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:flow-model" {
-						deps = append(deps, &config.Dependency{ContribType: config.FLOW_MODEL, Ref: ref})
-					}
+	// Get all imports
+	for _, imp := range pkgs.Imports {
+		pkg, err := bc.Import(imp, env.GetAppDir(), build.FindOnly)
+		if err != nil {
+			// Ignore package
+			continue
+		}
+		if cType == 0 || cType == config.ACTION {
+			filePath := path.Join(pkg.Dir, "action.json")
+			// Check if it is an action
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:action" {
+					deps = append(deps, &config.Dependency{ContribType: config.ACTION, Ref: imp})
 				}
 			}
-
 		}
-
-		return nil
-	})
-
-	return deps, err
-}
-
-func refPath(vendorSrc string, filePath string) string {
-
-	startIdx := len(vendorSrc) + 1
-	endIdx := strings.LastIndex(filePath, string(os.PathSeparator))
-
-	return strings.Replace(filePath[startIdx:endIdx], string(os.PathSeparator), "/", -1)
+		if cType == 0 || cType == config.TRIGGER {
+			filePath := path.Join(pkg.Dir, "trigger.json")
+			// Check if it is a trigger
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:trigger" {
+					deps = append(deps, &config.Dependency{ContribType: config.TRIGGER, Ref: imp})
+				}
+			}
+		}
+		if cType == 0 || cType == config.ACTIVITY {
+			filePath := path.Join(pkg.Dir, "activity.json")
+			// Check if it is an activity
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:activity" {
+					deps = append(deps, &config.Dependency{ContribType: config.ACTIVITY, Ref: imp})
+				}
+			}
+		}
+		if cType == 0 || cType == config.FLOW_MODEL {
+			filePath := path.Join(pkg.Dir, "flow-model.json")
+			// Check if it is a flow model
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:flow-model" {
+					deps = append(deps, &config.Dependency{ContribType: config.FLOW_MODEL, Ref: imp})
+				}
+			}
+		}
+	}
+	return deps, nil
 }
 
 func readDescriptor(path string, info os.FileInfo) (*config.Descriptor, error) {
