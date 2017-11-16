@@ -261,25 +261,25 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 
 func MigrateOldApp(env env.Project, depManager dep.DepManager) error {
 	// This is an old app
-	fmt.Println("Initializing dependency management files ....")
-	err := depManager.Init()
-	if err != nil {
-		return err
-	}
-	// Move old vendor folder to _old_vendor
+
+	// Move old vendor folder to /src/<my_app>/vendor/
 	oldVendorDir := path.Join(env.GetRootDir(), "vendor")
-	_, err = os.Stat(oldVendorDir)
+	_, err := os.Stat(oldVendorDir)
 	if err == nil {
-		newVendorDir, _ := path.Split(env.GetVendorDir())
-		newVendorDir = path.Join(newVendorDir, "_old_vendor")
-		fmt.Printf("Moving old vendoring directory %s to %s \n", oldVendorDir, newVendorDir)
 		// Vendor found, move it
-		err = CopyDir(oldVendorDir, newVendorDir)
+		err = CopyDir(oldVendorDir, env.GetVendorDir())
 		if err != nil {
 			return err
 		}
 		defer os.RemoveAll(oldVendorDir)
 	}
+
+	fmt.Println("Initializing dependency management files ....")
+	err = depManager.Init()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
