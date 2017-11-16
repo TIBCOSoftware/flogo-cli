@@ -20,7 +20,7 @@ Options:
     -nogen  ONLY perform the build, without performing the generation of metadata
     -gen    ONLY perform generation of metadata, without performing the build
     -sp     [Deprecated, use '-nogen' instead] skip prepare
-    -shim   trigger shim
+    -shim   trigger shim creates an app as shim, pass trigger id as value (for example flogo build -shim my_trigger_id)
 `,
 }
 
