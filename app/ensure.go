@@ -86,5 +86,5 @@ func (c *cmdEnsure) Exec(args []string) error {
 
 	depManager := dep.New(SetupExistingProjectEnv(rootDir))
 
-	return depManager.Ensure(ensureArgs...)
+	return Ensure(depManager, ensureArgs...)
 }

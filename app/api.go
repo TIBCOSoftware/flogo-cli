@@ -478,6 +478,11 @@ func ListDependencies(env env.Project, cType config.ContribType) ([]*config.Depe
 	return deps, nil
 }
 
+// Ensure is a wrapper for dep ensure command
+func Ensure(depManager *dep.DepManager, args ...string) error{
+	return depManager.Ensure(args...)
+}
+
 func readDescriptor(path string, info os.FileInfo) (*config.Descriptor, error) {
 
 	raw, err := ioutil.ReadFile(path)
