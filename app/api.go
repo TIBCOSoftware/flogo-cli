@@ -14,8 +14,6 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"go/build"
-	"os/exec"
-	"path/filepath"
 )
 
 // BuildPreProcessor interface for build pre-processors
