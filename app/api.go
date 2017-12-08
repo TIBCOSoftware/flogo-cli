@@ -25,9 +25,6 @@ ADD {{.name}}-linux-amd64 .
 EXPOSE {{.port}}
 CMD ./{{.name}}-linux-amd64`
 
-// restTrigger is the trigger ref for the Flogo contrib REST trigger
-const restTrigger = "github.com/TIBCOSoftware/flogo-contrib/trigger/rest"
-
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
 	PrepareForBuild(env env.Project) error
@@ -317,7 +314,7 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		found := false
 
 		for _, value := range config["triggers"].Arr {
-			if value.Obj["ref"].Str == restTrigger && value.Obj["id"].Str == options.BuildDocker {
+			if value.Obj["id"].Str == options.BuildDocker {
 				found = true
 				data["name"] = config["name"].Str
 				data["version"] = config["version"].Str
@@ -332,6 +329,10 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 				panic(err)
 			}
 			s := buf.String()
+
+			if data["port"] == "" {
+				s = strings.Replace(s, "EXPOSE \n", "", -1)
+			}
 
 			file, err := os.Create("./bin/dockerfile")
 			defer file.Close()
@@ -354,7 +355,7 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 			}
 
 		} else {
-			fmt.Println("Your app doesn't contain any REST HTTP triggers so we can't create a dockerfile for it")
+			fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
 		}
 	}
 
