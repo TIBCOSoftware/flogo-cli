@@ -291,19 +291,11 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 	if options.BuildDocker != "" {
 		fmt.Println("docker:", options.BuildDocker)
 
-		useBinFolder, err := exists("./bin/flogo.json")
-
 		if err != nil {
 			return err
 		}
 
-		config, err := jsonconfig.LoadAbstract("", "")
-
-		if useBinFolder {
-			config, err = jsonconfig.LoadAbstract("./bin/flogo.json", "")
-		} else {
-			config, err = jsonconfig.LoadAbstract("./flogo.json", "")
-		}
+		config, err := jsonconfig.LoadAbstract("./flogo.json", "")
 
 		if err != nil {
 			return err
@@ -360,18 +352,6 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 	}
 
 	return
-}
-
-// exists returns whether the given file or directory exists or not
-func exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return true, err
 }
 
 // InstallPalette install a palette
