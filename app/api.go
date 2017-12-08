@@ -314,6 +314,13 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 			}
 		}
 
+		if options.BuildDocker == "no-trigger" {
+			found = true
+			data["name"] = config["name"].Str
+			data["version"] = config["version"].Str
+			data["port"] = ""
+		}
+
 		if found {
 			t := template.Must(template.New("email").Parse(dockerfile))
 			buf := &bytes.Buffer{}
