@@ -7,8 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"path"
+
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 type GbProject struct {
@@ -18,6 +19,7 @@ type GbProject struct {
 	VendorDir      string
 	VendorSrcDir   string
 	CodeSourcePath string
+	DockerBuild    bool
 }
 
 func NewGbProjectEnv() Project {
@@ -131,6 +133,14 @@ func (e *GbProject) Open() error {
 	return nil
 }
 
+func (e *GbProject) SetDockerBuild() {
+	e.DockerBuild = true
+}
+
+func (e *GbProject) GetDockerBuild() bool {
+	return e.DockerBuild
+}
+
 func (e *GbProject) GetBinDir() string {
 	return e.BinDir
 }
@@ -216,6 +226,12 @@ func (e *GbProject) Build() error {
 	cmd := exec.Command("gb", "build")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if e.GetDockerBuild() {
+		fmt.Println("Setting GOOS to linux because this is a docker build")
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, "GOOS=linux")
+	}
 
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)

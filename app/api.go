@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,7 +14,16 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"github.com/callum-ramage/jsonconfig"
 )
+
+// dockerfile is the template for a dockerfile needed to build a docker image
+const dockerfile = `# Dockerfile for {{.name}}
+# VERSION {{.version}}
+FROM alpine
+ADD {{.name}}-linux-amd64 .
+EXPOSE {{.port}}
+CMD ./{{.name}}-linux-amd64`
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
@@ -236,6 +247,7 @@ type BuildOptions struct {
 	*PrepareOptions
 
 	SkipPrepare bool
+	BuildDocker string
 }
 
 // BuildApp build the flogo application
@@ -243,6 +255,10 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 
 	if options == nil {
 		options = &BuildOptions{}
+	}
+
+	if options.BuildDocker != "" {
+		env.SetDockerBuild()
 	}
 
 	if !options.SkipPrepare {
@@ -265,6 +281,81 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 		}
 	} else {
 		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
+	}
+
+	// To create a dockerfile this component executes four steps
+	// 1. Check if flogo.json exists in bin folder (built without -e)
+	// 2. Read flogo.json from either ./bin/flogo.json or ./flogo.json
+	// 3. Output the dockerfile in ./bin/dockerfile
+	// 4. Execute docker build
+	if options.BuildDocker != "" {
+		fmt.Println("docker:", options.BuildDocker)
+
+		if err != nil {
+			return err
+		}
+
+		config, err := jsonconfig.LoadAbstract("./flogo.json", "")
+
+		if err != nil {
+			return err
+		}
+
+		data := make(map[string]interface{})
+
+		found := false
+
+		for _, value := range config["triggers"].Arr {
+			if value.Obj["id"].Str == options.BuildDocker {
+				found = true
+				data["name"] = config["name"].Str
+				data["version"] = config["version"].Str
+				data["port"] = value.Obj["settings.port"].Str
+			}
+		}
+
+		if options.BuildDocker == "no-trigger" {
+			found = true
+			data["name"] = config["name"].Str
+			data["version"] = config["version"].Str
+			data["port"] = ""
+		}
+
+		if found {
+			t := template.Must(template.New("email").Parse(dockerfile))
+			buf := &bytes.Buffer{}
+			if err := t.Execute(buf, data); err != nil {
+				panic(err)
+			}
+			s := buf.String()
+
+			if data["port"] == "" {
+				s = strings.Replace(s, "EXPOSE \n", "", -1)
+			}
+
+			file, err := os.Create("./bin/dockerfile")
+			defer file.Close()
+
+			if err != nil {
+				return err
+			}
+
+			file.WriteString(s)
+			file.Sync()
+
+			cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
+			cmd.Dir = "./bin"
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			err = cmd.Run()
+			if err != nil {
+				return err
+			}
+
+		} else {
+			fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
+		}
 	}
 
 	return
@@ -339,7 +430,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "trigger.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0: len(filePath)-12]
+				dir := filePath[0 : len(filePath)-12]
 				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
 					//old trigger.json, ignore
 					return nil
@@ -353,7 +444,7 @@ func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error)
 				}
 			case "activity.json":
 				//temporary hack to handle old contrib dir layout
-				dir := filePath[0: len(filePath)-13]
+				dir := filePath[0 : len(filePath)-13]
 				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
 					//old activity.json, ignore
 					return nil
