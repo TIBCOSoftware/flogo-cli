@@ -1,20 +1,31 @@
 package app
 
 import (
+    "bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 
+	"github.com/callum-ramage/jsonconfig"
 	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"go/build"
 )
+
+// dockerfile is the template for a dockerfile needed to build a docker image
+const dockerfile = `# Dockerfile for {{.name}}
+# VERSION {{.version}}
+FROM alpine
+ADD {{.name}}-linux-amd64 .
+EXPOSE {{.port}}
+CMD ./{{.name}}-linux-amd64`
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
@@ -279,6 +290,7 @@ type BuildOptions struct {
 	NoGeneration   bool
 	GenerationOnly bool
 	SkipPrepare    bool
+	BuildDocker string
 }
 
 // BuildApp build the flogo application
@@ -291,6 +303,10 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 	if options == nil {
 		options = &BuildOptions{}
 	}
+
+	if len(options.BuildDocker) > 0 {
+    		env.SetDockerBuild()
+    }
 
 	if options.GenerationOnly {
 		// Only perform prepare
@@ -318,6 +334,70 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 	} else {
 		os.Remove(path.Join(env.GetBinDir(), config.FileDescriptor))
 	}
+
+	// To create a dockerfile this component executes four steps
+    // 1. Check if flogo.json exists in bin folder (built without -e)
+    // 2. Read flogo.json from ./flogo.json
+    // 3. Output the dockerfile in ./bin/dockerfile
+    // 4. Execute docker build
+    if len(options.BuildDocker) > 0 {
+        fmt.Println("docker:", options.BuildDocker)
+        config, err := jsonconfig.LoadAbstract("./flogo.json", "")
+        if err != nil {
+            return err
+        }
+        data := make(map[string]interface{})
+        found := false
+
+        for _, value := range config["triggers"].Arr {
+            if value.Obj["id"].Str == options.BuildDocker {
+                found = true
+                data["name"] = config["name"].Str
+                data["version"] = config["version"].Str
+                data["port"] = value.Obj["settings.port"].Str
+            }
+        }
+
+        if options.BuildDocker == "no-trigger" {
+            found = true
+            data["name"] = config["name"].Str
+            data["version"] = config["version"].Str
+            data["port"] = ""
+        }
+
+        if found {
+            t := template.Must(template.New("email").Parse(dockerfile))
+            buf := &bytes.Buffer{}
+            if err := t.Execute(buf, data); err != nil {
+                panic(err)
+            }
+            s := buf.String()
+
+            if data["port"] == "" {
+                s = strings.Replace(s, "EXPOSE \n", "", -1)
+            }
+
+            file, err := os.Create("./bin/dockerfile")
+            if err != nil {
+                return err
+            }
+            defer file.Close()
+
+            file.WriteString(s)
+            file.Sync()
+
+            cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
+            cmd.Dir = "./bin"
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+            err = cmd.Run()
+            if err != nil {
+                return err
+            }
+        } else {
+            fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
+        }
+    }
 
 	return
 }

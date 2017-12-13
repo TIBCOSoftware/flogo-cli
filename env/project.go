@@ -22,10 +22,20 @@ type FlogoProject struct {
 	CodeSourcePath     string
 	AppDir             string
 	FileDescriptorPath string
+	DockerBuild        bool
 }
 
 func NewFlogoProject() Project {
 	return &FlogoProject{}
+}
+
+
+func (e *FlogoProject) SetDockerBuild() {
+    e.DockerBuild = true
+}
+
+func (e *FlogoProject) GetDockerBuild() bool {
+    return e.DockerBuild
 }
 
 func (e *FlogoProject) Init(rootDir string) error {
@@ -153,6 +163,10 @@ func (e *FlogoProject) Build() error {
 	cmd.Dir = e.GetAppDir()
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", e.GetRootDir()))
+	if e.GetDockerBuild() {
+        fmt.Println("Setting GOOS to linux because this is a docker build")
+        newEnv = append(newEnv, "GOOS=linux")
+     }
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
