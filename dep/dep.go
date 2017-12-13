@@ -12,7 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -56,11 +56,11 @@ func (b *DepManager) Init() error {
 // IsInitialized Returns true if a dep environment has been initialized
 func (b *DepManager) IsInitialized() bool {
 
-	_, err := os.Stat(path.Join(b.Env.GetAppDir(), "Gopkg.toml"))
+	_, err := os.Stat(filepath.Join(b.Env.GetAppDir(), "Gopkg.toml"))
 	if err != nil {
 		return false
 	}
-	_, err = os.Stat(path.Join(b.Env.GetAppDir(), "Gopkg.lock"))
+	_, err = os.Stat(filepath.Join(b.Env.GetAppDir(), "Gopkg.lock"))
 	if err != nil {
 		return false
 	}
@@ -106,7 +106,7 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	fmt.Println("Validating existing dependencies, this might take a few seconds...")
 
 	// Load imports file
-	importsPath := path.Join(b.Env.GetAppDir(), config.FileImportsGo)
+	importsPath := filepath.Join(b.Env.GetAppDir(), config.FileImportsGo)
 	// Validate that it exists
 	_, err := os.Stat(importsPath)
 
@@ -198,7 +198,7 @@ func (b *DepManager) UninstallDependency(depPath string) error {
 	}
 
 	// Load imports file
-	importsPath := path.Join(b.Env.GetAppDir(), config.FileImportsGo)
+	importsPath := filepath.Join(b.Env.GetAppDir(), config.FileImportsGo)
 	// Validate that it exists
 	_, err := os.Stat(importsPath)
 

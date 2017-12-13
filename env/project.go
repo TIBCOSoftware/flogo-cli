@@ -10,7 +10,7 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 )
 
 type FlogoProject struct {
@@ -46,8 +46,8 @@ func (e *FlogoProject) Init(rootDir string) error {
 		return errors.New("dep not installed")
 	}
 	e.RootDir = rootDir
-	e.SourceDir = path.Join(e.RootDir, "src")
-	e.BinDir = path.Join(e.RootDir, "bin")
+	e.SourceDir = filepath.Join(e.RootDir, "src")
+	e.BinDir = filepath.Join(e.RootDir, "bin")
 	return nil
 }
 
@@ -82,7 +82,7 @@ func (e *FlogoProject) Open() error {
 	}
 
 	// Check file descriptor
-	fd := path.Join(e.RootDir, config.FileDescriptor)
+	fd := filepath.Join(e.RootDir, config.FileDescriptor)
 	_, err = os.Stat(fd)
 
 	if err != nil {
@@ -103,14 +103,14 @@ func (e *FlogoProject) Open() error {
 	appName := descriptor.Name
 
 	// Validate that there is an app dir
-	e.AppDir = path.Join(e.SourceDir, appName)
+	e.AppDir = filepath.Join(e.SourceDir, appName)
 	info, err = os.Stat(e.AppDir)
 
 	if err != nil || !info.IsDir() {
 		return fmt.Errorf("Invalid project, app directory '%s' doesn't exists", e.AppDir)
 	}
 
-	e.VendorDir = path.Join(e.AppDir, "vendor")
+	e.VendorDir = filepath.Join(e.AppDir, "vendor")
 	e.VendorSrcDir = e.VendorDir
 
 	return nil

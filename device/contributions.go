@@ -2,7 +2,7 @@ package device
 
 import (
 	"errors"
-	"path"
+	"path/filepath"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
@@ -53,7 +53,7 @@ func LoadTriggerContrib(proj Project, ref string) (*TriggerContrib, error) {
 	if !exists {
 		proj.InstallContribution(ref, "")
 
-		descFile := path.Join(proj.GetContributionDir(), ref, "trigger.json")
+		descFile := filepath.Join(proj.GetContributionDir(), ref, "trigger.json")
 		descJson, err := fgutil.LoadLocalFile(descFile)
 
 		if err != nil {
@@ -78,7 +78,7 @@ func LoadTriggerContrib(proj Project, ref string) (*TriggerContrib, error) {
 		}
 
 		if details != nil {
-			tmplFile := path.Join(proj.GetContributionDir(), ref, details.TemplateFile)
+			tmplFile := filepath.Join(proj.GetContributionDir(), ref, details.TemplateFile)
 			tmpl, err := fgutil.LoadLocalFile(tmplFile)
 			if err != nil {
 				return nil, err
@@ -111,7 +111,7 @@ func LoadActivityContrib(proj Project, ref string) (*ActivityContrib, error) {
 	if !exists {
 		proj.InstallContribution(ref, "")
 
-		descFile := path.Join(proj.GetContributionDir(), ref, "activity.json")
+		descFile := filepath.Join(proj.GetContributionDir(), ref, "activity.json")
 		actJson, err := fgutil.LoadLocalFile(descFile)
 
 		if err != nil {
@@ -136,7 +136,7 @@ func LoadActivityContrib(proj Project, ref string) (*ActivityContrib, error) {
 		}
 
 		if details != nil {
-			tmplFile := path.Join(proj.GetContributionDir(), ref, details.TemplateFile)
+			tmplFile := filepath.Join(proj.GetContributionDir(), ref, details.TemplateFile)
 			tmpl, err := fgutil.LoadLocalFile(tmplFile)
 			if err != nil {
 				return nil, err

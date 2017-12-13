@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strconv"
 )
 
@@ -32,9 +32,9 @@ func (p *PioProject) Init(basePath string) error {
 	}
 
 	p.RootDir = basePath
-	p.SourceDir = path.Join(basePath, "src")
-	p.LibDir = path.Join(basePath, "lib")
-	p.ContributionDir = path.Join(basePath, "vendor", "src")
+	p.SourceDir = filepath.Join(basePath, "src")
+	p.LibDir = filepath.Join(basePath, "lib")
+	p.ContributionDir = filepath.Join(basePath, "vendor", "src")
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (p *PioProject) Open() error {
 		return fmt.Errorf("Cannot open project, directory '%s' doesn't exists", p.RootDir)
 	}
 
-	if _, err := os.Stat(path.Join(p.RootDir, "platformio.ini")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(p.RootDir, "platformio.ini")); os.IsNotExist(err) {
 		return errors.New("Invalid device project, platformio.ini doesn't exists")
 	}
 
@@ -133,7 +133,7 @@ func (p *PioProject) InstallContribution(depPath string, version string) error {
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(path.Join(p.ContributionDir, depPath)); err == nil {
+	if _, err := os.Stat(filepath.Join(p.ContributionDir, depPath)); err == nil {
 		//todo ignore installed dependencies for now
 		//exists, return
 		return nil
@@ -169,7 +169,7 @@ func (p *PioProject) UninstallContribution(depPath string) error {
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(path.Join(p.ContributionDir, depPath)); err != nil {
+	if _, err := os.Stat(filepath.Join(p.ContributionDir, depPath)); err != nil {
 		//todo ignore dependencies that are not installed for now
 		//exists, return
 		return nil
