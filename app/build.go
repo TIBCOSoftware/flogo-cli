@@ -10,7 +10,7 @@ import (
 
 var optBuild = &cli.OptionInfo{
 	Name:      "build",
-	UsageLine: "build [-o][-e][-sp][-gen || -nogen][-shim]",
+	UsageLine: "build [-o][-e][-sp][-gen || -nogen][-shim][-docker]",
 	Short:     "build the flogo application",
 	Long: `Build the flogo application.
 
@@ -21,6 +21,7 @@ Options:
     -gen    ONLY perform generation of metadata, without performing the build
     -sp     [Deprecated, use '-nogen' instead] skip prepare
     -shim   trigger shim creates an app as shim, pass trigger id as value (for example flogo build -shim my_trigger_id)
+    -docker create a docker image based on Alpine Linux
 `,
 }
 
@@ -36,6 +37,7 @@ type cmdBuild struct {
 	generationOnly bool
 	embedConfig    bool
 	shim           string
+	docker         string
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo
@@ -51,6 +53,7 @@ func (c *cmdBuild) AddFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&(c.noGeneration), "nogen", false, "no generation")
 	fs.BoolVar(&(c.generationOnly), "gen", false, "only generation")
 	fs.StringVar(&(c.shim), "shim", "", "trigger shim")
+	fs.StringVar(&(c.docker), "docker", "", "build docker")
 }
 
 // Exec implementation of cli.Command.Exec
@@ -69,6 +72,6 @@ func (c *cmdBuild) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &BuildOptions{SkipPrepare: c.skipPrepare, NoGeneration: c.noGeneration, GenerationOnly: c.generationOnly, PrepareOptions: &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig, Shim: c.shim}}
+	options := &BuildOptions{SkipPrepare: c.skipPrepare, NoGeneration: c.noGeneration, GenerationOnly: c.generationOnly, BuildDocker: c.docker, PrepareOptions: &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig, Shim: c.shim}}
 	return BuildApp(SetupExistingProjectEnv(appDir), options)
 }
