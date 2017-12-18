@@ -23,9 +23,9 @@ import (
 const dockerfile = `# Dockerfile for {{.name}}
 # VERSION {{.version}}
 FROM alpine
-ADD {{.name}}-linux-amd64 .
+ADD linux_amd64 .
 EXPOSE {{.port}}
-CMD ./{{.name}}-linux-amd64`
+CMD ./linux_amd64/{{.name}}`
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
