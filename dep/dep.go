@@ -124,7 +124,8 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	//Validate that the install does not exist in imports.go file
 	for _, imp := range importsFileAst.Imports {
 		if imp.Path.Value == strconv.Quote(depPath) {
-			return fmt.Errorf("Error installing dependency, import '%s' already exists", depPath)
+		    fmt.Printf("WARNING: import '%s' already exists, specific import not reinstalled\n", depPath)
+			return nil
 		}
 	}
 

@@ -427,7 +427,7 @@ func InstallPalette(env env.Project, path string) error {
 	}
 
 	for _, dep := range deps {
-		err = env.InstallDependency(dep.Ref, "")
+		err = InstallDependency(env, dep.Ref, "")
 		if err != nil {
 			return err
 		}
