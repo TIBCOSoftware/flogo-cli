@@ -2,7 +2,7 @@ package app
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/util"
@@ -27,13 +27,13 @@ func createMainGoFile(codeSourcePath string, flogoJSON string) {
 		flogoJSON,
 	}
 
-	f, _ := os.Create(path.Join(codeSourcePath, fileMainGo))
+	f, _ := os.Create(filepath.Join(codeSourcePath, fileMainGo))
 	fgutil.RenderTemplate(f, tplNewMainGoFile, &data)
 	f.Close()
 }
 
 func removeMainGoFile(codeSourcePath string) {
-	os.Remove(path.Join(codeSourcePath, fileMainGo))
+	os.Remove(filepath.Join(codeSourcePath, fileMainGo))
 }
 
 var tplNewMainGoFile = `package main
@@ -121,7 +121,7 @@ func setupSignalHandling() chan int {
 `
 
 func createImportsGoFile(codeSourcePath string, deps []*config.Dependency) error {
-	f, err := os.Create(path.Join(codeSourcePath, config.FileImportsGo))
+	f, err := os.Create(filepath.Join(codeSourcePath, config.FileImportsGo))
 
 	if err != nil {
 		return err
@@ -150,13 +150,13 @@ func createEmbeddedAppGoFile(codeSourcePath string, flogoJSON string) {
 		flogoJSON,
 	}
 
-	f, _ := os.Create(path.Join(codeSourcePath, fileEmbeddedAppGo))
+	f, _ := os.Create(filepath.Join(codeSourcePath, fileEmbeddedAppGo))
 	fgutil.RenderTemplate(f, tplEmbeddedAppGoFile, &data)
 	f.Close()
 }
 
 func removeEmbeddedAppGoFile(codeSourcePath string) {
-	os.Remove(path.Join(codeSourcePath, fileEmbeddedAppGo))
+	os.Remove(filepath.Join(codeSourcePath, fileEmbeddedAppGo))
 }
 
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
@@ -211,14 +211,14 @@ func createShimSupportGoFile(codeSourcePath string, flogoJSON string, embeddedCo
 		configJson,
 	}
 
-	f, _ := os.Create(path.Join(codeSourcePath, fileShimSupportGo))
+	f, _ := os.Create(filepath.Join(codeSourcePath, fileShimSupportGo))
 	fgutil.RenderTemplate(f, tplShimSupportGoFile, &data)
 	f.Close()
 }
 
 func removeShimGoFiles(codeSourcePath string) {
-	os.Remove(path.Join(codeSourcePath, fileShimGo))
-	os.Remove(path.Join(codeSourcePath, fileShimSupportGo))
+	os.Remove(filepath.Join(codeSourcePath, fileShimGo))
+	os.Remove(filepath.Join(codeSourcePath, fileShimSupportGo))
 }
 
 var tplShimSupportGoFile = `// Do not change this file, it has been generated using flogo-cli
