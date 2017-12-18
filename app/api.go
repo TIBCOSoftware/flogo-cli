@@ -1,7 +1,7 @@
 package app
 
 import (
-    "bytes"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -335,7 +335,7 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 		os.Remove(filepath.Join(env.GetBinDir(), config.FileDescriptor))
 	}
 
-	// To create a dockerfile this component executes four steps
+	  // To create a dockerfile this component executes four steps
     // 1. Check if flogo.json exists in bin folder (built without -e)
     // 2. Read flogo.json from ./flogo.json
     // 3. Output the dockerfile in ./bin/dockerfile
@@ -398,7 +398,6 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
             fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
         }
     }
-
 	return
 }
 
