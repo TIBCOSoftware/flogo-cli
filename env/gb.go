@@ -31,14 +31,6 @@ func NewGbProjectEnv() Project {
 	return env
 }
 
-func (e *GbProject) SetDockerBuild() {
-    e.DockerBuild = true
-}
-
-func (e *GbProject) GetDockerBuild() bool {
-    return e.DockerBuild
-}
-
 func (e *GbProject) Init(basePath string) error {
 
 	exists := fgutil.ExecutableExists("gb")
