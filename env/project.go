@@ -167,7 +167,7 @@ func (e *FlogoProject) Build() error {
 	if e.GetDockerBuild() {
         fmt.Println("Setting GOOS to linux because this is a docker build")
         newEnv = append(newEnv, "GOOS=linux")
-     }
+     }	
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
