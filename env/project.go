@@ -163,6 +163,7 @@ func (e *FlogoProject) Build() error {
 	cmd.Dir = e.GetAppDir()
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", e.GetRootDir()))
+	newEnv = append(newEnv, "GOBIN=\"\"")
 	if e.GetDockerBuild() {
         fmt.Println("Setting GOOS to linux because this is a docker build")
         newEnv = append(newEnv, "GOOS=linux")
