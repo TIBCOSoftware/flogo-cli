@@ -7,10 +7,11 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/TIBCOSoftware/flogo-cli/config"
-	"github.com/TIBCOSoftware/flogo-cli/util"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/TIBCOSoftware/flogo-cli/config"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 type FlogoProject struct {
@@ -29,13 +30,12 @@ func NewFlogoProject() Project {
 	return &FlogoProject{}
 }
 
-
 func (e *FlogoProject) SetDockerBuild() {
-    e.DockerBuild = true
+	e.DockerBuild = true
 }
 
 func (e *FlogoProject) GetDockerBuild() bool {
-    return e.DockerBuild
+	return e.DockerBuild
 }
 
 func (e *FlogoProject) Init(rootDir string) error {
@@ -163,11 +163,11 @@ func (e *FlogoProject) Build() error {
 	cmd.Dir = e.GetAppDir()
 	newEnv := os.Environ()
 	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", e.GetRootDir()))
-	newEnv = append(newEnv, fmt.Sprintf("GOBIN=%s/bin", e.GetRootDir()))
+	os.Unsetenv("GOBIN")
 	if e.GetDockerBuild() {
-        fmt.Println("Setting GOOS to linux because this is a docker build")
-        newEnv = append(newEnv, "GOOS=linux")
-     }	
+		fmt.Println("Setting GOOS to linux because this is a docker build")
+		newEnv = append(newEnv, "GOOS=linux")
+	}
 	cmd.Env = newEnv
 
 	cmd.Stdout = os.Stdout
