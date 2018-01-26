@@ -23,6 +23,7 @@ import (
 const dockerfile = `# Dockerfile for {{.name}}
 # VERSION {{.version}}
 FROM alpine
+RUN apk update && apk add ca-certificates
 ADD linux_amd64 .
 EXPOSE {{.port}}
 CMD ./linux_amd64/{{.name}}`
