@@ -15,15 +15,15 @@ type Descriptor struct {
 type FlogoDeviceDescriptor struct {
 	*Descriptor
 
-	Device   *DeviceDetails    `json:"device"`
-	Actions  []*ActionConfig   `json:"actions"`
-	Triggers []*TriggerConfig  `json:"triggers"`
+	Device   *DeviceDetails   `json:"device"`
+	Actions  []*ActionConfig  `json:"actions"`
+	Triggers []*TriggerConfig `json:"triggers"`
 }
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
 type DeviceDetails struct {
-	Profile     string `json:"profile"`
-	MqttEnabled bool   `json:"mqtt_enabled"`
+	Profile     string            `json:"profile"`
+	MqttEnabled bool              `json:"mqtt_enabled"`
 	Settings    map[string]string `json:"settings"`
 
 	Actions  []*ActionConfig  `json:"actions"`
@@ -33,19 +33,19 @@ type DeviceDetails struct {
 type ActivityDescriptor struct {
 	*Descriptor
 
-	Ref           string      `json:"ref"`
-	Libs          []*Lib      `json:"libs"`
-	Settings      []*Setting  `json:"settings"`
+	Ref           string                  `json:"ref"`
+	Libs          []*Lib                  `json:"libs"`
+	Settings      []*Setting              `json:"settings"`
 	DeviceSupport []*DeviceSupportDetails `json:"device_support"`
 }
 
 type TriggerDescriptor struct {
 	*Descriptor
 
-	Ref           string      `json:"ref"`
-	Libs          []*Lib      `json:"libs"`
-	Settings      []*Setting  `json:"settings"`
-	Outputs       []*Setting  `json:"outputs"`
+	Ref           string                  `json:"ref"`
+	Libs          []*Lib                  `json:"libs"`
+	Settings      []*Setting              `json:"settings"`
+	Outputs       []*Setting              `json:"outputs"`
 	DeviceSupport []*DeviceSupportDetails `json:"device_support"`
 }
 
@@ -76,10 +76,10 @@ type DeviceProfile struct {
 type DevicePlatform struct {
 	*Descriptor
 
-	Framework    string `json:"arduino"`
-	MainTemplate string `json:"main_template"`
+	Framework    string             `json:"arduino"`
+	MainTemplate string             `json:"main_template"`
 	WifiDetails  []*PlatformFeature `json:"wifi"`
-	MqttDetails  *PlatformFeature `json:"mqtt"`
+	MqttDetails  *PlatformFeature   `json:"mqtt"`
 }
 
 type PlatformFeature struct {

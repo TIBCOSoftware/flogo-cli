@@ -6,11 +6,10 @@ import (
 	"path"
 )
 
-
 func IsGbProject(basePath string) bool {
 
-	sourceDir := path.Join(basePath,"src")
-	vendorDir := path.Join(basePath,"vendor", "src")
+	sourceDir := path.Join(basePath, "src")
+	vendorDir := path.Join(basePath, "vendor", "src")
 
 	info, err := os.Stat(sourceDir)
 
@@ -103,7 +102,7 @@ func (e *Gb) VendorFetchWithBranch(path string, version string, branch string) e
 	var cmd *exec.Cmd
 
 	if version == "" {
-		cmd = exec.Command("gb", "vendor", "fetch","-branch", branch,  path)
+		cmd = exec.Command("gb", "vendor", "fetch", "-branch", branch, path)
 	} else {
 
 		var tag string
@@ -147,4 +146,3 @@ func (e *Gb) Build() error {
 
 	return cmd.Run()
 }
-

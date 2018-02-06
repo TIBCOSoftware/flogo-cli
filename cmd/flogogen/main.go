@@ -58,7 +58,7 @@ func main() {
 
 		err := generator.Generate(basePath, data)
 
-		if err != nil{
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error generating contribution: %s\n\n", err.Error())
 			os.Exit(2)
 		}

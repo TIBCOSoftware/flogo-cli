@@ -11,7 +11,6 @@ const (
 )
 
 type ActivityGenerator struct {
-
 }
 
 func (g *ActivityGenerator) Description() string {

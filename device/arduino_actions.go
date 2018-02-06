@@ -12,21 +12,20 @@ func init() {
 	RegisterActionContrib("github.com/TIBCOSoftware/flogo-contrib/device/action/flow", tplActionDeviceFlow)
 }
 
-
 //todo hardcoded for now, should be generated from action-ref
 type ActivityActionConfig struct {
-	UseTriggerVal bool          `json:"useTriggerVal"`
-	Activity      *ActivityConfig  `json:"activity"`
+	UseTriggerVal bool            `json:"useTriggerVal"`
+	Activity      *ActivityConfig `json:"activity"`
 }
 
 //todo hardcoded for now, should be generated from action-ref
 type FlowActionConfig struct {
-	Flow map[string]interface{}  `json:"flow"`
+	Flow map[string]interface{} `json:"flow"`
 }
 
 type ActivityConfig struct {
-	Id         string                `json:"id"`
-	Ref        string                `json:"ref"`
+	Id         string            `json:"id"`
+	Ref        string            `json:"ref"`
 	Attributes map[string]string `json:"attributes"`
 }
 
@@ -113,7 +112,7 @@ func toFlowTree(Id string, flow map[string]interface{}) *FlowTree {
 	taskReps := flow["tasks"].([]interface{})
 	for _, taskRep := range taskReps {
 		taskData := taskRep.(map[string]interface{})
-		task := &Task{isFirst: true, FlowId:Id}
+		task := &Task{isFirst: true, FlowId: Id}
 		task.Id = toInt(taskData["id"])
 		task.ActivityRef = taskData["activityRef"].(string)
 		task.Attributes = toStringMap(taskData["attributes"].(map[string]interface{}))
@@ -134,7 +133,7 @@ func toFlowTree(Id string, flow map[string]interface{}) *FlowTree {
 			condition := ""
 			if linkType == 1 {
 				condition = linkData["value"].(string)
-				condition = strings.Replace(condition, "${value}","value",-1)
+				condition = strings.Replace(condition, "${value}", "value", -1)
 			}
 
 			tasks[toId].isFirst = false

@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"strings"
-	"runtime"
-	"path/filepath"
-	"net/url"
-	"net/http"
 	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 const FileURIPrefix = "file://"
@@ -65,7 +65,7 @@ func GetPathInfo(pathStr string) (*PathInfo, error) {
 
 	if pi.IsFile {
 		idx := strings.LastIndex(pathStr, "/")
-		pi.FileName = pathStr[idx + 1:]
+		pi.FileName = pathStr[idx+1:]
 	}
 
 	return pi, nil
@@ -106,7 +106,7 @@ func PathToFileURL(filePath string) (string, error) {
 
 	fixedPath, err := ToAbsOsPath(filePath)
 
-	if (err != nil) {
+	if err != nil {
 		return "", err
 	}
 
@@ -118,7 +118,6 @@ func PathToFileURL(filePath string) (string, error) {
 		return "file:///" + fixedPath, nil
 	}
 }
-
 
 // WriteJSONtoFile encodes the data to json and saves it to a file
 func WriteJSONtoFile(filePath string, data interface{}) error {
@@ -273,8 +272,8 @@ func MoveFiles(source string, dest string) (err error) {
 
 	for _, obj := range objects {
 
-		srcFile := path.Join(source,obj.Name())
-		destFile := path.Join(dest,obj.Name())
+		srcFile := path.Join(source, obj.Name())
+		destFile := path.Join(dest, obj.Name())
 
 		if !obj.IsDir() {
 			err = os.Rename(srcFile, destFile)

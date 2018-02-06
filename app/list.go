@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"encoding/json"
+	"github.com/TIBCOSoftware/flogo-cli/cli"
+	"github.com/TIBCOSoftware/flogo-cli/config"
 )
 
 var optList = &cli.OptionInfo{
@@ -53,20 +54,20 @@ func (c *cmdList) Exec(args []string) error {
 		cmdUsage(c)
 	}
 
-	var cType ContribType
+	var cType config.ContribType
 
 	if len(args) == 1 {
 		listCT := args[0]
 
 		switch listCT {
 		case ctActions:
-			cType = ACTION
+			cType = config.ACTION
 		case ctTriggers:
-			cType = TRIGGER
+			cType = config.TRIGGER
 		case ctActivites:
-			cType = ACTIVITY
+			cType = config.ACTIVITY
 		case "flow-models":
-			cType = FLOW_MODEL
+			cType = config.FLOW_MODEL
 		default:
 			fmt.Fprintf(os.Stderr, "Error: Unknown contribution type - %s\n\n", listCT)
 			cmdUsage(c)
@@ -99,11 +100,11 @@ func (c *cmdList) Exec(args []string) error {
 		for _, dependency := range dependencies {
 
 			switch dependency.ContribType {
-			case ACTION:
+			case config.ACTION:
 				byType[ctActions] = append(byType[ctActions], dependency.Ref)
-			case TRIGGER:
+			case config.TRIGGER:
 				byType[ctTriggers] = append(byType[ctTriggers], dependency.Ref)
-			case ACTIVITY:
+			case config.ACTIVITY:
 				byType[ctActivites] = append(byType[ctActivites], dependency.Ref)
 			default:
 				byType[dependency.ContribType.String()] = append(byType[dependency.ContribType.String()], dependency.Ref)

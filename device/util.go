@@ -1,14 +1,14 @@
 package device
 
 import (
-	"github.com/TIBCOSoftware/flogo-cli/util"
-	"os"
+	"bufio"
 	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
-	"bufio"
+	"github.com/TIBCOSoftware/flogo-cli/util"
 	"io"
-	"strings"
+	"os"
 	"strconv"
+	"strings"
 )
 
 var (

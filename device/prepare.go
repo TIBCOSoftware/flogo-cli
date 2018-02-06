@@ -3,9 +3,9 @@ package device
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optPrepare = &cli.OptionInfo{

@@ -2,14 +2,14 @@ package device
 
 import (
 	"encoding/json"
-	"os"
-	"path"
-	"strings"
-	"io"
-	"text/template"
-	"fmt"
-	"strconv"
 	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"text/template"
 
 	"github.com/TIBCOSoftware/flogo-cli/util"
 )
@@ -56,7 +56,7 @@ func CreateDevice(project Project, deviceJson string, deviceDir string, deviceNa
 		descriptor.Name = deviceName
 	} else {
 		deviceName = descriptor.Name
-		deviceDir = path.Join(deviceDir, deviceName)
+		deviceDir = filepath.Join(deviceDir, deviceName)
 	}
 
 	project.Init(deviceDir)
@@ -72,7 +72,7 @@ func CreateDevice(project Project, deviceJson string, deviceDir string, deviceNa
 		return err
 	}
 
-	err = fgutil.CreateFileFromString(path.Join(deviceDir, "device.json"), deviceJson)
+	err = fgutil.CreateFileFromString(filepath.Join(deviceDir, "device.json"), deviceJson)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func PrepareDevice(project Project, options *PrepareOptions) (err error) {
 	}
 
 	//load descriptor
-	appJson, err := fgutil.LoadLocalFile(path.Join(project.GetRootDir(), "device.json"))
+	appJson, err := fgutil.LoadLocalFile(filepath.Join(project.GetRootDir(), "device.json"))
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func GetDeviceProfile(proj Project, ref string) (*DeviceProfile, error) {
 
 	proj.InstallContribution(ref, "")
 
-	descFile := path.Join(proj.GetContributionDir(), ref, "profile.json")
+	descFile := filepath.Join(proj.GetContributionDir(), ref, "profile.json")
 	profJson, err := fgutil.LoadLocalFile(descFile)
 
 	if err != nil {
@@ -174,7 +174,7 @@ func GetDevicePlatform(proj Project, ref string) (*DevicePlatform, error) {
 
 	proj.InstallContribution(ref, "")
 
-	platformFile := path.Join(proj.GetContributionDir(), ref, "platform.json")
+	platformFile := filepath.Join(proj.GetContributionDir(), ref, "platform.json")
 	platformJson, err := fgutil.LoadLocalFile(platformFile)
 
 	if err != nil {
@@ -252,7 +252,7 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 			}
 		}
 
-		f, _ := os.Create(path.Join(srcDir, trgCfg.Id+".ino"))
+		f, _ := os.Create(filepath.Join(srcDir, trgCfg.Id+".ino"))
 		tpl := trgContrib.Template
 		err = RenderTemplate(f, tpl, trgCfg)
 		f.Close()
@@ -279,7 +279,7 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 			//generate activities
 			for _, task := range flowTree.AllTasks {
 
-				f, _ := os.Create(path.Join(srcDir, actCfg.Id+"_"+strconv.Itoa(task.Id)+".ino"))
+				f, _ := os.Create(filepath.Join(srcDir, actCfg.Id+"_"+strconv.Itoa(task.Id)+".ino"))
 
 				actContrib, err := LoadActivityContrib(proj, task.ActivityRef)
 
@@ -310,7 +310,7 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 				}
 			}
 
-			f, _ := os.Create(path.Join(srcDir, actCfg.Id+".ino"))
+			f, _ := os.Create(filepath.Join(srcDir, actCfg.Id+".ino"))
 
 			t := template.New("action")
 			t.Funcs(DeviceFuncMap)
@@ -348,7 +348,7 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 				}
 			}
 
-			f, _ := os.Create(path.Join(srcDir, "ac_ "+actCfg.Id+".ino"))
+			f, _ := os.Create(filepath.Join(srcDir, "ac_ "+actCfg.Id+".ino"))
 			tpl := activityContribs[aaCfg.Activity.Ref].Template
 			err = RenderTemplate(f, tpl, aaCfg.Activity)
 			f.Close()
@@ -356,7 +356,7 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 				return nil, err
 			}
 
-			f, _ = os.Create(path.Join(srcDir, actCfg.Id+".ino"))
+			f, _ = os.Create(filepath.Join(srcDir, actCfg.Id+".ino"))
 
 			t := template.New("action")
 			t.Funcs(DeviceFuncMap)
@@ -372,10 +372,9 @@ func generateSourceFiles(proj Project, descriptor *FlogoDeviceDescriptor, profil
 		}
 	}
 
-
 	libs := make([]*Lib, 0, len(libMap))
 
-	for  _, value := range libMap {
+	for _, value := range libMap {
 		libs = append(libs, value)
 	}
 
@@ -420,15 +419,15 @@ func generatePlatformCode(proj Project, descriptor *FlogoDeviceDescriptor, profi
 		mqttTriggers,
 	}
 
-	platformDir := path.Join(proj.GetContributionDir(), profile.Platform)
+	platformDir := filepath.Join(proj.GetContributionDir(), profile.Platform)
 
-	tpl,err := fgutil.LoadLocalFile(path.Join(platformDir, platform.MainTemplate))
+	tpl, err := fgutil.LoadLocalFile(filepath.Join(platformDir, platform.MainTemplate))
 	if err != nil {
 		return err
 	}
 
 	//todo fix main file name generation
-	f, _ := os.Create(path.Join(proj.GetSourceDir(), "main.ino"))
+	f, _ := os.Create(filepath.Join(proj.GetSourceDir(), "main.ino"))
 	err = RenderTemplate(f, tpl, data)
 	f.Close()
 	if err != nil {
@@ -457,13 +456,13 @@ func generateWifiCode(project Project, descriptor *FlogoDeviceDescriptor, platfo
 	for _, value := range platform.WifiDetails {
 		if value.Name == profile.PlatformWifi {
 
-			tpl,err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, value.Template))
+			tpl, err := fgutil.LoadLocalFile(filepath.Join(project.GetContributionDir(), profile.Platform, value.Template))
 			if err != nil {
 				return err
 			}
 
 			//todo fix mqtt file name generation
-			f, _ := os.Create(path.Join(project.GetSourceDir(), "wifi.ino"))
+			f, _ := os.Create(filepath.Join(project.GetSourceDir(), "wifi.ino"))
 			err = RenderTemplate(f, tpl, settings)
 			f.Close()
 			if err != nil {
@@ -484,13 +483,13 @@ func generateMqttCode(project Project, descriptor *FlogoDeviceDescriptor, platfo
 
 	settings := &SettingsConfig{DeviceName: descriptor.Name, Settings: descriptor.Device.Settings}
 
-	tpl,err := fgutil.LoadLocalFile(path.Join(project.GetContributionDir(), profile.Platform, platform.MqttDetails.Template))
+	tpl, err := fgutil.LoadLocalFile(filepath.Join(project.GetContributionDir(), profile.Platform, platform.MqttDetails.Template))
 	if err != nil {
 		return err
 	}
 
 	//todo fix mqtt file name generation
-	f, _ := os.Create(path.Join(project.GetSourceDir(), "mqtt.ino"))
+	f, _ := os.Create(filepath.Join(project.GetSourceDir(), "mqtt.ino"))
 	err = RenderTemplate(f, tpl, settings)
 	f.Close()
 	if err != nil {

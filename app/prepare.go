@@ -3,16 +3,16 @@ package app
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optPrepare = &cli.OptionInfo{
 	Name:      "prepare",
 	UsageLine: "prepare [-o][-e]",
 	Short:     "prepare the flogo application",
-	Long: `Prepare the flogo application.
+	Long: `[Deprecated, use 'build [-gen]' instead]Prepare the flogo application.
 
 Options:
     -o   optimize for directly referenced contributions
@@ -51,6 +51,6 @@ func (c *cmdPrepare) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	options := &PrepareOptions{OptimizeImports:c.optimize, EmbedConfig:c.embedConfig}
+	options := &PrepareOptions{OptimizeImports: c.optimize, EmbedConfig: c.embedConfig}
 	return PrepareApp(SetupExistingProjectEnv(appDir), options)
 }

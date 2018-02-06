@@ -1,14 +1,14 @@
 package device
 
 import (
-	"text/template"
 	"strconv"
+	"text/template"
 )
 
 type SettingsConfig struct {
-	DeviceName       string
-	Id               string
-	Settings         map[string]string
+	DeviceName string
+	Id         string
+	Settings   map[string]string
 }
 
 func (s *SettingsConfig) GetSetting(key string) string {
@@ -36,7 +36,7 @@ var DeviceFuncMap = template.FuncMap{
 
 	"settingb": func(ctx interface{}, key string) bool {
 		config := ctx.(WithSettings)
-		val,_ := strconv.ParseBool(config.GetSetting(key))
+		val, _ := strconv.ParseBool(config.GetSetting(key))
 		return val
 	},
 

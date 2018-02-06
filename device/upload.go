@@ -3,9 +3,9 @@ package device
 import (
 	"flag"
 
+	"fmt"
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"os"
-	"fmt"
 )
 
 var optUpload = &cli.OptionInfo{
@@ -21,7 +21,7 @@ func init() {
 }
 
 type cmdUpload struct {
-	option      *cli.OptionInfo
+	option *cli.OptionInfo
 }
 
 // HasOptionInfo implementation of cli.HasOptionInfo.OptionInfo

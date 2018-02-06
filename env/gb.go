@@ -7,9 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"path"
-
 	"github.com/TIBCOSoftware/flogo-cli/util"
+	"path/filepath"
 )
 
 type GbProject struct {
@@ -27,7 +26,7 @@ func NewGbProjectEnv() Project {
 	env := &GbProject{}
 	env.SourceDir = "src"
 	env.VendorDir = "vendor"
-	env.VendorSrcDir = path.Join("vendor", "src")
+	env.VendorSrcDir = filepath.Join("vendor", "src")
 
 	return env
 }
@@ -41,9 +40,9 @@ func (e *GbProject) Init(basePath string) error {
 	}
 
 	e.RootDir = basePath
-	e.SourceDir = path.Join(basePath, "src")
-	e.VendorDir = path.Join(basePath, "vendor")
-	e.VendorSrcDir = path.Join(basePath, "vendor", "src")
+	e.SourceDir = filepath.Join(basePath, "src")
+	e.VendorDir = filepath.Join(basePath, "vendor")
+	e.VendorSrcDir = filepath.Join(basePath, "vendor", "src")
 
 	return nil
 }
@@ -72,8 +71,8 @@ func (e *GbProject) Create(createBin bool, vendorDir string) error {
 
 			isGBVendor := false
 
-			if _, err := os.Stat(path.Join(vendorDir, "src")); err == nil {
-				if _, err := os.Stat(path.Join(vendorDir, "manifest")); err == nil {
+			if _, err := os.Stat(filepath.Join(vendorDir, "src")); err == nil {
+				if _, err := os.Stat(filepath.Join(vendorDir, "manifest")); err == nil {
 					isGBVendor = true
 				}
 			}
@@ -95,7 +94,7 @@ func (e *GbProject) Create(createBin bool, vendorDir string) error {
 	}
 
 	if createBin {
-		e.BinDir = path.Join(e.RootDir, "bin")
+		e.BinDir = filepath.Join(e.RootDir, "bin")
 		os.MkdirAll(e.BinDir, os.ModePerm)
 	}
 
@@ -123,7 +122,7 @@ func (e *GbProject) Open() error {
 		return errors.New("Invalid project, vendor directory doesn't exists")
 	}
 
-	binDir := path.Join(e.RootDir, "bin")
+	binDir := filepath.Join(e.RootDir, "bin")
 	info, err = os.Stat(binDir)
 
 	if err != nil || info.IsDir() {
@@ -161,6 +160,10 @@ func (e *GbProject) GetVendorSrcDir() string {
 	return e.VendorSrcDir
 }
 
+func (e *GbProject) GetAppDir() string {
+	return ""
+}
+
 func (e *GbProject) InstallDependency(depPath string, version string) error {
 	var cmd *exec.Cmd
 
@@ -168,7 +171,7 @@ func (e *GbProject) InstallDependency(depPath string, version string) error {
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(path.Join(e.VendorSrcDir, depPath)); err == nil {
+	if _, err := os.Stat(filepath.Join(e.VendorSrcDir, depPath)); err == nil {
 		//todo ignore installed dependencies for now
 		//exists, return
 		return nil
@@ -206,7 +209,7 @@ func (e *GbProject) UninstallDependency(depPath string) error {
 	defer os.Chdir(cwd)
 
 	//check if dependency is installed
-	if _, err := os.Stat(path.Join(e.VendorSrcDir, depPath)); err != nil {
+	if _, err := os.Stat(filepath.Join(e.VendorSrcDir, depPath)); err != nil {
 		//todo ignore dependencies that are not installed for now
 		//exists, return
 		return nil
@@ -228,10 +231,10 @@ func (e *GbProject) Build() error {
 	cmd.Stderr = os.Stderr
 
 	if e.GetDockerBuild() {
-		fmt.Println("Setting GOOS to linux because this is a docker build")
-		cmd.Env = os.Environ()
-		cmd.Env = append(cmd.Env, "GOOS=linux")
-	}
+  	fmt.Println("Setting GOOS to linux because this is a docker build")
+  	cmd.Env = os.Environ()
+  	cmd.Env = append(cmd.Env, "GOOS=linux")
+  }
 
 	cwd, _ := os.Getwd()
 	defer os.Chdir(cwd)
@@ -244,8 +247,8 @@ func (e *GbProject) Build() error {
 
 func IsGbProject(projectPath string) bool {
 
-	sourceDir := path.Join(projectPath, "src")
-	vendorDir := path.Join(projectPath, "vendor", "src")
+	sourceDir := filepath.Join(projectPath, "src")
+	vendorDir := filepath.Join(projectPath, "vendor", "src")
 
 	info, err := os.Stat(sourceDir)
 
@@ -263,7 +266,7 @@ func IsGbProject(projectPath string) bool {
 }
 
 //Env checker?
-//IsProject(path.Join string) bool
+//IsProject(filepath.Join string) bool
 
 // Gb structure that contains gb project paths
 type Gb struct {
@@ -279,8 +282,8 @@ func NewGb(codePath string) *Gb {
 	env := &Gb{}
 	env.BinPath = "bin"
 	env.SourcePath = "src"
-	env.VendorPath = path.Join("vendor", "src")
-	env.CodeSourcePath = path.Join("src", codePath)
+	env.VendorPath = filepath.Join("vendor", "src")
+	env.CodeSourcePath = filepath.Join("src", codePath)
 
 	return env
 }
@@ -303,7 +306,7 @@ func (e *Gb) Installed() bool {
 
 // NewBinFilepath.Join creates a new file path.Join in the bin directory
 func (e *Gb) NewBinFilePath(fileName string) string {
-	return path.Join(e.BinPath, fileName)
+	return filepath.Join(e.BinPath, fileName)
 }
 
 // VendorFetch performs a 'gb vendor fetch'

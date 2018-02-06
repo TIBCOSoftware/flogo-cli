@@ -1,6 +1,5 @@
 package device
 
-
 type Project interface {
 
 	// GetRootDir get the root directory of the project

@@ -7,7 +7,7 @@ import (
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"path"
+	"path/filepath"
 )
 
 var optCreate = &cli.OptionInfo{
@@ -88,12 +88,12 @@ func (c *cmdCreate) Exec(args []string) error {
 		return err
 	}
 
-	deviceDir := path.Join(currentDir, deviceName)
+	deviceDir := filepath.Join(currentDir, deviceName)
 
 	return CreateDevice(SetupNewProjectEnv(), deviceJson, deviceDir, deviceName)
 }
 
-var tplSimpleDevice =`{
+var tplSimpleDevice = `{
   "name": "mydevice",
   "type": "flogo:device",
   "version": "0.0.1",

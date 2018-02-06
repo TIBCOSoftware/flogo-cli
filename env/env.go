@@ -12,10 +12,10 @@ type Project interface {
 	Open() error
 
 	// Sets whether this is a docker build or not
-	SetDockerBuild()
+  SetDockerBuild()
 
-	// GetDockerBuild returns whether this is a docker build or not
-	GetDockerBuild() bool
+  // GetDockerBuild returns whether this is a docker build or not
+  GetDockerBuild() bool
 
 	// GetBinDir get the bin directory of the project
 	GetBinDir() string
@@ -31,6 +31,9 @@ type Project interface {
 
 	// GetVendorSrcDir get the vendor source directory of the project
 	GetVendorSrcDir() string
+
+	// GetAppDir get the app directory of the project
+	GetAppDir() string
 
 	// Install a go dependency
 	InstallDependency(path string, version string) error

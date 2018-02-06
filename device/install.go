@@ -24,7 +24,7 @@ func init() {
 }
 
 type cmdInstall struct {
-	option   *cli.OptionInfo
+	option  *cli.OptionInfo
 	version string
 	palette bool
 }
@@ -68,4 +68,3 @@ func (c *cmdInstall) Exec(args []string) error {
 
 	return InstallContribution(SetupExistingProjectEnv(appDir), contribPath, version)
 }
-

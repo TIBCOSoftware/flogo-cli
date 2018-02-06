@@ -2,16 +2,16 @@ package fgutil
 
 import (
 	"io"
+	"io/ioutil"
+	"os"
+	"path"
 	"strings"
 	"text/template"
 	"unicode"
 	"unicode/utf8"
-	"os"
-	"io/ioutil"
-	"path"
 )
 
-func CreateFileFromTemplate(basePath string, fileName string, template string, data interface{} ) error {
+func CreateFileFromTemplate(basePath string, fileName string, template string, data interface{}) error {
 	filePath := path.Join(basePath, fileName)
 	f, err := os.Create(filePath)
 	if err != nil {

@@ -8,13 +8,15 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/callum-ramage/jsonconfig"
+	"github.com/TIBCOSoftware/flogo-cli/config"
+	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"github.com/callum-ramage/jsonconfig"
+	"go/build"
 )
 
 // dockerfile is the template for a dockerfile needed to build a docker image
@@ -22,9 +24,9 @@ const dockerfile = `# Dockerfile for {{.name}}
 # VERSION {{.version}}
 FROM alpine
 RUN apk update && apk add ca-certificates
-ADD {{.name}}-linux-amd64 .
+ADD linux_amd64 .
 EXPOSE {{.port}}
-CMD ./{{.name}}-linux-amd64`
+CMD ./linux_amd64/{{.name}}`
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
@@ -32,13 +34,17 @@ type BuildPreProcessor interface {
 }
 
 // CreateApp creates an application from the specified json application descriptor
-func CreateApp(env env.Project, appJson string, appDir string, appName string, vendorDir string) error {
+func CreateApp(env env.Project, appJson, appDir, appName, vendorDir, constraints string) error {
+	return doCreate(env, appJson, appDir, appName, vendorDir, constraints)
+}
 
+// doCreate performs the app creation
+func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constraints string) error {
+	fmt.Printf("Creating initial project structure, this might take a few seconds ... \n")
 	descriptor, err := ParseAppDescriptor(appJson)
 	if err != nil {
 		return err
 	}
-
 	if appName != "" {
 		// override the application name
 
@@ -68,39 +74,71 @@ func CreateApp(env env.Project, appJson string, appDir string, appName string, v
 		descriptor.Name = appName
 	} else {
 		appName = descriptor.Name
-		appDir = path.Join(appDir, appName)
+		rootDir = filepath.Join(rootDir, appName)
 	}
 
-	env.Init(appDir)
-	err = env.Create(false, vendorDir)
+	err = enviro.Init(rootDir)
 	if err != nil {
 		return err
 	}
 
-	err = fgutil.CreateFileFromString(path.Join(appDir, "flogo.json"), appJson)
+	err = enviro.Create(false, "")
 	if err != nil {
 		return err
 	}
 
-	//todo allow ability to specify flogo-lib version
-	env.InstallDependency(pathFlogoLib, "")
+	err = fgutil.CreateFileFromString(filepath.Join(rootDir, "flogo.json"), appJson)
+	if err != nil {
+		return err
+	}
+	// create initial structure
+	appDir := filepath.Join(enviro.GetSourceDir(), descriptor.Name)
+	os.MkdirAll(appDir, os.ModePerm)
 
-	deps := ExtractDependencies(descriptor)
+	// Validate structure
+	err = enviro.Open()
+	if err != nil {
+		return err
+	}
 
-	for _, dep := range deps {
-		path, version := splitVersion(dep.Ref)
-		err = env.InstallDependency(path, version)
+	// Create the dep manager
+	depManager := &dep.DepManager{Env: enviro}
+
+	// Initialize the dep manager
+	err = depManager.Init()
+	if err != nil {
+		return err
+	}
+
+	// Create initial files
+	deps := config.ExtractDependencies(descriptor)
+	createMainGoFile(appDir, "")
+	createImportsGoFile(appDir, deps)
+
+	// Add constraints
+	if len(constraints) > 0 {
+		newConstraints := []string{"-add"}
+		newConstraints = append(newConstraints, strings.Split(constraints, ",")...)
+		err = depManager.Ensure(newConstraints...)
 		if err != nil {
 			return err
 		}
 	}
 
-	// create source files
-	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
-	os.MkdirAll(cmdPath, 0777)
+	ensureArgs := []string{}
 
-	createMainGoFile(cmdPath, "")
-	createImportsGoFile(cmdPath, deps)
+	if len(vendorDir) > 0 {
+		// Copy vendor directory
+		fgutil.CopyDir(vendorDir, enviro.GetVendorDir())
+		// Do not touch vendor folder when ensuring
+		ensureArgs = append(ensureArgs, "-no-vendor")
+	}
+
+	// Sync up
+	err = depManager.Ensure(ensureArgs...)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -113,12 +151,27 @@ type PrepareOptions struct {
 }
 
 // PrepareApp do all pre-build setup and pre-processing
-func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
+func PrepareApp(env env.Project, options *PrepareOptions) error {
+	return doPrepare(env, options)
+}
+
+// doPrepare performs all the prepare functionality
+func doPrepare(env env.Project, options *PrepareOptions) (err error) {
+	// Create the dep manager
+	depManager := dep.DepManager{Env: env}
+	if !depManager.IsInitialized() {
+		// This is an old app
+		err = MigrateOldApp(env, depManager)
+		if err != nil {
+			return err
+		}
+	}
 
 	if options == nil {
 		options = &PrepareOptions{}
 	}
 
+	// Call external preprocessor
 	if options.PreProcessor != nil {
 		err = options.PreProcessor.PrepareForBuild(env)
 		if err != nil {
@@ -133,7 +186,7 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 	}
 
 	//load descriptor
-	appJson, err := fgutil.LoadLocalFile(path.Join(env.GetRootDir(), "flogo.json"))
+	appJson, err := fgutil.LoadLocalFile(filepath.Join(env.GetRootDir(), "flogo.json"))
 
 	if err != nil {
 		return err
@@ -143,29 +196,13 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 		return err
 	}
 
-	//generate imports file
-	var deps []*Dependency
-
-	if options.OptimizeImports {
-
-		deps = ExtractDependencies(descriptor)
-
-	} else {
-		deps, err = ListDependencies(env, 0)
-	}
-
-	cmdPath := path.Join(env.GetSourceDir(), strings.ToLower(descriptor.Name))
-	createImportsGoFile(cmdPath, deps)
-
-	removeEmbeddedAppGoFile(cmdPath)
-
-	wasUsingShim := fgutil.FileExists(path.Join(cmdPath, fileShimGo))
-	removeShimGoFiles(cmdPath)
+	removeEmbeddedAppGoFile(env.GetAppDir())
+	removeShimGoFiles(env.GetAppDir())
 
 	if options.Shim != "" {
 
-		removeMainGoFile(cmdPath) //todo maybe rename if it exists
-		createShimSupportGoFile(cmdPath, appJson, options.EmbedConfig)
+		removeMainGoFile(env.GetAppDir()) //todo maybe rename if it exists
+		createShimSupportGoFile(env.GetAppDir(), appJson, options.EmbedConfig)
 
 		fmt.Println("Shim:", options.Shim)
 
@@ -173,7 +210,7 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 
 			fmt.Println("Id:", value.ID)
 			if value.ID == options.Shim {
-				triggerPath := path.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
+				triggerPath := filepath.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
 
 				mdJson, err := fgutil.LoadLocalFile(triggerPath)
 				if err != nil {
@@ -184,35 +221,23 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 					return err
 				}
 
+				fmt.Println("Shim Metadata:", metadata.Shim)
+
 				if metadata.Shim != "" {
 
 					//todo blow up if shim file not found
-					shimFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
+					shimFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
 					fmt.Println("Shim File:", shimFilePath)
-					fgutil.CopyFile(shimFilePath, path.Join(cmdPath, fileShimGo))
+					fgutil.CopyFile(shimFilePath, filepath.Join(env.GetAppDir(), fileShimGo))
 
 					if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
-						makeFilePath := path.Join(env.GetVendorSrcDir(), value.Ref, dirShim, makeFile)
+						makeFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, makeFile)
 						fmt.Println("Make File:", makeFilePath)
-						fgutil.CopyFile(makeFilePath, path.Join(cmdPath, makeFile))
-
-						// Copy the vendor folder (Ugly workaround, this will go once our app is golang structure compliant)
-						vendorDestDir := path.Join(cmdPath, "vendor")
-						_, err = os.Stat(vendorDestDir)
-						if err == nil {
-							// We don't support existing vendor folders yet
-							return fmt.Errorf("Unsupported vendor folder found for function build, please create an issue on https://github.com/TIBCOSoftware/flogo")
-						}
-						// Create vendor folder
-						err = CopyDir(env.GetVendorSrcDir(), vendorDestDir)
-						if err != nil {
-							return err
-						}
-						defer os.RemoveAll(vendorDestDir)
+						fgutil.CopyFile(makeFilePath, filepath.Join(env.GetAppDir(), makeFile))
 
 						// Execute make
-						cmd := exec.Command("make", "-C", cmdPath)
+						cmd := exec.Command("make", "-C", env.GetAppDir())
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
 						cmd.Env = append(os.Environ(),
@@ -230,39 +255,66 @@ func PrepareApp(env env.Project, options *PrepareOptions) (err error) {
 			}
 		}
 
-	} else {
+	} else if options.EmbedConfig {
+		createEmbeddedAppGoFile(env.GetAppDir(), appJson)
+	}
+	return
+}
 
-		if wasUsingShim {
-			createMainGoFile(cmdPath, "")
-		}
+func MigrateOldApp(env env.Project, depManager dep.DepManager) error {
+	// This is an old app
 
-		if options.EmbedConfig {
-			createEmbeddedAppGoFile(cmdPath, appJson)
+	// Move old vendor folder to /src/<my_app>/vendor/
+	oldVendorDir := filepath.Join(env.GetRootDir(), "vendor")
+	_, err := os.Stat(oldVendorDir)
+	if err == nil {
+		// Vendor found, move it
+		err = CopyDir(oldVendorDir, env.GetVendorDir())
+		if err != nil {
+			return err
 		}
+		defer os.RemoveAll(oldVendorDir)
 	}
 
-	return
+	fmt.Println("Initializing dependency management files ....")
+	err = depManager.Init()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type BuildOptions struct {
 	*PrepareOptions
 
-	SkipPrepare bool
+	NoGeneration   bool
+	GenerationOnly bool
+	SkipPrepare    bool
 	BuildDocker string
 }
 
 // BuildApp build the flogo application
-func BuildApp(env env.Project, options *BuildOptions) (err error) {
+func BuildApp(env env.Project, options *BuildOptions) error {
+	return doBuild(env, options)
+}
 
+// doBuildApp performs the build functionality
+func doBuild(env env.Project, options *BuildOptions) (err error) {
 	if options == nil {
 		options = &BuildOptions{}
 	}
 
-	if options.BuildDocker != "" {
-		env.SetDockerBuild()
+	if len(options.BuildDocker) > 0 {
+    		env.SetDockerBuild()
+    }
+
+	if options.GenerationOnly {
+		// Only perform prepare
+		return PrepareApp(env, options.PrepareOptions)
 	}
 
-	if !options.SkipPrepare {
+	if !options.SkipPrepare && !options.NoGeneration {
 		err = PrepareApp(env, options.PrepareOptions)
 
 		if err != nil {
@@ -276,89 +328,77 @@ func BuildApp(env env.Project, options *BuildOptions) (err error) {
 	}
 
 	if !options.EmbedConfig {
-		fgutil.CopyFile(path.Join(env.GetRootDir(), fileDescriptor), path.Join(env.GetBinDir(), fileDescriptor))
+		fgutil.CopyFile(filepath.Join(env.GetRootDir(), config.FileDescriptor), filepath.Join(env.GetBinDir(), config.FileDescriptor))
 		if err != nil {
 			return err
 		}
 	} else {
-		os.Remove(path.Join(env.GetBinDir(), fileDescriptor))
+		os.Remove(filepath.Join(env.GetBinDir(), config.FileDescriptor))
 	}
 
-	// To create a dockerfile this component executes four steps
-	// 1. Check if flogo.json exists in bin folder (built without -e)
-	// 2. Read flogo.json from either ./bin/flogo.json or ./flogo.json
-	// 3. Output the dockerfile in ./bin/dockerfile
-	// 4. Execute docker build
-	if options.BuildDocker != "" {
-		fmt.Println("docker:", options.BuildDocker)
+	  // To create a dockerfile this component executes four steps
+    // 1. Check if flogo.json exists in bin folder (built without -e)
+    // 2. Read flogo.json from ./flogo.json
+    // 3. Output the dockerfile in ./bin/dockerfile
+    // 4. Execute docker build
+    if len(options.BuildDocker) > 0 {
+        fmt.Println("docker:", options.BuildDocker)
+        config, err := jsonconfig.LoadAbstract("./flogo.json", "")
+        if err != nil {
+            return err
+        }
+        data := make(map[string]interface{})
+        found := false
 
-		if err != nil {
-			return err
-		}
+        for _, value := range config["triggers"].Arr {
+            if value.Obj["id"].Str == options.BuildDocker {
+                found = true
+                data["name"] = config["name"].Str
+                data["version"] = config["version"].Str
+                data["port"] = value.Obj["settings.port"].Str
+            }
+        }
 
-		config, err := jsonconfig.LoadAbstract("./flogo.json", "")
+        if options.BuildDocker == "no-trigger" {
+            found = true
+            data["name"] = config["name"].Str
+            data["version"] = config["version"].Str
+            data["port"] = ""
+        }
 
-		if err != nil {
-			return err
-		}
+        if found {
+            t := template.Must(template.New("email").Parse(dockerfile))
+            buf := &bytes.Buffer{}
+            if err := t.Execute(buf, data); err != nil {
+                return err
+            }
+            s := buf.String()
 
-		data := make(map[string]interface{})
+            if data["port"] == "" {
+                s = strings.Replace(s, "EXPOSE \n", "", -1)
+            }
 
-		found := false
+            file, err := os.Create("./bin/dockerfile")
+            if err != nil {
+                return err
+            }
+            defer file.Close()
 
-		for _, value := range config["triggers"].Arr {
-			if value.Obj["id"].Str == options.BuildDocker {
-				found = true
-				data["name"] = config["name"].Str
-				data["version"] = config["version"].Str
-				data["port"] = value.Obj["settings.port"].Str
-			}
-		}
+            file.WriteString(s)
+            file.Sync()
 
-		if options.BuildDocker == "no-trigger" {
-			found = true
-			data["name"] = config["name"].Str
-			data["version"] = config["version"].Str
-			data["port"] = ""
-		}
-
-		if found {
-			t := template.Must(template.New("email").Parse(dockerfile))
-			buf := &bytes.Buffer{}
-			if err := t.Execute(buf, data); err != nil {
-				panic(err)
-			}
-			s := buf.String()
-
-			if data["port"] == "" {
-				s = strings.Replace(s, "EXPOSE \n", "", -1)
-			}
-
-			file, err := os.Create("./bin/dockerfile")
-			defer file.Close()
-
-			if err != nil {
-				return err
-			}
-
-			file.WriteString(s)
-			file.Sync()
-
-			cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
-			cmd.Dir = "./bin"
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			err = cmd.Run()
-			if err != nil {
-				return err
-			}
-
-		} else {
-			fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
-		}
-	}
-
+            cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
+            cmd.Dir = "./bin"
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+            err = cmd.Run()
+            if err != nil {
+                return err
+            }
+        } else {
+            fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
+        }
+    }
 	return
 }
 
@@ -369,10 +409,10 @@ func InstallPalette(env env.Project, path string) error {
 
 	file, _ = ioutil.ReadFile(path)
 
-	var paletteDescriptor *FlogoPaletteDescriptor
+	var paletteDescriptor *config.FlogoPaletteDescriptor
 	err := json.Unmarshal(file, &paletteDescriptor)
 
-	var deps []Dependency
+	var deps []config.Dependency
 
 	if err != nil {
 		err = json.Unmarshal(file, &deps)
@@ -387,7 +427,7 @@ func InstallPalette(env env.Project, path string) error {
 	}
 
 	for _, dep := range deps {
-		err = env.InstallDependency(dep.Ref, "")
+		err = InstallDependency(env, dep.Ref, "")
 		if err != nil {
 			return err
 		}
@@ -399,91 +439,113 @@ func InstallPalette(env env.Project, path string) error {
 }
 
 // InstallDependency install a dependency
-func InstallDependency(env env.Project, path string, version string) error {
-
-	return env.InstallDependency(path, version)
+func InstallDependency(environ env.Project, path string, version string) error {
+	// Create the dep manager
+	depManager := dep.DepManager{Env: environ}
+	if !depManager.IsInitialized() {
+		// This is an old app
+		err := MigrateOldApp(environ, depManager)
+		if err != nil {
+			return err
+		}
+	}
+	err := depManager.InstallDependency(path, version)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // UninstallDependency uninstall a dependency
-func UninstallDependency(env env.Project, path string) error {
-
-	return env.UninstallDependency(path)
+func UninstallDependency(environ env.Project, path string) error {
+	// Create the dep manager
+	depManager := dep.DepManager{Env: environ}
+	if !depManager.IsInitialized() {
+		// This is an old app
+		err := MigrateOldApp(environ, depManager)
+		if err != nil {
+			return err
+		}
+	}
+	err := depManager.UninstallDependency(path)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// ListDependencies lists all installed dependencies
-func ListDependencies(env env.Project, cType ContribType) ([]*Dependency, error) {
-
-	vendorSrc := env.GetVendorSrcDir()
-	var deps []*Dependency
-
-	err := filepath.Walk(vendorSrc, func(filePath string, info os.FileInfo, _ error) error {
-
-		if !info.IsDir() {
-
-			switch info.Name() {
-			case "action.json":
-				if cType == 0 || cType == ACTION {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:action" {
-						deps = append(deps, &Dependency{ContribType: ACTION, Ref: ref})
-					}
-				}
-			case "trigger.json":
-				//temporary hack to handle old contrib dir layout
-				dir := filePath[0 : len(filePath)-12]
-				if _, err := os.Stat(fmt.Sprintf("%s/../trigger.json", dir)); err == nil {
-					//old trigger.json, ignore
-					return nil
-				}
-				if cType == 0 || cType == TRIGGER {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:trigger" {
-						deps = append(deps, &Dependency{ContribType: TRIGGER, Ref: ref})
-					}
-				}
-			case "activity.json":
-				//temporary hack to handle old contrib dir layout
-				dir := filePath[0 : len(filePath)-13]
-				if _, err := os.Stat(fmt.Sprintf("%s/../activity.json", dir)); err == nil {
-					//old activity.json, ignore
-					return nil
-				}
-				if cType == 0 || cType == ACTIVITY {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:activity" {
-						deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: ref})
-					}
-				}
-			case "flow-model.json":
-				if cType == 0 || cType == FLOW_MODEL {
-					ref := refPath(vendorSrc, filePath)
-					desc, err := readDescriptor(filePath, info)
-					if err == nil && desc.Type == "flogo:flow-model" {
-						deps = append(deps, &Dependency{ContribType: FLOW_MODEL, Ref: ref})
-					}
+func ListDependencies(env env.Project, cType config.ContribType) ([]*config.Dependency, error) {
+	// Get build context
+	bc := build.Default
+	currentGoPath := bc.GOPATH
+	bc.GOPATH = env.GetRootDir()
+	defer func() { bc.GOPATH = currentGoPath }()
+	pkgs, err := bc.ImportDir(env.GetAppDir(), build.IgnoreVendor)
+	if err != nil {
+		return nil, err
+	}
+	var deps []*config.Dependency
+	// Get all imports
+	for _, imp := range pkgs.Imports {
+		pkg, err := bc.Import(imp, env.GetAppDir(), build.FindOnly)
+		if err != nil {
+			// Ignore package
+			continue
+		}
+		if cType == 0 || cType == config.ACTION {
+			filePath := filepath.Join(pkg.Dir, "action.json")
+			// Check if it is an action
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:action" {
+					deps = append(deps, &config.Dependency{ContribType: config.ACTION, Ref: imp})
 				}
 			}
-
 		}
-
-		return nil
-	})
-
-	return deps, err
+		if cType == 0 || cType == config.TRIGGER {
+			filePath := filepath.Join(pkg.Dir, "trigger.json")
+			// Check if it is a trigger
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:trigger" {
+					deps = append(deps, &config.Dependency{ContribType: config.TRIGGER, Ref: imp})
+				}
+			}
+		}
+		if cType == 0 || cType == config.ACTIVITY {
+			filePath := filepath.Join(pkg.Dir, "activity.json")
+			// Check if it is an activity
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:activity" {
+					deps = append(deps, &config.Dependency{ContribType: config.ACTIVITY, Ref: imp})
+				}
+			}
+		}
+		if cType == 0 || cType == config.FLOW_MODEL {
+			filePath := filepath.Join(pkg.Dir, "flow-model.json")
+			// Check if it is a flow model
+			info, err := os.Stat(filePath)
+			if err == nil {
+				desc, err := readDescriptor(filePath, info)
+				if err == nil && desc.Type == "flogo:flow-model" {
+					deps = append(deps, &config.Dependency{ContribType: config.FLOW_MODEL, Ref: imp})
+				}
+			}
+		}
+	}
+	return deps, nil
 }
 
-func refPath(vendorSrc string, filePath string) string {
-
-	startIdx := len(vendorSrc) + 1
-	endIdx := strings.LastIndex(filePath, string(os.PathSeparator))
-
-	return strings.Replace(filePath[startIdx:endIdx], string(os.PathSeparator), "/", -1)
+// Ensure is a wrapper for dep ensure command
+func Ensure(depManager *dep.DepManager, args ...string) error{
+	return depManager.Ensure(args...)
 }
 
-func readDescriptor(path string, info os.FileInfo) (*Descriptor, error) {
+func readDescriptor(path string, info os.FileInfo) (*config.Descriptor, error) {
 
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -509,26 +571,26 @@ func generateGoMetadata(env env.Project) error {
 	return nil
 }
 
-func createMetadata(env env.Project, dependency *Dependency) error {
+func createMetadata(env env.Project, dependency *config.Dependency) error {
 
 	vendorSrc := env.GetVendorSrcDir()
-	mdFilePath := path.Join(vendorSrc, dependency.Ref)
-	mdGoFilePath := path.Join(vendorSrc, dependency.Ref)
-	pkg := path.Base(mdFilePath)
+	mdFilePath := filepath.Join(vendorSrc, dependency.Ref)
+	mdGoFilePath := filepath.Join(vendorSrc, dependency.Ref)
+	pkg := filepath.Base(mdFilePath)
 
 	tplMetadata := tplMetadataGoFile
 
 	switch dependency.ContribType {
-	case ACTION:
-		mdFilePath = path.Join(mdFilePath, "action.json")
-		mdGoFilePath = path.Join(mdGoFilePath, "action_metadata.go")
-	case TRIGGER:
-		mdFilePath = path.Join(mdFilePath, "trigger.json")
-		mdGoFilePath = path.Join(mdGoFilePath, "trigger_metadata.go")
+	case config.ACTION:
+		mdFilePath = filepath.Join(mdFilePath, "action.json")
+		mdGoFilePath = filepath.Join(mdGoFilePath, "action_metadata.go")
+	case config.TRIGGER:
+		mdFilePath = filepath.Join(mdFilePath, "trigger.json")
+		mdGoFilePath = filepath.Join(mdGoFilePath, "trigger_metadata.go")
 		tplMetadata = tplTriggerMetadataGoFile
-	case ACTIVITY:
-		mdFilePath = path.Join(mdFilePath, "activity.json")
-		mdGoFilePath = path.Join(mdGoFilePath, "activity_metadata.go")
+	case config.ACTIVITY:
+		mdFilePath = filepath.Join(mdFilePath, "activity.json")
+		mdGoFilePath = filepath.Join(mdGoFilePath, "activity_metadata.go")
 		tplMetadata = tplActivityMetadataGoFile
 	default:
 		return nil
@@ -594,8 +656,8 @@ func init() {
 `
 
 // ParseDescriptor parse a descriptor
-func ParseDescriptor(descJson string) (*Descriptor, error) {
-	descriptor := &Descriptor{}
+func ParseDescriptor(descJson string) (*config.Descriptor, error) {
+	descriptor := &config.Descriptor{}
 
 	err := json.Unmarshal([]byte(descJson), descriptor)
 
@@ -607,8 +669,8 @@ func ParseDescriptor(descJson string) (*Descriptor, error) {
 }
 
 // ParseAppDescriptor parse the application descriptor
-func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
-	descriptor := &FlogoAppDescriptor{}
+func ParseAppDescriptor(appJson string) (*config.FlogoAppDescriptor, error) {
+	descriptor := &config.FlogoAppDescriptor{}
 
 	err := json.Unmarshal([]byte(appJson), descriptor)
 
@@ -620,8 +682,8 @@ func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
 }
 
 // ParseTriggerMetadata parse the trigger metadata
-func ParseTriggerMetadata(metadataJson string) (*TriggerMetadata, error) {
-	metadata := &TriggerMetadata{}
+func ParseTriggerMetadata(metadataJson string) (*config.TriggerMetadata, error) {
+	metadata := &config.TriggerMetadata{}
 
 	err := json.Unmarshal([]byte(metadataJson), metadata)
 

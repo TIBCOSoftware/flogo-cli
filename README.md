@@ -1,14 +1,14 @@
 # flogo-cli
 > Command line tool for building **Flogo**-based applications.
 
-**Flogo** is an IoT Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IoT devices.
+**Flogo** is an Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications (microsewrvices and serverless functions) and at the same time sufficiently lean for IoT devices.
 
 
 ## Installation
 ### Prerequisites
-* The Go programming language 1.7 or later should be [installed](https://golang.org/doc/install).
+* The Go programming language 1.8 or later should be [installed](https://golang.org/doc/install).
 * Set GOPATH environment variable on your system
-* In order to simplify development and building in Go, we are using the **gb** build tool.  It can be downloaded from [here](https://getgb.io).  
+* In order to simplify dependency management, we're using **go dep**. You can install that by following the instructions [here](https://github.com/golang/dep#setup).
 
 ### Install flogo
     go get github.com/TIBCOSoftware/flogo-cli/...
@@ -103,15 +103,7 @@ The built in sample application is based of the following flogo.json.  This file
 For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
 ## Documentation
-Additional documentation on flogo and the CLI tool
-
-  - **flogo tool**
-    - creating an [application](docs/app.md)
-  - **flogogen tool**
-    - creating a [trigger](docs/trigger.md)
-    - creating a [action](docs/action.md)
-    - creating an [activity](docs/activity.md)
-    - creating a [flow model](docs/flow_model.md)
+Additional documentation on flogo and the CLI tool can be found [here](https://tibcosoftware.github.io/flogo/)
 
 ## Contributing and support
 
