@@ -103,15 +103,7 @@ The built in sample application is based of the following flogo.json.  This file
 For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
 
 ## Documentation
-Additional documentation on flogo and the CLI tool
-
-  - **flogo tool**
-    - creating an [application](docs/app.md)
-  - **flogogen tool**
-    - creating a [trigger](docs/trigger.md)
-    - creating a [action](docs/action.md)
-    - creating an [activity](docs/activity.md)
-    - creating a [flow model](docs/flow_model.md)
+Additional documentation on flogo and the CLI tool can be found [here](https://tibcosoftware.github.io/flogo/)
 
 ## Contributing and support
 
