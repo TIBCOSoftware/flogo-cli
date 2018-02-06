@@ -6,7 +6,7 @@
 
 ## Installation
 ### Prerequisites
-* The Go programming language 1.7 or later should be [installed](https://golang.org/doc/install).
+* The Go programming language 1.8 or later should be [installed](https://golang.org/doc/install).
 * Set GOPATH environment variable on your system
 * In order to simplify dependency management, we're using **go dep**. You can install that by following the instructions [here](https://github.com/golang/dep#setup).
 
