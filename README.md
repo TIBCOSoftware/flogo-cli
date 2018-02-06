@@ -1,7 +1,7 @@
 # flogo-cli
 > Command line tool for building **Flogo**-based applications.
 
-**Flogo** is an IoT Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications and at the same time sufficiently lean for IoT devices.
+**Flogo** is an Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications (microsewrvices and serverless functions) and at the same time sufficiently lean for IoT devices.
 
 
 ## Installation
