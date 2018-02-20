@@ -2,6 +2,9 @@ package config
 
 import (
 	"encoding/json"
+	"reflect"
+	"strings"
+	"fmt"
 )
 
 type ContribType int
@@ -11,6 +14,7 @@ const (
 	TRIGGER
 	ACTIVITY
 	FLOW_MODEL
+	REF
 
 	FileDescriptor string = "flogo.json"
 	FileImportsGo  string = "imports.go"
@@ -49,8 +53,9 @@ type FlogoAppDescriptor struct {
 	Type        string `json:"type"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
+	AppModel    string `json:"appModel,omitempty"`
 
-	Actions  []*ActionDescriptor  `json:"actions"`
+	Actions  []*ActionDescriptor  `json:"actions,omitempty"`
 	Triggers []*TriggerDescriptor `json:"triggers"`
 }
 
@@ -159,6 +164,49 @@ func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
 
 	return dh.deps
 }
+
+func ExtractAllDependencies(appJson string) ([]*Dependency) {
+
+	dh := &depHolder{}
+
+	var descriptor interface{}
+
+	//Should be valid app json
+	json.Unmarshal([]byte(appJson), &descriptor)
+
+	//Find all "ref" values in the model
+	traverse(descriptor, dh)
+
+	return dh.deps
+}
+
+func traverse(data interface{}, dh *depHolder ) {
+	if reflect.ValueOf(data).Kind() == reflect.Slice {
+		d := reflect.ValueOf(data)
+		tmpData := make([]interface{}, d.Len())
+		for i := 0; i < d.Len(); i++ {
+			tmpData[i] = d.Index(i).Interface()
+		}
+		for _, v := range tmpData {
+			traverse(v, dh)
+		}
+	} else if reflect.ValueOf(data).Kind() == reflect.Map {
+		d := reflect.ValueOf(data)
+		for _, k := range d.MapKeys() {
+			match := strings.EqualFold("ref", k.String())
+			if match {
+				refVal := d.MapIndex(k).Interface()
+				dh.deps = append(dh.deps, &Dependency{ContribType: REF, Ref: refVal.(string)})
+			} else {
+				typeOfValue := reflect.TypeOf(d.MapIndex(k).Interface()).Kind()
+				if typeOfValue == reflect.Map || typeOfValue == reflect.Slice {
+					traverse(d.MapIndex(k).Interface(), dh)
+				}
+			}
+		}
+	}
+}
+
 
 // extractDepsFromTask extract dependencies from a task and is children
 func extractDepsFromTask(task *Task, dh *depHolder) {

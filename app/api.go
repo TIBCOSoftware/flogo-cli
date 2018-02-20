@@ -111,7 +111,13 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 	}
 
 	// Create initial files
-	deps := config.ExtractDependencies(descriptor)
+	var deps []*config.Dependency
+	if descriptor.AppModel != "" {
+		// New model: https://github.com/TIBCOSoftware/flogo/wiki/App-Model
+		deps = config.ExtractAllDependencies(appJson)
+	} else {
+		deps = config.ExtractDependencies(descriptor)
+	}
 	createMainGoFile(appDir, "")
 	createImportsGoFile(appDir, deps)
 
