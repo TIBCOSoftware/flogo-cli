@@ -111,7 +111,7 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 	}
 
 	// Create initial files
-	deps := config.ExtractDependencies(descriptor)
+	deps := config.ExtractAllDependencies(appJson)
 	createMainGoFile(appDir, "")
 	createImportsGoFile(appDir, deps)
 

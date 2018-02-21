@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"reflect"
+	"regexp"
 )
 
 type ContribType int
@@ -11,6 +13,7 @@ const (
 	TRIGGER
 	ACTIVITY
 	FLOW_MODEL
+	REF
 
 	FileDescriptor string = "flogo.json"
 	FileImportsGo  string = "imports.go"
@@ -49,8 +52,7 @@ type FlogoAppDescriptor struct {
 	Type        string `json:"type"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
-
-	Actions  []*ActionDescriptor  `json:"actions"`
+	AppModel    string `json:"appModel,omitempty"`
 	Triggers []*TriggerDescriptor `json:"triggers"`
 }
 
@@ -64,25 +66,6 @@ type TriggerMetadata struct {
 	Name string `json:"name"`
 	Ref  string `json:"ref"`
 	Shim string `json:"shim"`
-}
-
-// todo make make ActionDescriptor generic
-// ActionDescriptor is the config descriptor for an Action
-type ActionDescriptor struct {
-	ID   string `json:"id"`
-	Ref  string `json:"ref"`
-	Data *struct {
-		Flow *struct {
-			RootTask         *Task `json:"rootTask"`
-			ErrorHandlerTask *Task `json:"errorHandlerTask"`
-		} `json:"flow"`
-	} `json:"data"`
-}
-
-// Task is part of the flow structure
-type Task struct {
-	Ref   string  `json:"activityRef"`
-	Tasks []*Task `json:"tasks"`
 }
 
 //FlogoPaletteDescriptor a package: just change to a list of references
@@ -136,38 +119,41 @@ type depHolder struct {
 	deps []*Dependency
 }
 
-// ExtractDependencies extracts dependencies from from application descriptor
-func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
-
+func ExtractAllDependencies(appJson string) ([]*Dependency) {
 	dh := &depHolder{}
-
-	for _, action := range descriptor.Actions {
-		dh.deps = append(dh.deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
-
-		if action.Data != nil && action.Data.Flow != nil {
-			extractDepsFromTask(action.Data.Flow.RootTask, dh)
-			//Error handle flow
-			if action.Data.Flow.ErrorHandlerTask != nil {
-				extractDepsFromTask(action.Data.Flow.ErrorHandlerTask, dh)
-			}
-		}
-	}
-
-	for _, trigger := range descriptor.Triggers {
-		dh.deps = append(dh.deps, &Dependency{ContribType: TRIGGER, Ref: trigger.Ref})
-	}
-
+	var descriptor interface{}
+	//Should be valid app json
+	json.Unmarshal([]byte(appJson), &descriptor)
+	//Find all "ref" values in the model
+	traverse(descriptor, dh)
 	return dh.deps
 }
 
-// extractDepsFromTask extract dependencies from a task and is children
-func extractDepsFromTask(task *Task, dh *depHolder) {
-
-	if task.Ref != "" {
-		dh.deps = append(dh.deps, &Dependency{ContribType: ACTIVITY, Ref: task.Ref})
-	}
-
-	for _, childTask := range task.Tasks {
-		extractDepsFromTask(childTask, dh)
+func traverse(data interface{}, dh *depHolder ) {
+	if reflect.ValueOf(data).Kind() == reflect.Slice {
+		d := reflect.ValueOf(data)
+		tmpData := make([]interface{}, d.Len())
+		for i := 0; i < d.Len(); i++ {
+			tmpData[i] = d.Index(i).Interface()
+		}
+		for _, v := range tmpData {
+			traverse(v, dh)
+		}
+	} else if reflect.ValueOf(data).Kind() == reflect.Map {
+		d := reflect.ValueOf(data)
+		for _, k := range d.MapKeys() {
+			match, _ := regexp.MatchString("(ref|activityRef)", k.String())
+			if match {
+				refVal := d.MapIndex(k).Interface()
+				dh.deps = append(dh.deps, &Dependency{ContribType: REF, Ref: refVal.(string)})
+			} else {
+				if d.MapIndex(k).Interface() != nil {
+					typeOfValue := reflect.TypeOf(d.MapIndex(k).Interface()).Kind()
+					if typeOfValue == reflect.Map || typeOfValue == reflect.Slice {
+						traverse(d.MapIndex(k).Interface(), dh)
+					}
+				}
+			}
+		}
 	}
 }
