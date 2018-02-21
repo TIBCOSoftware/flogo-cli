@@ -17,6 +17,7 @@ import (
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
 	"go/build"
+	"regexp"
 )
 
 // dockerfile is the template for a dockerfile needed to build a docker image
@@ -112,7 +113,9 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 
 	// Create initial files
 	var deps []*config.Dependency
-	if descriptor.AppModel != "" {
+
+	newAppModel, _ := regexp.MatchString("[1-9]\\.[0-9]\\.[0-9]", descriptor.AppModel)
+	if newAppModel {
 		// New model: https://github.com/TIBCOSoftware/flogo/wiki/App-Model
 		deps = config.ExtractAllDependencies(appJson)
 	} else {
