@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"reflect"
-	"strings"
+	"regexp"
 )
 
 type ContribType int
@@ -140,42 +140,13 @@ type depHolder struct {
 	deps []*Dependency
 }
 
-// ExtractDependencies extracts dependencies from from application descriptor
-func ExtractDependencies(descriptor *FlogoAppDescriptor) []*Dependency {
-
-	dh := &depHolder{}
-
-	for _, action := range descriptor.Actions {
-		dh.deps = append(dh.deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
-
-		if action.Data != nil && action.Data.Flow != nil {
-			extractDepsFromTask(action.Data.Flow.RootTask, dh)
-			//Error handle flow
-			if action.Data.Flow.ErrorHandlerTask != nil {
-				extractDepsFromTask(action.Data.Flow.ErrorHandlerTask, dh)
-			}
-		}
-	}
-
-	for _, trigger := range descriptor.Triggers {
-		dh.deps = append(dh.deps, &Dependency{ContribType: TRIGGER, Ref: trigger.Ref})
-	}
-
-	return dh.deps
-}
-
 func ExtractAllDependencies(appJson string) ([]*Dependency) {
-
 	dh := &depHolder{}
-
 	var descriptor interface{}
-
 	//Should be valid app json
 	json.Unmarshal([]byte(appJson), &descriptor)
-
 	//Find all "ref" values in the model
 	traverse(descriptor, dh)
-
 	return dh.deps
 }
 
@@ -192,29 +163,18 @@ func traverse(data interface{}, dh *depHolder ) {
 	} else if reflect.ValueOf(data).Kind() == reflect.Map {
 		d := reflect.ValueOf(data)
 		for _, k := range d.MapKeys() {
-			match := strings.EqualFold("ref", k.String())
+			match, _ := regexp.MatchString("(ref|activityRef)", k.String())
 			if match {
 				refVal := d.MapIndex(k).Interface()
 				dh.deps = append(dh.deps, &Dependency{ContribType: REF, Ref: refVal.(string)})
 			} else {
-				typeOfValue := reflect.TypeOf(d.MapIndex(k).Interface()).Kind()
-				if typeOfValue == reflect.Map || typeOfValue == reflect.Slice {
-					traverse(d.MapIndex(k).Interface(), dh)
+				if d.MapIndex(k).Interface() != nil {
+					typeOfValue := reflect.TypeOf(d.MapIndex(k).Interface()).Kind()
+					if typeOfValue == reflect.Map || typeOfValue == reflect.Slice {
+						traverse(d.MapIndex(k).Interface(), dh)
+					}
 				}
 			}
 		}
-	}
-}
-
-
-// extractDepsFromTask extract dependencies from a task and is children
-func extractDepsFromTask(task *Task, dh *depHolder) {
-
-	if task.Ref != "" {
-		dh.deps = append(dh.deps, &Dependency{ContribType: ACTIVITY, Ref: task.Ref})
-	}
-
-	for _, childTask := range task.Tasks {
-		extractDepsFromTask(childTask, dh)
 	}
 }
