@@ -53,8 +53,6 @@ type FlogoAppDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	AppModel    string `json:"appModel,omitempty"`
-
-	Actions  []*ActionDescriptor  `json:"actions,omitempty"`
 	Triggers []*TriggerDescriptor `json:"triggers"`
 }
 
@@ -68,25 +66,6 @@ type TriggerMetadata struct {
 	Name string `json:"name"`
 	Ref  string `json:"ref"`
 	Shim string `json:"shim"`
-}
-
-// todo make make ActionDescriptor generic
-// ActionDescriptor is the config descriptor for an Action
-type ActionDescriptor struct {
-	ID   string `json:"id"`
-	Ref  string `json:"ref"`
-	Data *struct {
-		Flow *struct {
-			RootTask         *Task `json:"rootTask"`
-			ErrorHandlerTask *Task `json:"errorHandlerTask"`
-		} `json:"flow"`
-	} `json:"data"`
-}
-
-// Task is part of the flow structure
-type Task struct {
-	Ref   string  `json:"activityRef"`
-	Tasks []*Task `json:"tasks"`
 }
 
 //FlogoPaletteDescriptor a package: just change to a list of references
