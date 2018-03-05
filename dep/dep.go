@@ -58,17 +58,14 @@ func (b *DepManager) Init() error {
 	return err
 }
 
-const (
-	noPruneTemplate = `# Gopkg.toml example
+func removePrune(b *DepManager) error {
+	noPruneTemplate := `# Gopkg.toml example
 #
 # Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
 # for detailed Gopkg.toml documentation.
-	
+		
 [prune]
   go-tests = true`
-)
-
-func removePrune(b *DepManager) error {
 	depMetadataFile := filepath.Join(b.Env.GetAppDir(), "Gopkg.toml")
 	file, err := os.OpenFile(depMetadataFile, os.O_TRUNC|os.O_WRONLY, 0600)
 	defer file.Close()
