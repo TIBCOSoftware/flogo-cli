@@ -50,7 +50,33 @@ func (b *DepManager) Init() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	err := cmd.Run()
+	if err == nil {
+		err = removePrune(b)
+	}
+
+	return err
+}
+
+func removePrune(b *DepManager) error {
+	noPruneTemplate := `# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+		
+[prune]
+  go-tests = true`
+	depMetadataFile := filepath.Join(b.Env.GetAppDir(), "Gopkg.toml")
+	file, err := os.OpenFile(depMetadataFile, os.O_TRUNC|os.O_WRONLY, 0600)
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+
+	if _, err = file.WriteString(noPruneTemplate); err == nil {
+		file.Sync()
+	}
+	return err
 }
 
 // IsInitialized Returns true if a dep environment has been initialized
@@ -124,7 +150,7 @@ func (b *DepManager) InstallDependency(depPath, depVersion string) error {
 	//Validate that the install does not exist in imports.go file
 	for _, imp := range importsFileAst.Imports {
 		if imp.Path.Value == strconv.Quote(depPath) {
-		    fmt.Printf("WARNING: import '%s' already exists, specific import not reinstalled\n", depPath)
+			fmt.Printf("WARNING: import '%s' already exists, specific import not reinstalled\n", depPath)
 			return nil
 		}
 	}
