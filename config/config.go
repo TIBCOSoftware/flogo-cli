@@ -144,7 +144,7 @@ func traverse(data interface{}, dh *depHolder) {
 		d := reflect.ValueOf(data)
 		for _, k := range d.MapKeys() {
 			// Skip attributes or mappings for now
-			if strings.EqualFold(k.String(), "attributes") || strings.EqualFold(k.String(), "mappings") {
+			if strings.EqualFold(k.String(), "attributes") || strings.EqualFold(k.String(), "mappings") || strings.EqualFold(k.String(), "inputMappings") {
 				continue
 			}
 			match, _ := regexp.MatchString("(ref|activityRef)", k.String())
