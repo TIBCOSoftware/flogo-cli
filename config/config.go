@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"regexp"
+	"strings"
 )
 
 type ContribType int
@@ -48,12 +49,12 @@ func ToContribType(name string) ContribType {
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
 type FlogoAppDescriptor struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	AppModel    string `json:"appModel,omitempty"`
-	Triggers []*TriggerDescriptor `json:"triggers"`
+	Name        string               `json:"name"`
+	Type        string               `json:"type"`
+	Version     string               `json:"version"`
+	Description string               `json:"description"`
+	AppModel    string               `json:"appModel,omitempty"`
+	Triggers    []*TriggerDescriptor `json:"triggers"`
 }
 
 // TriggerDescriptor is the config descriptor for a Trigger
@@ -119,7 +120,7 @@ type depHolder struct {
 	deps []*Dependency
 }
 
-func ExtractAllDependencies(appJson string) ([]*Dependency) {
+func ExtractAllDependencies(appJson string) []*Dependency {
 	dh := &depHolder{}
 	var descriptor interface{}
 	//Should be valid app json
@@ -129,7 +130,7 @@ func ExtractAllDependencies(appJson string) ([]*Dependency) {
 	return dh.deps
 }
 
-func traverse(data interface{}, dh *depHolder ) {
+func traverse(data interface{}, dh *depHolder) {
 	if reflect.ValueOf(data).Kind() == reflect.Slice {
 		d := reflect.ValueOf(data)
 		tmpData := make([]interface{}, d.Len())
@@ -142,6 +143,10 @@ func traverse(data interface{}, dh *depHolder ) {
 	} else if reflect.ValueOf(data).Kind() == reflect.Map {
 		d := reflect.ValueOf(data)
 		for _, k := range d.MapKeys() {
+			// Skip attributes or mappings for now
+			if strings.EqualFold(k.String(), "attributes") || strings.EqualFold(k.String(), "mappings") || strings.EqualFold(k.String(), "inputMappings") {
+				continue
+			}
 			match, _ := regexp.MatchString("(ref|activityRef)", k.String())
 			if match {
 				refVal := d.MapIndex(k).Interface()
