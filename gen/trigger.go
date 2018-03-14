@@ -139,13 +139,9 @@ func getJsonMetadata() string{
 type TestRunner struct {
 }
 
-type initContext struct {
-	handlers []*trigger.Handler
-}
-
-// Run implements action.Runner.Run
-func (tr *TestRunner) Run(context context.Context, action action.Action, uri string, options interface{}) (code int, data interface{}, err error) {
-	return 0, nil, nil
+// Execute implements action.Runner.Execute
+func (runner *TestRunner) Execute(ctx context.Context, act action.Action, inputs map[string]*data.Attribute) (results map[string]*data.Attribute, err error) {
+	return nil, nil
 }
 
 const testConfig string = ` + "`" + `{
@@ -176,7 +172,11 @@ func TestInit(t *testing.T) {
 
 	runner := &TestRunner{}
 
-	initCtx := &initContext{handlers: make([]*trigger.Handler, 0, len(config.Handlers))}
+	initCtx := &struct {
+		handlers []*trigger.Handler
+	}{
+		handlers: make([]*trigger.Handler, 0, len(config.Handlers))
+	}
 	tgr.Initialize(initCtx)
 }
 `
