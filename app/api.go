@@ -229,6 +229,9 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 					shimFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
 					fmt.Println("Shim File:", shimFilePath)
 					fgutil.CopyFile(shimFilePath, filepath.Join(env.GetAppDir(), fileShimGo))
+					
+					// ensure deps after the shim.go has been copied to main.go...
+					depManager.Ensure()
 
 					if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
