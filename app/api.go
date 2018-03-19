@@ -232,6 +232,13 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 					
 					// ensure deps after the shim.go has been copied to main.go...
 					depManager.Ensure()
+					
+					// This is a bit of a workaround, will resolve with a better solution in the future
+					// generate metadata again... ensure will remove it
+					err = generateGoMetadata(env)
+					if err != nil {
+						return err
+					}					
 
 					if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
