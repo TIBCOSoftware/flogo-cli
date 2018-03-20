@@ -186,7 +186,9 @@ func extractTrigersDependency(triggers []*trigger.Config) []*Dependency {
 			deps = append(deps, &Dependency{ContribType: REF, Ref: t.Ref})
 			if t.Handlers != nil {
 				for _, t := range t.Handlers {
-					deps = append(deps, &Dependency{ContribType: ACTION, Ref: t.Action.Ref})
+					if t.Action != nil {
+						deps = append(deps, &Dependency{ContribType: ACTION, Ref: t.Action.Ref})
+					}
 				}
 			}
 		}
