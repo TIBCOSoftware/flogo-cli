@@ -183,7 +183,7 @@ func extractTrigersDependency(triggers []*trigger.Config) []*Dependency {
 
 	if triggers != nil && len(triggers) > 0 {
 		for _, t := range triggers {
-			deps = append(deps, &Dependency{ContribType: REF, Ref: t.Ref})
+			deps = append(deps, &Dependency{ContribType: TRIGGER, Ref: t.Ref})
 			if t.Handlers != nil {
 				for _, t := range t.Handlers {
 					if t.Action != nil {
@@ -225,14 +225,14 @@ func extractResourceDependency(resources []*ResourceDescriptor) ([]*Dependency, 
 
 			if defRep.Tasks != nil {
 				for _, task := range defRep.Tasks {
-					deps = append(deps, &Dependency{ContribType: REF, Ref: task.Activity.Ref})
+					deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: task.Activity.Ref})
 				}
 			}
 
 			//Error handler
 			if defRep.ErrorHandler != nil {
 				for _, task := range defRep.ErrorHandler.Tasks {
-					deps = append(deps, &Dependency{ContribType: REF, Ref: task.Activity.Ref})
+					deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: task.Activity.Ref})
 				}
 			}
 
