@@ -227,35 +227,38 @@ func extractResourceDependency(resources []*ResourceDescriptor) ([]*Dependency, 
 	return deps, nil
 }
 
+type depHolder struct {
+	deps []*Dependency
+}
+
 // ExtractDependencies extracts dependencies from from application descriptor
 func ExtractDependenciesActionOld(actions []*ActionDescriptor) []*Dependency {
-
-	var deps []*Dependency
+	dh := &depHolder{}
 
 	for _, action := range actions {
-		deps = append(deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
+		dh.deps = append(dh.deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
 
 		if action.Data != nil && action.Data.Flow != nil {
-			extractDepsFromTaskOld(action.Data.Flow.RootTask, deps)
+			extractDepsFromTaskOld(action.Data.Flow.RootTask, dh)
 			//Error handle flow
 			if action.Data.Flow.ErrorHandlerTask != nil {
-				extractDepsFromTaskOld(action.Data.Flow.ErrorHandlerTask, deps)
+				extractDepsFromTaskOld(action.Data.Flow.ErrorHandlerTask, dh)
 			}
 		}
 	}
 
-	return deps
+	return dh.deps
 }
 
 // extractDepsFromTask extract dependencies from a TaskOld and is children
-func extractDepsFromTaskOld(TaskOld *TaskOld, deps []*Dependency) {
+func extractDepsFromTaskOld(TaskOld *TaskOld, dh *depHolder) {
 
 	if TaskOld.Ref != "" {
-		deps = append(deps, &Dependency{ContribType: ACTIVITY, Ref: TaskOld.Ref})
+		dh.deps = append(dh.deps, &Dependency{ContribType: ACTIVITY, Ref: TaskOld.Ref})
 	}
 
 	for _, childTask := range TaskOld.Tasks {
-		extractDepsFromTaskOld(childTask, deps)
+		extractDepsFromTaskOld(childTask, dh)
 	}
 }
 
