@@ -91,7 +91,7 @@ type Task struct {
 }
 
 type ErrorHandlerRep struct {
-	Tasks []*TaskOld `json:"tasks"`
+	Tasks []*Task `json:"tasks"`
 }
 
 type ActionDescriptor struct {
@@ -225,6 +225,13 @@ func extractResourceDependency(resources []*ResourceDescriptor) ([]*Dependency, 
 
 			if defRep.Tasks != nil {
 				for _, task := range defRep.Tasks {
+					deps = append(deps, &Dependency{ContribType: REF, Ref: task.Activity.Ref})
+				}
+			}
+
+			//Error handler
+			if defRep.ErrorHandler != nil {
+				for _, task := range defRep.ErrorHandler.Tasks {
 					deps = append(deps, &Dependency{ContribType: REF, Ref: task.Activity.Ref})
 				}
 			}
