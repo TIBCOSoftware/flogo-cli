@@ -111,7 +111,11 @@ func doCreate(enviro env.Project, appJson, rootDir, appName, vendorDir, constrai
 	}
 
 	// Create initial files
-	deps := config.ExtractAllDependencies(appJson)
+	deps, err := config.ExtractAllDependencies(appJson)
+	if err != nil {
+		return err
+	}
+
 	createMainGoFile(appDir, "")
 	createImportsGoFile(appDir, deps)
 
@@ -208,8 +212,8 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 
 		for _, value := range descriptor.Triggers {
 
-			fmt.Println("Id:", value.ID)
-			if value.ID == options.Shim {
+			fmt.Println("Id:", value.Id)
+			if value.Id == options.Shim {
 				triggerPath := filepath.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
 
 				mdJson, err := fgutil.LoadLocalFile(triggerPath)
