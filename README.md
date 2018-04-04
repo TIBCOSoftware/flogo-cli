@@ -136,8 +136,8 @@ $go get github.com/xeipuuv/gojsonschema
 $go install ./... 
 ```
 
-##License
-flogo-cli is licensed under a BSD-type license. See TIBCO LICENSE.txt for license text.
+## License
+flogo-cli is licensed under a BSD-type license. See [LICENSE](LICENSE) for license text.
 
 
 ### Support
