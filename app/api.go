@@ -11,12 +11,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/callum-ramage/jsonconfig"
+	"go/build"
+
 	"github.com/TIBCOSoftware/flogo-cli/config"
 	"github.com/TIBCOSoftware/flogo-cli/dep"
 	"github.com/TIBCOSoftware/flogo-cli/env"
 	"github.com/TIBCOSoftware/flogo-cli/util"
-	"go/build"
+	"github.com/callum-ramage/jsonconfig"
 )
 
 // dockerfile is the template for a dockerfile needed to build a docker image
@@ -233,16 +234,16 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 					shimFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, fileShimGo)
 					fmt.Println("Shim File:", shimFilePath)
 					fgutil.CopyFile(shimFilePath, filepath.Join(env.GetAppDir(), fileShimGo))
-					
+
 					// ensure deps after the shim.go has been copied to main.go...
 					depManager.Ensure()
-					
+
 					// This is a bit of a workaround, will resolve with a better solution in the future
 					// generate metadata again... ensure will remove it
 					err = generateGoMetadata(env)
 					if err != nil {
 						return err
-					}					
+					}
 
 					if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
@@ -254,6 +255,27 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 						cmd := exec.Command("make", "-C", env.GetAppDir())
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
+						cmd.Env = append(os.Environ(),
+							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+						)
+
+						err = cmd.Run()
+						if err != nil {
+							return err
+						}
+					}
+
+					if metadata.Shim == "gobuild" {
+						//look for Makefile and execute it
+						gobuildFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, gobuildFile)
+						fmt.Println("Go build file:", gobuildFilePath)
+						fgutil.CopyFile(gobuildFilePath, filepath.Join(env.GetAppDir(), gobuildFile))
+
+						// Execute go run gobuild.go
+						cmd := exec.Command("go", "run", gobuildFile, env.GetAppDir())
+						cmd.Stdout = os.Stdout
+						cmd.Stderr = os.Stderr
+						cmd.Dir = env.GetAppDir()
 						cmd.Env = append(os.Environ(),
 							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
 						)
@@ -305,7 +327,7 @@ type BuildOptions struct {
 	NoGeneration   bool
 	GenerationOnly bool
 	SkipPrepare    bool
-	BuildDocker string
+	BuildDocker    string
 }
 
 // BuildApp build the flogo application
@@ -320,8 +342,8 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 	}
 
 	if len(options.BuildDocker) > 0 {
-    		env.SetDockerBuild()
-    }
+		env.SetDockerBuild()
+	}
 
 	if options.GenerationOnly {
 		// Only perform prepare
@@ -350,69 +372,69 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 		os.Remove(filepath.Join(env.GetBinDir(), config.FileDescriptor))
 	}
 
-	  // To create a dockerfile this component executes four steps
-    // 1. Check if flogo.json exists in bin folder (built without -e)
-    // 2. Read flogo.json from ./flogo.json
-    // 3. Output the dockerfile in ./bin/dockerfile
-    // 4. Execute docker build
-    if len(options.BuildDocker) > 0 {
-        fmt.Println("docker:", options.BuildDocker)
-        config, err := jsonconfig.LoadAbstract("./flogo.json", "")
-        if err != nil {
-            return err
-        }
-        data := make(map[string]interface{})
-        found := false
+	// To create a dockerfile this component executes four steps
+	// 1. Check if flogo.json exists in bin folder (built without -e)
+	// 2. Read flogo.json from ./flogo.json
+	// 3. Output the dockerfile in ./bin/dockerfile
+	// 4. Execute docker build
+	if len(options.BuildDocker) > 0 {
+		fmt.Println("docker:", options.BuildDocker)
+		config, err := jsonconfig.LoadAbstract("./flogo.json", "")
+		if err != nil {
+			return err
+		}
+		data := make(map[string]interface{})
+		found := false
 
-        for _, value := range config["triggers"].Arr {
-            if value.Obj["id"].Str == options.BuildDocker {
-                found = true
-                data["name"] = config["name"].Str
-                data["version"] = config["version"].Str
-                data["port"] = value.Obj["settings.port"].Str
-            }
-        }
+		for _, value := range config["triggers"].Arr {
+			if value.Obj["id"].Str == options.BuildDocker {
+				found = true
+				data["name"] = config["name"].Str
+				data["version"] = config["version"].Str
+				data["port"] = value.Obj["settings.port"].Str
+			}
+		}
 
-        if options.BuildDocker == "no-trigger" {
-            found = true
-            data["name"] = config["name"].Str
-            data["version"] = config["version"].Str
-            data["port"] = ""
-        }
+		if options.BuildDocker == "no-trigger" {
+			found = true
+			data["name"] = config["name"].Str
+			data["version"] = config["version"].Str
+			data["port"] = ""
+		}
 
-        if found {
-            t := template.Must(template.New("email").Parse(dockerfile))
-            buf := &bytes.Buffer{}
-            if err := t.Execute(buf, data); err != nil {
-                return err
-            }
-            s := buf.String()
+		if found {
+			t := template.Must(template.New("email").Parse(dockerfile))
+			buf := &bytes.Buffer{}
+			if err := t.Execute(buf, data); err != nil {
+				return err
+			}
+			s := buf.String()
 
-            if data["port"] == "" {
-                s = strings.Replace(s, "EXPOSE \n", "", -1)
-            }
+			if data["port"] == "" {
+				s = strings.Replace(s, "EXPOSE \n", "", -1)
+			}
 
-            file, err := os.Create("./bin/dockerfile")
-            if err != nil {
-                return err
-            }
-            defer file.Close()
+			file, err := os.Create("./bin/dockerfile")
+			if err != nil {
+				return err
+			}
+			defer file.Close()
 
-            file.WriteString(s)
-            file.Sync()
+			file.WriteString(s)
+			file.Sync()
 
-            cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
-            cmd.Dir = "./bin"
-            cmd.Stdout = os.Stdout
-            cmd.Stderr = os.Stderr
-            err = cmd.Run()
-            if err != nil {
-                return err
-            }
-        } else {
-            fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
-        }
-    }
+			cmd := exec.Command("docker", "build", ".", "-t", strings.ToLower(config["name"].Str)+":"+config["version"].Str)
+			cmd.Dir = "./bin"
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err = cmd.Run()
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Your app doesn't contain the trigger you specified so we can't create a dockerfile for it")
+		}
+	}
 	return
 }
 
@@ -555,7 +577,7 @@ func ListDependencies(env env.Project, cType config.ContribType) ([]*config.Depe
 }
 
 // Ensure is a wrapper for dep ensure command
-func Ensure(depManager *dep.DepManager, args ...string) error{
+func Ensure(depManager *dep.DepManager, args ...string) error {
 	return depManager.Ensure(args...)
 }
 
