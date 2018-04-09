@@ -245,7 +245,28 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 						return err
 					}
 
-					if metadata.Shim == "plugin" {
+					// Check if this shim based trigger has a gobuild file. If the trigger has a gobuild
+					// execute that file, otherwise check if there is a Makefile to execute
+					gobuildFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, gobuildFile)
+					if _, err := os.Stat(gobuildFilePath); err == nil {
+						fmt.Println("This trigger makes use if a gobuild file...")
+						fmt.Println("Go build file:", gobuildFilePath)
+						fgutil.CopyFile(gobuildFilePath, filepath.Join(env.GetAppDir(), gobuildFile))
+
+						// Execute go run gobuild.go
+						cmd := exec.Command("go", "run", gobuildFile, env.GetAppDir())
+						cmd.Stdout = os.Stdout
+						cmd.Stderr = os.Stderr
+						cmd.Dir = env.GetAppDir()
+						cmd.Env = append(os.Environ(),
+							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+						)
+
+						err = cmd.Run()
+						if err != nil {
+							return err
+						}
+					} else if metadata.Shim == "plugin" {
 						//look for Makefile and execute it
 						makeFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, makeFile)
 						fmt.Println("Make File:", makeFilePath)
@@ -255,27 +276,6 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 						cmd := exec.Command("make", "-C", env.GetAppDir())
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
-						cmd.Env = append(os.Environ(),
-							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
-						)
-
-						err = cmd.Run()
-						if err != nil {
-							return err
-						}
-					}
-
-					if metadata.Shim == "gobuild" {
-						//look for Makefile and execute it
-						gobuildFilePath := filepath.Join(env.GetVendorSrcDir(), value.Ref, dirShim, gobuildFile)
-						fmt.Println("Go build file:", gobuildFilePath)
-						fgutil.CopyFile(gobuildFilePath, filepath.Join(env.GetAppDir(), gobuildFile))
-
-						// Execute go run gobuild.go
-						cmd := exec.Command("go", "run", gobuildFile, env.GetAppDir())
-						cmd.Stdout = os.Stdout
-						cmd.Stderr = os.Stderr
-						cmd.Dir = env.GetAppDir()
 						cmd.Env = append(os.Environ(),
 							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
 						)
