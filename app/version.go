@@ -3,7 +3,11 @@ package app
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
 
 	"github.com/TIBCOSoftware/flogo-cli/cli"
 )
@@ -11,8 +15,8 @@ import (
 var optVersion = &cli.OptionInfo{
 	Name:      "version",
 	UsageLine: "version",
-	Short:     "Displays the version of Flogo CLI",
-	Long: `Get the current version number of the CLI.
+	Short:     "displays the version of flogo cli and flogo-contrib",
+	Long: `Get the current version number of the cli and contrib.
 
 `,
 }
@@ -41,7 +45,21 @@ func (c *cmdVersion) AddFlags(fs *flag.FlagSet) {
 // Exec implementation of cli.Command.Exec
 func (c *cmdVersion) Exec(args []string) error {
 
-	line := fmt.Sprintf("Flogo CLI version [%s] and commithash [%s]\n\n", tag, hash)
+	line := fmt.Sprintf("flogo cli version [%s] and commithash [%s]\n", tag, hash)
+	fmt.Fprint(os.Stdout, line)
+
+	cmd := exec.Command("git", "describe", "--tags")
+	cmd.Dir = filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "TIBCOSoftware", "flogo-contrib")
+	cmd.Env = append(os.Environ())
+
+	out, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	re := regexp.MustCompile("\\n")
+	fc := re.ReplaceAllString(string(out), "")
+
+	line = fmt.Sprintf("flogo-contrib version [%s]\n\n", fc)
 	fmt.Fprint(os.Stdout, line)
 
 	return nil
