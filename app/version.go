@@ -103,11 +103,22 @@ func (c *cmdVersion) Exec(args []string) error {
 		}
 
 		for _, v := range raw.Projects {
-			if strings.Contains(v.Name, "flogo") {
-				fmt.Printf("Your project uses %s version %s\n", strings.Split(v.Name, "/")[2], v.Version)
+			if caseInsensitiveContains(v.Name, "flogo") {
+				if v.Version == "" {
+					line = fmt.Sprintf("Your project uses %s branch %s and revision %s\n", v.Name, v.Branch, v.Revision)
+				} else {
+					line = fmt.Sprintf("Your project uses %s version %s\n", v.Name, v.Version)
+				}
+				fmt.Fprint(os.Stdout, line)
 			}
 		}
 	}
 
 	return nil
+}
+
+// This isn't the most performant way, but this will be able to check if the string exists while ignoring any case sensitivity.
+func caseInsensitiveContains(s, substr string) bool {
+	s, substr = strings.ToUpper(s), strings.ToUpper(substr)
+	return strings.Contains(s, substr)
 }
