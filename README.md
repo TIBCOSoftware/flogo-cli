@@ -1,45 +1,59 @@
-# flogo-cli
-> Command line tool for building **Flogo**-based applications.
+<p align="center">
+  <img src ="https://raw.githubusercontent.com/TIBCOSoftware/flogo/master/images/projectflogo.png" />
+</p>
 
-**Flogo** is an Integration framework written in Go. It was designed from the ground up to be robust enough for cloud applications (microsewrvices and serverless functions) and at the same time sufficiently lean for IoT devices.
+<p align="center" >
+  <b>Serverless functions and edge microservices made painless</b>
+</p>
 
+<p align="center">
+  <img src="https://travis-ci.org/TIBCOSoftware/flogo-cli.svg"/>
+  <img src="https://img.shields.io/badge/dependencies-up%20to%20date-green.svg"/>
+  <img src="https://img.shields.io/badge/license-BSD%20style-blue.svg"/>
+  <a href="https://gitter.im/project-flogo/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link"><img src="https://badges.gitter.im/Join%20Chat.svg"/></a>
+</p>
+
+<p align="center">
+  <a href="#Installation">Installation</a> | <a href="#getting-started">Getting Started</a> | <a href="#repos">Repos</a> | <a href="#contributing">Contributing</a> | <a href="#license">License</a>
+</p>
+
+<br/>
+Project Flogo is an open source framework to simplify building efficient & modern serverless functions and edge microservices and _this_ is the cli that makes it all happen. 
 
 ## Installation
 ### Prerequisites
-* The Go programming language 1.8 or later should be [installed](https://golang.org/doc/install).
-* Set GOPATH environment variable on your system
+To get started with the Project Flogo cli you'll need to have a few things
+* The Go programming language version 1.8 or later should be [installed](https://golang.org/doc/install).
+* The **GOPATH** environment variable on your system must be set properly
 * In order to simplify dependency management, we're using **go dep**. You can install that by following the instructions [here](https://github.com/golang/dep#setup).
 
-### Install flogo
-    go get github.com/TIBCOSoftware/flogo-cli/...
+### Install the cli
+To install the cli, simply open a terminal and enter the below command
+```
+$ go get -u github.com/TIBCOSoftware/flogo-cli/...
+```
+_Note that the -u parameter automatically updates the cli if it exists_
 
-### Update flogo
-    go get -u github.com/TIBCOSoftware/flogo-cli/...
-    
-### IMPORTANT UPDATE ##
-
-The original **flogo** CLI tool has been deprecated and will be going away in the near future.  It has been temporarily renamed to **flogo_old** and its documentation can still be accessed [here](README_OLD.md).
-    
-## Getting Started
-A flogo application is created using the **flogo** CLI tool.  The tool can be used to create an application from an existing *flogo.json* or to create a simple base application to get you started.  In this example we will walk you through creating the base/sample application.
-
-To create the base application, which consists of a REST trigger and a simple flow with a log activity, you use the following commands.
-
-
+### Build the cli from source
+You can build the cli from source code as well, which is convenient if you're developing new features for it! To do that, follow these easy steps
 ```bash
-flogo create myApp
-cd myApp
+# Get the flogo-cli from GitHub
+$ go get github.com/TIBCOSoftware/flogo-cli/...
 
-flogo build
+# Go to the right directory
+$ cd $GOPATH/src/github.com/TIBCOSoftware/flogo-cli
+
+# Optionally check out the branch you want to use 
+$ git checkout my_branch
+
+# Run the install command
+$ go install ./... 
 ```
 
-- Cd bin folder 
-- Start flogo engine by running ./myApp
-- Flogo will start a REST server
-- Send GET request to run the flow. eg: http://localhost: 9233/test
+## Getting started
+Getting started should be easy and fun, and so is getting started with the Flogo cli. 
 
-The built in sample application is based of the following flogo.json.  This file can be manually modified to add additional triggers and flow actions.  This file can also be generated using the flogo-web UI.
-
+First, create a file called `flogo.json` and with the below content (which is a simple app with an [HTTP trigger](https://tibcosoftware.github.io/flogo/development/webui/triggers/rest/))
 ```json
 {
   "name": "myApp",
@@ -99,46 +113,52 @@ The built in sample application is based of the following flogo.json.  This file
 }
 ```
 
-
-For more details about the REST Trigger configuration go [here](https://github.com/TIBCOSoftware/flogo-contrib/tree/master/trigger/rest#example-configurations)
-
-## Documentation
-Additional documentation on flogo and the CLI tool can be found [here](https://tibcosoftware.github.io/flogo/)
-
-## Contributing and support
-
-### Contributing
-
-We welcome all bug fixes and issue reports.
-
-Pull requests are also welcome. If you would like to submit one, please follow these guidelines:
-
-* Code must be [gofmt](https://golang.org/cmd/gofmt/) compliant.
-* Execute [golint](https://github.com/golang/lint) on your code.
-* Document all funcs, structs and types.
-* Ensure that 'go test' succeeds.
-
-
-Please submit a github issue if you would like to propose a significant change or request a new feature.
-
-### Build flogo from source
-```
-$go get github.com/TIBCOSoftware/flogo-cli/...
-
-$cd $GOPATH/src/github.com/TIBCOSoftware/flogo-cli
-
-[optional, only if building from branch] 
-$git checkout my_branch
-
-[need to manually go get all dependencies for example:] 
-$go get github.com/xeipuuv/gojsonschema
-
-$go install ./... 
+Based on this file we'll create a new flogo app
+```bash
+$ flogo create -f flogo.json myApp
 ```
 
-## License
-flogo-cli is licensed under a BSD-type license. See [LICENSE](LICENSE) for license text.
+From the app folder we can build the executable
+```bash
+$ cd myApp
+$ flogo build -e
+```
 
+Now that there is an executable we can run it!
+```bash
+$ cd bin
+$ ./myApp
+```
 
-### Support
-You can post your questions via [GitHub issues](https://github.com/TIBCOSoftware/flogo/issues)
+The above commands will start the REST server and wait for messages to be sent to `http://localhost:9233/test`. To send a message you can use your browser, or a new terminal window and run
+```bash
+$ curl http://localhost:9233/test
+```
+
+_For more tutorials check out the [Labs](https://tibcosoftware.github.io/flogo/labs/) section in our documentation_
+
+## Repos
+
+[Project Flogo](https://github.com/TIBCOSoftware/flogo) consists of the following sub-projects available as separate repos:
+* [flogo-cli](https://github.com/TIBCOSoftware/flogo-cli): Command line tools for building Flogo apps & extensions (you're here now)
+* [flogo-lib](https://github.com/TIBCOSoftware/flogo-lib): The core Flogo library
+* [flogo-services](https://github.com/TIBCOSoftware/flogo-services): Backing services required by Flogo 
+* [flogo-contrib](https://github.com/TIBCOSoftware/flogo-contrib): Flogo contributions/extensions
+
+## Contributing
+Want to contribute to Project Flogo? We've made it easy, all you need to do is fork the repository you intend to contribute to, make your changes and create a Pull Request! Once the pull request has been created, you'll be prompted to sign the CLA (Contributor License Agreement) online.
+
+Not sure where to start? No problem, here are a few suggestions:
+
+* [flogo-contrib](https://github.com/TIBCOSoftware/flogo-contrib): This repository contains all of the contributions, such as activities, triggers, etc. Perhaps there is something missing? Create a new activity or trigger or fix a bug in an existing activity or trigger.
+* Browse all of the Project Flogo repositories and look for issues tagged `kind/help-wanted` or `good first issue`
+
+If you have any questions, feel free to post an issue and tag it as a question, email flogo-oss@tibco.com or chat with the team and community:
+
+* The [project-flogo/Lobby](https://gitter.im/project-flogo/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link) Gitter channel should be used for general discussions, start here for all things Flogo!
+* The [project-flogo/developers](https://gitter.im/project-flogo/developers?utm_source=share-link&utm_medium=link&utm_campaign=share-link) Gitter channel should be used for developer/contributor focused conversations. 
+
+For additional details, refer to the [Contribution Guidelines](https://github.com/TIBCOSoftware/flogo/blob/master/CONTRIBUTING.md).
+
+## License 
+Flogo source code in [this](https://github.com/TIBCOSoftware/flogo-cli) repository is under a BSD-style license, refer to [LICENSE](https://github.com/TIBCOSoftware/flogo-cli/blob/master/LICENSE) 
