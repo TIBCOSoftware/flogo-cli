@@ -45,6 +45,8 @@ import (
 	"os/signal"
 	"syscall"
     "runtime/pprof"
+    "flag"
+    "runtime"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
