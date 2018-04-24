@@ -44,6 +44,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+    "runtime/pprof"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
@@ -51,7 +52,8 @@ import (
 )
 
 var log = logger.GetLogger("main-engine")
-
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var memprofile = flag.String("memprofile", "", "write memory profile to file")
 var (
 	cp app.ConfigProvider
 )
@@ -67,6 +69,17 @@ func main() {
 	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
+    }
+
+    flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            fmt.Println(err.Error())
+        	os.Exit(1)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
     }
     
     e, err := engine.New(app)
@@ -86,6 +99,20 @@ func main() {
 	code := <-exitChan
 
 	e.Stop()
+
+    if *memprofile != "" {
+        f, err := os.Create(*memprofile)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		if f != nil {
+			runtime.GC() // get up-to-date statistics
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				fmt.Println(err.Error())
+			}
+			f.Close()
+		}
+    }
 
 	os.Exit(code)
 }
@@ -124,8 +151,7 @@ func setupSignalHandling() chan int {
 	}()
 
 	return exitChan
-}
-`
+}`
 
 func createImportsGoFile(codeSourcePath string, deps []*config.Dependency) error {
 	f, err := os.Create(filepath.Join(codeSourcePath, config.FileImportsGo))
