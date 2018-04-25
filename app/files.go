@@ -44,6 +44,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+    "runtime/pprof"
+    "flag"
+    "runtime"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
 	"github.com/TIBCOSoftware/flogo-lib/engine"
@@ -51,7 +54,8 @@ import (
 )
 
 var log = logger.GetLogger("main-engine")
-
+var cpuprofile = flag.String("cpuprofile", "", "Writes CPU profiling for the current process to the specified file")
+var memprofile = flag.String("memprofile", "", "Writes memory profiling for the current process to the specified file")
 var (
 	cp app.ConfigProvider
 )
@@ -67,6 +71,17 @@ func main() {
 	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
+    }
+
+    flag.Parse()
+    if *cpuprofile != "" {
+        f, err := os.Create(*cpuprofile)
+        if err != nil {
+            fmt.Println(fmt.Sprintf("Failed to create CPU profiling file due to error - %s", err.Error()))
+        	os.Exit(1)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
     }
     
     e, err := engine.New(app)
@@ -86,6 +101,21 @@ func main() {
 	code := <-exitChan
 
 	e.Stop()
+
+    if *memprofile != "" {
+        f, err := os.Create(*memprofile)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Failed to create memory profiling file due to error - %s", err.Error()))
+            os.Exit(1)
+		}
+		
+        runtime.GC() // get up-to-date statistics
+        if err := pprof.WriteHeapProfile(f); err != nil {
+          fmt.Println(fmt.Sprintf("Failed to write memory profiling data to file due to error - %s", err.Error()))
+          os.Exit(1)
+        }
+        f.Close()
+    }
 
 	os.Exit(code)
 }
