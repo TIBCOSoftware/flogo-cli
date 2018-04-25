@@ -129,32 +129,21 @@ func setupSignalHandling() chan int {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 
-	exitChan := make(chan int)
-	go func() {
-		for {
-			s := <-signalChan
-			switch s {
-			// kill -SIGHUP
-			case syscall.SIGHUP:
-				exitChan <- 0
-			// kill -SIGINT/Ctrl+c
-			case syscall.SIGINT:
-				exitChan <- 0
-			// kill -SIGTERM
-			case syscall.SIGTERM:
-				exitChan <- 0
-			// kill -SIGQUIT
-			case syscall.SIGQUIT:
-				exitChan <- 0
-			default:
-				logger.Debug("Unknown signal.")
-				exitChan <- 1
-			}
+	exitChan := make(chan int, 1)
+	select {
+	case s := <-signalChan:
+		switch s {
+		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+			exitChan <- 0
+		default:
+			logger.Debug("Unknown signal.")
+			exitChan <- 1
 		}
-	}()
-
+	}
 	return exitChan
-}`
+}
+
+`
 
 func createImportsGoFile(codeSourcePath string, deps []*config.Dependency) error {
 	f, err := os.Create(filepath.Join(codeSourcePath, config.FileImportsGo))
