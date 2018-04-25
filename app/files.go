@@ -54,8 +54,8 @@ import (
 )
 
 var log = logger.GetLogger("main-engine")
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-var memprofile = flag.String("memprofile", "", "write memory profile to file")
+var cpuprofile = flag.String("cpuprofile", "", "Writes CPU profiling for the current process to the specified file")
+var memprofile = flag.String("memprofile", "", "Writes memory profiling for the current process to the specified file")
 var (
 	cp app.ConfigProvider
 )
@@ -77,7 +77,7 @@ func main() {
     if *cpuprofile != "" {
         f, err := os.Create(*cpuprofile)
         if err != nil {
-            fmt.Println(err.Error())
+            fmt.Println(fmt.Sprintf("Failed to create CPU profiling file due to error - %s", err.Error()))
         	os.Exit(1)
         }
         pprof.StartCPUProfile(f)
@@ -105,15 +105,16 @@ func main() {
     if *memprofile != "" {
         f, err := os.Create(*memprofile)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(fmt.Sprintf("Failed to create memory profiling file due to error - %s", err.Error()))
+            os.Exit(1)
 		}
-		if f != nil {
-			runtime.GC() // get up-to-date statistics
-			if err := pprof.WriteHeapProfile(f); err != nil {
-				fmt.Println(err.Error())
-			}
-			f.Close()
-		}
+		
+        runtime.GC() // get up-to-date statistics
+        if err := pprof.WriteHeapProfile(f); err != nil {
+          fmt.Println(fmt.Sprintf("Failed to write memory profiling data to file due to error - %s", err.Error()))
+          os.Exit(1)
+        }
+        f.Close()
     }
 
 	os.Exit(code)
