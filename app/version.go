@@ -69,17 +69,15 @@ func (c *cmdVersion) AddFlags(fs *flag.FlagSet) {
 func (c *cmdVersion) Exec(args []string) error {
 
 	cmd := exec.Command("git", "describe", "--tags")
-	_, set := os.LookupEnv("GOPATH")
-	if set {
-		cmd.Dir = filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "TIBCOSoftware", "flogo-cli")
-	} else {
+	gopath, set := os.LookupEnv("GOPATH")
+	if !set {
 		out, err := exec.Command("go", "env", "GOPATH").Output()
 		if err != nil {
 			log.Fatal(err)
 		}
-		gopath := strings.TrimSuffix(string(out), "\n")
-		cmd.Dir = filepath.Join(gopath, "src", "github.com", "TIBCOSoftware", "flogo-cli")
+		gopath = strings.TrimSuffix(string(out), "\n")
 	}
+	cmd.Dir = filepath.Join(gopath, "src", "github.com", "TIBCOSoftware", "flogo-cli")
 	cmd.Env = append(os.Environ())
 
 	out, err := cmd.Output()
