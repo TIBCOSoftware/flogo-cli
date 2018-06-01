@@ -211,10 +211,11 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 
 		fmt.Println("Shim:", options.Shim)
 
-		for _, value := range descriptor.Triggers {
+		found := false
 
-			fmt.Println("Id:", value.Id)
+		for _, value := range descriptor.Triggers {
 			if value.Id == options.Shim {
+				found = true
 				triggerPath := filepath.Join(env.GetVendorSrcDir(), value.Ref, "trigger.json")
 
 				mdJson, err := fgutil.LoadLocalFile(triggerPath)
@@ -289,6 +290,12 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 
 				break
 			}
+		}
+
+		if !found {
+			fmt.Printf("\nCan't locate trigger with id [%s] in flogo.json\n", options.Shim)
+			fmt.Printf("Please check if you have specified the correct trigger id\n\n")
+			os.Exit(2)
 		}
 
 	} else if options.EmbedConfig {
