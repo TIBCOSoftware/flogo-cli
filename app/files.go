@@ -62,12 +62,15 @@ var (
 
 func main() {
 
-	if cp == nil {
-		// Use default config provider
-		cp = app.DefaultConfigProvider()
+	var flogoApp *app.Config
+	var err error
+
+	if cp != nil {
+		flogoApp, err = cp.GetApp()
+	} else {
+		flogoApp, err = app.LoadConfig("")
 	}
 
-	app, err := cp.GetApp()
 	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
@@ -212,13 +215,7 @@ func EmbeddedProvider() (app.ConfigProvider){
 
 // GetApp returns the app configuration
 func (d *embeddedProvider) GetApp() (*app.Config, error){
-
-	app := &app.Config{}
-	err := json.Unmarshal([]byte(flogoJSON), app)
-	if err != nil {
-		return nil, err
-	}
-	return app, nil
+     return app.LoadConfig(flogoJSON)
 }
 `
 
