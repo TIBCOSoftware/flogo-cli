@@ -87,7 +87,7 @@ func main() {
         defer pprof.StopCPUProfile()
     }
     
-    e, err := engine.New(app)
+    e, err := engine.New(flogoApp)
 	if err != nil {
 		log.Errorf("Failed to create engine instance due to error: %s", err.Error())
 		os.Exit(1)
@@ -270,17 +270,23 @@ func init() {
 
 	if flogoJSON != "" {
 		cp = EmbeddedProvider()
-	} else {
-		cp = app.DefaultConfigProvider()
-	}
+	} 
 
-	app, err := cp.GetApp()
+    var flogoApp *app.Config
+	var err error
+
+	if cp != nil {
+		flogoApp, err = cp.GetApp()
+	} else {
+		flogoApp, err = app.LoadConfig("")
+	} 
+	
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	e, err := engine.New(app)
+	e, err := engine.New(flogoApp)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -301,11 +307,6 @@ func EmbeddedProvider() (app.ConfigProvider){
 // GetApp returns the app configuration
 func (d *embeddedProvider) GetApp() (*app.Config, error){
 
-	appCfg := &app.Config{}
-	err := json.Unmarshal([]byte(flogoJSON), appCfg)
-	if err != nil {
-		return nil, err
-	}
-	return appCfg, nil
+	return app.LoadConfig(flogoJSON)
 }
 `
