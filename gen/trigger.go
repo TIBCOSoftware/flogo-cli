@@ -49,7 +49,7 @@ var tplTriggerDescriptor = `{
       "value": "default"
     }
   ],
-  "outputs": [
+  "output": [
     {
       "name": "output",
       "type": "string"
@@ -77,12 +77,12 @@ type MyTriggerFactory struct{
 	metadata *trigger.Metadata
 }
 
-//NewFactory create a new Trigger factory
+// NewFactory create a new Trigger factory
 func NewFactory(md *trigger.Metadata) trigger.Factory {
 	return &MyTriggerFactory{metadata:md}
 }
 
-//New Creates a new trigger instance for a given id
+// New Creates a new trigger instance for a given id
 func (t *MyTriggerFactory) New(config *trigger.Config) trigger.Trigger {
 	return &MyTrigger{metadata: t.metadata, config:config}
 }
@@ -90,13 +90,12 @@ func (t *MyTriggerFactory) New(config *trigger.Config) trigger.Trigger {
 // MyTrigger is a stub for your Trigger implementation
 type MyTrigger struct {
 	metadata *trigger.Metadata
-	runner   action.Runner
 	config   *trigger.Config
 }
 
-// Init implements trigger.Trigger.Init
-func (t *MyTrigger) Init(runner action.Runner) {
-	t.runner = runner
+// Initialize implements trigger.Init.Initialize
+func (t *MyTrigger) Initialize(ctx trigger.InitContext) error {
+	return nil
 }
 
 // Metadata implements trigger.Trigger.Metadata
@@ -140,9 +139,9 @@ func getJsonMetadata() string{
 type TestRunner struct {
 }
 
-// Run implements action.Runner.Run
-func (tr *TestRunner) Run(context context.Context, action action.Action, uri string, options interface{}) (code int, data interface{}, err error) {
-	return 0, nil, nil
+// Execute implements action.Runner.Execute
+func (runner *TestRunner) Execute(ctx context.Context, act action.Action, inputs map[string]*data.Attribute) (results map[string]*data.Attribute, err error) {
+	return nil, nil
 }
 
 const testConfig string = ` + "`" + `{
@@ -173,6 +172,11 @@ func TestInit(t *testing.T) {
 
 	runner := &TestRunner{}
 
-	tgr.Init(runner)
+	initCtx := &struct {
+		handlers []*trigger.Handler
+	}{
+		handlers: make([]*trigger.Handler, 0, len(config.Handlers))
+	}
+	tgr.Initialize(initCtx)
 }
 `
