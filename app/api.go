@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"go/build"
@@ -25,9 +26,9 @@ const dockerfile = `# Dockerfile for {{.name}}
 # VERSION {{.version}}
 FROM alpine
 RUN apk update && apk add ca-certificates
-ADD linux_amd64 .
+COPY linux_amd64/{{.name}} {{.name}}
 EXPOSE {{.port}}
-CMD ./linux_amd64/{{.name}}`
+CMD ./{{.name}}`
 
 // BuildPreProcessor interface for build pre-processors
 type BuildPreProcessor interface {
@@ -419,6 +420,10 @@ func doBuild(env env.Project, options *BuildOptions) (err error) {
 
 			if data["port"] == "" {
 				s = strings.Replace(s, "EXPOSE \n", "", -1)
+			}
+
+			if runtime.GOOS == "linux" {
+				s = strings.Replace(s, fmt.Sprintf("COPY linux_amd64/%s %s", data["name"].(string), data["name"].(string)), fmt.Sprintf("COPY %s %s", data["name"].(string), data["name"].(string)), -1)
 			}
 
 			file, err := os.Create("./bin/dockerfile")
