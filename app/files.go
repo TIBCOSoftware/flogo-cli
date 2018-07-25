@@ -192,7 +192,6 @@ var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated us
 package main
 
 import (
-	"encoding/json"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
 )
@@ -248,7 +247,6 @@ var tplShimSupportGoFile = `// Do not change this file, it has been generated us
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
