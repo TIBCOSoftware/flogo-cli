@@ -62,15 +62,12 @@ var (
 
 func main() {
 
-	var flogoApp *app.Config
-	var err error
-
-	if cp != nil {
-		flogoApp, err = cp.GetApp()
-	} else {
-		flogoApp, err = app.LoadConfig("")
+	if cp == nil {
+		// Use default config provider
+		cp = app.DefaultConfigProvider()
 	}
 
+	app, err := cp.GetApp()
 	if err != nil {
         	fmt.Println(err.Error())
         	os.Exit(1)
@@ -87,7 +84,7 @@ func main() {
         defer pprof.StopCPUProfile()
     }
     
-    e, err := engine.New(flogoApp)
+    e, err := engine.New(app)
 	if err != nil {
 		log.Errorf("Failed to create engine instance due to error: %s", err.Error())
 		os.Exit(1)
@@ -192,6 +189,7 @@ var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated us
 package main
 
 import (
+	"encoding/json"
 
 	"github.com/TIBCOSoftware/flogo-lib/app"
 )
@@ -214,7 +212,13 @@ func EmbeddedProvider() (app.ConfigProvider){
 
 // GetApp returns the app configuration
 func (d *embeddedProvider) GetApp() (*app.Config, error){
-     return app.LoadConfig(flogoJSON)
+
+	app := &app.Config{}
+	err := json.Unmarshal([]byte(flogoJSON), app)
+	if err != nil {
+		return nil, err
+	}
+	return app, nil
 }
 `
 
@@ -247,6 +251,7 @@ var tplShimSupportGoFile = `// Do not change this file, it has been generated us
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -268,23 +273,17 @@ func init() {
 
 	if flogoJSON != "" {
 		cp = EmbeddedProvider()
-	} 
-
-    var flogoApp *app.Config
-	var err error
-
-	if cp != nil {
-		flogoApp, err = cp.GetApp()
 	} else {
-		flogoApp, err = app.LoadConfig("")
-	} 
-	
+		cp = app.DefaultConfigProvider()
+	}
+
+	app, err := cp.GetApp()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	e, err := engine.New(flogoApp)
+	e, err := engine.New(app)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -305,6 +304,11 @@ func EmbeddedProvider() (app.ConfigProvider){
 // GetApp returns the app configuration
 func (d *embeddedProvider) GetApp() (*app.Config, error){
 
-	return app.LoadConfig(flogoJSON)
+	appCfg := &app.Config{}
+	err := json.Unmarshal([]byte(flogoJSON), appCfg)
+	if err != nil {
+		return nil, err
+	}
+	return appCfg, nil
 }
 `
