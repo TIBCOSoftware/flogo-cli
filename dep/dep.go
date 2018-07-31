@@ -43,9 +43,9 @@ func (b *DepManager) Init() error {
 
 	cmd := exec.Command("dep", "init")
 	cmd.Dir = b.Env.GetAppDir()
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-	cmd.Env = newEnv
+	//newEnv := os.Environ()
+	//newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
+	cmd.Env = fgutil.ReplaceEnvValue(os.Environ(), "GOPATH", b.Env.GetRootDir())
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -112,9 +112,10 @@ func (b *DepManager) Ensure(args ...string) error {
 
 	cmd := exec.Command("dep", ensureArgs...)
 	cmd.Dir = b.Env.GetAppDir()
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
-	cmd.Env = newEnv
+	//newEnv := os.Environ()
+	//newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", b.Env.GetRootDir()))
+	//cmd.Env = newEnv
+	cmd.Env = fgutil.ReplaceEnvValue(os.Environ(), "GOPATH", b.Env.GetRootDir())
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -324,9 +325,10 @@ func GetExistingConstraint(rootDir, appDir, depPath string) (*ConstraintDef, err
 	// Validate that the install project does not exist in Gopkg.toml
 	cmd := exec.Command("dep", "status", "-json")
 	cmd.Dir = appDir
-	newEnv := os.Environ()
-	newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
-	cmd.Env = newEnv
+	//newEnv := os.Environ()
+	//newEnv = append(newEnv, fmt.Sprintf("GOPATH=%s", rootDir))
+	//cmd.Env = newEnv
+	cmd.Env = fgutil.ReplaceEnvValue(os.Environ(), "GOPATH", rootDir)
 
 	status, err := cmd.Output()
 	if err != nil {
