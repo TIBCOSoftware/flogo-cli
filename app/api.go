@@ -260,9 +260,11 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
 						cmd.Dir = env.GetAppDir()
-						cmd.Env = append(os.Environ(),
-							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
-						)
+						//cmd.Env = append(os.Environ(),
+						//	fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+						//)
+						cmd.Env = fgutil.ReplaceEnvValue(os.Environ(), "GOPATH", env.GetRootDir())
+
 
 						err = cmd.Run()
 						if err != nil {
@@ -278,9 +280,11 @@ func doPrepare(env env.Project, options *PrepareOptions) (err error) {
 						cmd := exec.Command("make", "-C", env.GetAppDir())
 						cmd.Stdout = os.Stdout
 						cmd.Stderr = os.Stderr
-						cmd.Env = append(os.Environ(),
-							fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
-						)
+						//cmd.Env = append(os.Environ(),
+						//	fmt.Sprintf("GOPATH=%s", env.GetRootDir()),
+						//)
+						cmd.Env = fgutil.ReplaceEnvValue(os.Environ(), "GOPATH", env.GetRootDir())
+
 
 						err = cmd.Run()
 						if err != nil {

@@ -174,7 +174,7 @@ func ExtractAllDependencies(appjson string) ([]*Dependency, error) {
 	}
 	deps = append(deps, resourceDeps...)
 
-	deps = append(deps, ExtractDependenciesActionOld(flogoApp.Actions)...)
+	deps = append(deps, ExtractDependenciesSharedActions(flogoApp.Actions)...)
 	return deps, nil
 }
 
@@ -187,7 +187,9 @@ func extractTrigersDependency(triggers []*trigger.Config) []*Dependency {
 			if t.Handlers != nil {
 				for _, t := range t.Handlers {
 					if t.Action != nil {
-						deps = append(deps, &Dependency{ContribType: ACTION, Ref: t.Action.Ref})
+						if t.Action.Ref != "" {
+							deps = append(deps, &Dependency{ContribType: ACTION, Ref: t.Action.Ref})
+						}
 					}
 				}
 			}
@@ -246,12 +248,13 @@ type depHolder struct {
 }
 
 // ExtractDependencies extracts dependencies from from application descriptor
-func ExtractDependenciesActionOld(actions []*ActionDescriptor) []*Dependency {
+func ExtractDependenciesSharedActions(actions []*ActionDescriptor) []*Dependency {
 	dh := &depHolder{}
 
 	for _, action := range actions {
 		dh.deps = append(dh.deps, &Dependency{ContribType: ACTION, Ref: action.Ref})
 
+		//todo remove
 		if action.Data != nil && action.Data.Flow != nil {
 			extractDepsFromTaskOld(action.Data.Flow.RootTask, dh)
 			//Error handle flow
