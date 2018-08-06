@@ -119,29 +119,19 @@ func (t *MyTrigger) Stop() error {
 var tplTriggerGoTestGo = `package {{.Name}}
 
 import (
-	"context"
 	"io/ioutil"
 	"encoding/json"
 	"testing"
 
-	"github.com/TIBCOSoftware/flogo-lib/core/action"
 	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
 )
 
-func getJsonMetadata() string{
+func getJsonMetadata() string {
 	jsonMetadataBytes, err := ioutil.ReadFile("trigger.json")
-	if err != nil{
+	if err != nil {
 		panic("No Json Metadata found for trigger.json path")
 	}
 	return string(jsonMetadataBytes)
-}
-
-type TestRunner struct {
-}
-
-// Execute implements action.Runner.Execute
-func (runner *TestRunner) Execute(ctx context.Context, act action.Action, inputs map[string]*data.Attribute) (results map[string]*data.Attribute, err error) {
-	return nil, nil
 }
 
 const testConfig string = ` + "`" + `{
@@ -151,32 +141,33 @@ const testConfig string = ` + "`" + `{
   },
   "handlers": [
     {
-      "actionId": "test_action",
       "settings": {
         "handler_setting": "somevalue"
+      },
+      "action" {
+	     "id": "test_action"
       }
     }
   ]
 }` + "`" + `
 
-func TestInit(t *testing.T) {
+func TestCreate(t *testing.T) {
 
 	// New factory
 	md := trigger.NewMetadata(getJsonMetadata())
 	f := NewFactory(md)
 
+	if f == nil {
+		t.Fail()
+	}
+
 	// New Trigger
 	config := trigger.Config{}
 	json.Unmarshal([]byte(testConfig), config)
-	tgr := f.New(&config)
+	trg := f.New(&config)
 
-	runner := &TestRunner{}
-
-	initCtx := &struct {
-		handlers []*trigger.Handler
-	}{
-		handlers: make([]*trigger.Handler, 0, len(config.Handlers))
+	if trg == nil {
+		t.Fail()
 	}
-	tgr.Initialize(initCtx)
 }
 `
