@@ -23,20 +23,33 @@ func SetupNewProjectEnv() env.Project {
 }
 
 func SetupExistingProjectEnv(rootDir string) env.Project {
+	proj, _ := SetupExistingProjectEnvWithOrWithoutExitOnFailure(rootDir, true)
+	return proj
+}
+
+func SetupExistingProjectEnvWithOrWithoutExitOnFailure(rootDir string, exitOnFailure bool) (env.Project, error) {
 
 	proj := env.NewFlogoProject()
 
 	if err := proj.Init(rootDir); err != nil {
-		fmt.Fprintf(os.Stderr, "Error initializing flogo app project: %s\n\n", err.Error())
-		os.Exit(2)
+		if exitOnFailure {
+			fmt.Fprintf(os.Stderr, "Error initializing flogo app project: %s\n\n", err.Error())
+			os.Exit(2)
+		} else {
+			return nil, err
+		}
 	}
 
 	if err := proj.Open(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error opening flogo app project: %s\n\n", err.Error())
-		os.Exit(2)
+		if exitOnFailure {
+			fmt.Fprintf(os.Stderr, "Error opening flogo app project: %s\n\n", err.Error())
+			os.Exit(2)
+		} else {
+			return nil, err
+		}
 	}
 
-	return proj
+	return proj, nil
 }
 
 func splitVersion(t string) (path string, version string) {

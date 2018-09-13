@@ -97,27 +97,29 @@ func (c *cmdVersion) Exec(args []string) error {
 		os.Exit(2)
 	}
 
-	project := SetupExistingProjectEnv(appDir)
+	project, _ := SetupExistingProjectEnvWithOrWithoutExitOnFailure(appDir, false)
 
-	config, err := toml.LoadFile(filepath.Join(project.GetAppDir(), lockName))
+	if project != nil {
+		config, err := toml.LoadFile(filepath.Join(project.GetAppDir(), lockName))
 
-	if err != nil {
-		fmt.Println("Error ", err.Error())
-	} else {
-		raw := rawLock{}
-		err := config.Unmarshal(&raw)
 		if err != nil {
-			fmt.Printf("Unable to parse the lock as TOML")
-		}
+			fmt.Println("Error ", err.Error())
+		} else {
+			raw := rawLock{}
+			err := config.Unmarshal(&raw)
+			if err != nil {
+				fmt.Printf("Unable to parse the lock as TOML")
+			}
 
-		for _, v := range raw.Projects {
-			if caseInsensitiveContains(v.Name, "flogo") {
-				if v.Version == "" {
-					line = fmt.Sprintf("Your project uses %s branch %s and revision %s\n", v.Name, v.Branch, v.Revision)
-				} else {
-					line = fmt.Sprintf("Your project uses %s version %s\n", v.Name, v.Version)
+			for _, v := range raw.Projects {
+				if caseInsensitiveContains(v.Name, "flogo") {
+					if v.Version == "" {
+						line = fmt.Sprintf("Your project uses %s branch %s and revision %s\n", v.Name, v.Branch, v.Revision)
+					} else {
+						line = fmt.Sprintf("Your project uses %s version %s\n", v.Name, v.Version)
+					}
+					fmt.Fprint(os.Stdout, line)
 				}
-				fmt.Fprint(os.Stdout, line)
 			}
 		}
 	}
