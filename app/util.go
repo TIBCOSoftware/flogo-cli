@@ -101,7 +101,8 @@ func Usage() {
 }
 
 func cmdUsage(command cli.Command) {
-	cli.CmdUsage("", command)
+	cli.PrintCmdHelp("", command)
+	os.Exit(2)
 }
 
 func printUsage(w io.Writer) {

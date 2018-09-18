@@ -62,13 +62,13 @@ func (c *cmdCreate) Exec(args []string) error {
 			appJson, err = fgutil.LoadRemoteFile(c.fileName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: Error loading app file '%s' - %s\n\n", c.fileName, err.Error())
-				os.Exit(2)
+				cmdUsage(c)
 			}
 		} else {
 			appJson, err = fgutil.LoadLocalFile(c.fileName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: Error loading app file '%s' - %s\n\n", c.fileName, err.Error())
-				os.Exit(2)
+				cmdUsage(c)
 			}
 
 			if len(args) != 0 {
