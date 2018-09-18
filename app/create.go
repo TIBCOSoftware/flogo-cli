@@ -109,17 +109,24 @@ var tplSimpleApp = `{
   "name": "AppName",
   "type": "flogo:app",
   "version": "0.0.1",
-  "description": "My flogo application description",
+  "appModel": "1.0.0",
   "triggers": [
     {
-      "id": "my_rest_trigger",
+      "id": "receive_http_message",
       "ref": "github.com/TIBCOSoftware/flogo-contrib/trigger/rest",
+      "name": "Receive HTTP Message",
+      "description": "Simple REST Trigger",
       "settings": {
-        "port": "9233"
+        "port": 9233
       },
       "handlers": [
         {
-          "actionId": "my_simple_flow",
+          "action": {
+            "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+            "data": {
+              "flowURI": "res://flow:sample_flow"
+            }
+          },
           "settings": {
             "method": "GET",
             "path": "/test"
@@ -128,37 +135,26 @@ var tplSimpleApp = `{
       ]
     }
   ],
-  "actions": [
+  "resources": [
     {
-      "id": "my_simple_flow",
-      "name": "my simple flow",
-      "ref": "github.com/TIBCOSoftware/flogo-contrib/action/flow",
+      "id": "flow:sample_flow",
       "data": {
-        "flow": {
-          "name": "my simple flow",
-          "attributes": [],
-          "rootTask": {
-            "id": 1,
-            "type": 1,
-            "tasks": [
-              {
-                "id": 2,
-                "type": 1,
-                "activityRef": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
-                "name": "log",
-                "attributes": [
-                  {
-                    "name": "message",
-                    "value": "Simple Log",
-                    "type": "string"
-                  }
-                ]
+        "name": "SampleFlow",
+        "tasks": [
+          {
+            "id": "log_2",
+            "name": "Log Message",
+            "description": "Simple Log Activity",
+            "activity": {
+              "ref": "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+              "input": {
+                "message": "Simple Log",
+                "flowInfo": "false",
+                "addToFlow": "false"
               }
-            ],
-            "links": [
-            ]
+            }
           }
-        }
+        ]
       }
     }
   ]
