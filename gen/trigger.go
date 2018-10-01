@@ -40,6 +40,7 @@ var tplTriggerDescriptor = `{
   "name": "{{.Name}}",
   "version": "0.0.1",
   "type": "flogo:trigger",
+  "ref": "github.com/yourusername/yourrepository",
   "description": "trigger description",
   "author": "Your Name <you.name@example.org>",
   "settings":[

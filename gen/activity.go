@@ -42,6 +42,7 @@ var tplActivityDescriptor = `{
   "version": "0.0.1",
   "type": "flogo:activity",
   "description": "activity description",
+  "ref": "github.com/yourusername/yourrepository",
   "author": "Your Name <you.name@example.org>",
   "inputs":[
     {
