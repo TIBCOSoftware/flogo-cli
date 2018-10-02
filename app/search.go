@@ -131,7 +131,7 @@ func searchContent(content string, filterByType bool, filterByString bool, searc
 	// Get the correct key
 	queryResult := config.Get(tomlKey)
 	if queryResult == nil {
-		return nil, fmt.Errorf("Unknown error occured, no items found in FAR")
+		return nil, fmt.Errorf("Unknown error occurred, no items found in Flogo Showcase")
 	}
 
 	// Prepare a result structure
@@ -198,5 +198,5 @@ func getFARContent() (string, error) {
 		return res.Body, nil
 	}
 
-	return "", fmt.Errorf("Unknown error occured with HTTP Status Code %v", res.StatusCode)
+	return "", fmt.Errorf("Unknown error occurred with HTTP Status Code %v", res.StatusCode)
 }
