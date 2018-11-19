@@ -8,6 +8,7 @@ const (
 	fileActivityDescriptor string = "activity.json"
 	fileActivityGo         string = "activity.go"
 	fileActivityGoTest     string = "activity_test.go"
+	fileActivityReadme     string = "README.md"
 )
 
 type ActivityGenerator struct {
@@ -30,6 +31,11 @@ func (g *ActivityGenerator) Generate(basePath string, data interface{}) error {
 	}
 
 	err = fgutil.CreateFileFromTemplate(basePath, fileActivityGoTest, tplActivityGoTest, data)
+	if err != nil {
+		return err
+	}
+
+	err = fgutil.CreateFileFromTemplate(basePath, fileActivityReadme, tplActivityReadme, data)
 	if err != nil {
 		return err
 	}
@@ -143,4 +149,7 @@ func TestEval(t *testing.T) {
 
 	//check result attr
 }
+`
+var tplActivityReadme = `
+# 	{{.Name}} - Activity
 `

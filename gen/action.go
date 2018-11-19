@@ -8,6 +8,7 @@ const (
 	fileActionDescriptor string = "action.json"
 	fileActionGo         string = "action.go"
 	fileActionGoTest     string = "action_test.go"
+	fileActionReadme     string = "README.md"
 )
 
 type ActionGenerator struct {
@@ -29,6 +30,11 @@ func (g *ActionGenerator) Generate(basePath string, data interface{}) error {
 	}
 
 	err = fgutil.CreateFileFromTemplate(basePath, fileActionGoTest, tplActionGoTest, data)
+	if err != nil {
+		return err
+	}
+
+	err = fgutil.CreateFileFromTemplate(basePath, fileActionReadme, tplActionReadme, data)
 	if err != nil {
 		return err
 	}
@@ -102,4 +108,7 @@ func TestRun(t *testing.T) {
 
 	act.Run(ctx, "", nil, nil)
 }
+`
+var tplActionReadme = `
+# 	{{.Name}} - Action
 `
