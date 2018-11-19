@@ -8,6 +8,7 @@ const (
 	fileFlowModelDescriptor string = "model.json"
 	fileFlowModelGo         string = "model.go"
 	fileFlowModelGoTest     string = "model_test.go"
+	fileFlowModelReadme     string = "README.md"
 )
 
 type FlowModelGenerator struct {
@@ -30,6 +31,11 @@ func (g *FlowModelGenerator) Generate(basePath string, data interface{}) error {
 	}
 
 	err = fgutil.CreateFileFromTemplate(basePath, fileFlowModelGoTest, tplFlowModelGoTest, data)
+	if err != nil {
+		return err
+	}
+
+	err = fgutil.CreateFileFromTemplate(basePath, fileFlowModelReadme, tplFlowModelReadme, data)
 	if err != nil {
 		return err
 	}
@@ -238,4 +244,7 @@ func TestRegistered(t *testing.T) {
 		return
 	}
 }
+`
+var tplFlowModelReadme = `
+# 	{{.Name}} - Flow Model
 `

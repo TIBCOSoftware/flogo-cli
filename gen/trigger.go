@@ -8,6 +8,7 @@ const (
 	fileTriggerDescriptor string = "trigger.json"
 	fileTriggerGo         string = "trigger.go"
 	fileTriggerGoTest     string = "trigger_test.go"
+	fileTriggerReadme     string = "README.md"
 )
 
 type TriggerGenerator struct {
@@ -29,6 +30,11 @@ func (g *TriggerGenerator) Generate(basePath string, data interface{}) error {
 	}
 
 	err = fgutil.CreateFileFromTemplate(basePath, fileTriggerGoTest, tplTriggerGoTestGo, data)
+	if err != nil {
+		return err
+	}
+
+	err = fgutil.CreateFileFromTemplate(basePath, fileTriggerReadme, tplTriggerReadme, data)
 	if err != nil {
 		return err
 	}
@@ -171,4 +177,7 @@ func TestCreate(t *testing.T) {
 		t.Fail()
 	}
 }
+`
+var tplTriggerReadme = `
+# 	{{.Name}} - Trigger
 `
