@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/TIBCOSoftware/flogo-cli/config"
-	"github.com/TIBCOSoftware/flogo-cli/util"
+	fgutil "github.com/TIBCOSoftware/flogo-cli/util"
 )
 
 const (
@@ -152,7 +152,17 @@ func createImportsGoFile(codeSourcePath string, deps []*config.Dependency) error
 		return err
 	}
 
-	fgutil.RenderTemplate(f, tplNewImportsGoFile, deps)
+	// dedup:
+	depMap := make(map[string]*config.Dependency)
+	var uniqueDeps []*config.Dependency
+	for _, dep := range deps {
+		if _, ok := depMap[dep.Ref]; !ok {
+			depMap[dep.Ref] = dep
+			uniqueDeps = append(uniqueDeps, dep)
+		}
+	}
+
+	fgutil.RenderTemplate(f, tplNewImportsGoFile, uniqueDeps)
 	f.Close()
 
 	return nil
