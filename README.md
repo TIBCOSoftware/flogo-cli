@@ -1,3 +1,5 @@
+**This repository has been replaced with Project Flogo [0.9.0 CLI](https://github.com/project-flogo/cli). Project Flogo 0.5.8 (this repository) will be placed in maintaince mode and only critical issues fixed.**
+
 <p align="center">
   <img src ="https://raw.githubusercontent.com/TIBCOSoftware/flogo/master/images/projectflogo.png" />
 </p>
